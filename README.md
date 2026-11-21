@@ -87,6 +87,10 @@ PowerSync 要求客户端声明 schema（本地有哪些表、每张表哪些列
 
 > SDK 根包保持**项目无关**：只有通用 API，不含任何业务 schema；业务 schema 属于使用方
 > （示例里放在 `examples/todo/`）。换项目时用 `cmd/genschema -pkg main -out-go <你的项目>/schema.go`。
+>
+> 注意区分两种“schema”：**PG 的 schema**（`org`/`cutters`/`mats`…）只是服务端命名空间，
+> 客户端表名是**裸表名**（同步流里 `object_type` 就是 `cutter_info`）；**PowerSync 客户端 schema**
+> 才是客户端必须声明的表/列清单。`syncRules.yaml` 只在服务端，构建期拿来发现表名，**运行时不依赖**。
 
 ```bash
 # 重新生成（服务端表结构变了就跑一次）

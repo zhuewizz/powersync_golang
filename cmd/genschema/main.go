@@ -27,6 +27,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"go/format"
 	"log"
 	"net/http"
 	"net/url"
@@ -65,9 +66,16 @@ func main() {
 	if err != nil {
 		log.Fatalf("读同步规则: %v", err)
 	}
-	order, err := parseSyncRules(string(raw))
+	order, pgSchemas, err := parseSyncRules(string(raw))
 	if err != nil {
 		log.Fatalf("解析同步规则: %v", err)
+	}
+	// 同名的表出现在多个 PG schema 里是危险的（客户端没有 schema 概念，会撞成一张表）。
+	for name, schemas := range pgSchemas {
+		if len(schemas) > 1 {
+			fmt.Printf("⚠️ 表 %s 同时出现在多个 PG schema（%s）：客户端会合并成一张表 %s\n",
+				name, strings.Join(schemas, ", "), name)
+		}
 	}
 	fmt.Printf("同步规则: %s（%d 张表）\n", *rulesF, len(order))
 
@@ -128,9 +136,15 @@ func main() {
 	cols := columnsForTables(order, openapi, *fallback, inferred)
 
 	// 生成 Go 源码
-	goSrc, jsonSrc, err := render(*pkgName, *fnName, *rulesF, order, cols)
+	goSrc, jsonSrc, err := render(*pkgName, *fnName, *rulesF, order, pgSchemas, cols)
 	if err != nil {
 		log.Fatalf("生成: %v", err)
+	}
+	// 生成物先过 gofmt，保证 CI 的 gofmt -l 不会报警（注释对齐由它处理）。
+	if formatted, err := format.Source([]byte(goSrc)); err == nil {
+		goSrc = string(formatted)
+	} else {
+		log.Fatalf("生成代码无法 gofmt: %v", err)
 	}
 	if err := os.WriteFile(*outGo, []byte(goSrc), 0o644); err != nil {
 		log.Fatalf("写 %s: %v", *outGo, err)
@@ -191,8 +205,9 @@ func parseAliases(yaml string) map[string][]string {
 //
 // 只做这一件事就够了：bucket 划分、参数、过滤条件都是服务端的事，
 // 客户端只关心"哪些表会出现"。
-func parseSyncRules(yaml string) ([]string, error) {
+func parseSyncRules(yaml string) ([]string, map[string][]string, error) {
 	seen := map[string]bool{}
+	pgSchemas := map[string][]string{}
 	var out []string
 	for _, line := range strings.Split(yaml, "\n") {
 		trimmed := strings.TrimSpace(line)
@@ -200,7 +215,11 @@ func parseSyncRules(yaml string) ([]string, error) {
 			continue
 		}
 		for _, m := range fromRe.FindAllStringSubmatch(line, -1) {
-			table := m[2]
+			pgSchema, table := m[1], m[2]
+			// 客户端 schema 没有 PG schema（命名空间）的概念：只用表名，pg schema 仅作备注。
+			if !contains(pgSchemas[table], pgSchema) {
+				pgSchemas[table] = append(pgSchemas[table], pgSchema)
+			}
 			if seen[table] {
 				continue
 			}
@@ -209,9 +228,9 @@ func parseSyncRules(yaml string) ([]string, error) {
 		}
 	}
 	if len(out) == 0 {
-		return nil, fmt.Errorf("没有匹配到 FROM \"schema\".\"table\"")
+		return nil, nil, fmt.Errorf("没有匹配到 FROM \"schema\".\"table\"")
 	}
-	return out, nil
+	return out, pgSchemas, nil
 }
 
 // ---------------------------------------------------------------- OpenAPI
@@ -352,7 +371,7 @@ func psType(format, typ string) powersync.ColumnType {
 
 // ---------------------------------------------------------------- 渲染
 
-func render(pkg, fn, rulesFile string, order []string, cols map[string][]powersync.Column) (string, string, error) {
+func render(pkg, fn, rulesFile string, order []string, pgSchemas map[string][]string, cols map[string][]powersync.Column) (string, string, error) {
 	tables := make([]powersync.Table, 0, len(order))
 	for _, name := range order {
 		tables = append(tables, powersync.Table{Name: name, Columns: cols[name]})
@@ -391,6 +410,9 @@ func render(pkg, fn, rulesFile string, order []string, cols map[string][]powersy
 	fmt.Fprintf(&b, "// %s 是本项目的客户端 schema：表清单来自 PowerSync 同步规则（%s），\n", fn, filepathBase(rulesFile))
 	b.WriteString("// 列定义来自 PostgREST OpenAPI。PowerSync 只会同步这里声明的表。\n")
 	fmt.Fprintf(&b, "//\n// 共 %d 张表 / %d 列。\n", len(order), countCols(cols))
+	b.WriteString("//\n// 注意：PG 的 schema（org/cutters/mats/tools/delivery）只是服务端命名空间；\n")
+	b.WriteString("// 客户端表名**不带 schema 前缀**（同步流里的 object_type 就是裸表名）。\n")
+	b.WriteString("// 每行末尾的注释只说明它在 PG 里属于哪个 schema，便于对照排查。\n")
 	fmt.Fprintf(&b, "func %s() *%s {\n", fn, q("Schema"))
 	fmt.Fprintf(&b, "\treturn %s(cutterTables()...)\n}\n\n", q("NewSchema"))
 	fmt.Fprintf(&b, "func cutterTables() []%s {\n\treturn []%s{\n", q("Table"), q("Table"))
@@ -399,11 +421,19 @@ func render(pkg, fn, rulesFile string, order []string, cols map[string][]powersy
 		for _, c := range cols[name] {
 			specs = append(specs, fmt.Sprintf("%q", string(c.Name)+":"+string(c.Type)))
 		}
+		comment := ""
+		if pgs := pgSchemas[name]; len(pgs) > 0 {
+			qualified := make([]string, 0, len(pgs))
+			for _, pg := range pgs {
+				qualified = append(qualified, pg+"."+name)
+			}
+			comment = "  // " + strings.Join(qualified, ", ")
+		}
 		if len(specs) == 0 {
-			fmt.Fprintf(&b, "\t\t{Name: %q},\n", name)
+			fmt.Fprintf(&b, "\t\t{Name: %q},%s\n", name, comment)
 			continue
 		}
-		fmt.Fprintf(&b, "\t\t{Name: %q, Columns: cols(%s)},\n", name, strings.Join(specs, ", "))
+		fmt.Fprintf(&b, "\t\t{Name: %q, Columns: cols(%s)},%s\n", name, strings.Join(specs, ", "), comment)
 	}
 	b.WriteString("\t}\n}\n\n")
 
