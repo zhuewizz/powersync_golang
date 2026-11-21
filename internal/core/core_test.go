@@ -645,6 +645,9 @@ func TestSkippedUnknownCounts(t *testing.T) {
 	if got := db.SkippedUnknown() - before; got != 2 {
 		t.Errorf("SkippedUnknown 增量 = %d, want 2", got)
 	}
+	if tables := db.SkippedTables(); len(tables) != 2 || tables[0] != "ghost" || tables[1] != "ghost2" {
+		t.Errorf("SkippedTables = %v, want [ghost ghost2]", tables)
+	}
 	// oplog 仍然记录（checksum 不受影响）
 	if rows, _, err := db.OplogStats(ctx, "b"); err != nil || rows == 0 {
 		t.Errorf("oplog 应仍记录，rows=%d err=%v", rows, err)

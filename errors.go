@@ -13,8 +13,9 @@ var (
 	ErrClosed = errors.New("powersync: database is closed")
 	// ErrNotConnected 表示当前没有可用的同步连接（Connect 未调用或已 Disconnect）。
 	ErrNotConnected = errors.New("powersync: not connected")
-	// ErrSchemaRequired 表示新库必须先提供 schema。
-	ErrSchemaRequired = errors.New("powersync: schema is required when creating a database")
+	// ErrSchemaRequired 表示没有提供 schema。PowerSync 要求实例化时必须给出客户端 schema
+	// （官方 SDK 同样如此）：它决定本地建哪些表/视图，服务端下发但未声明的表会被跳过。
+	ErrSchemaRequired = errors.New("powersync: Options.Schema is required（PowerSync 要求客户端必须声明 schema）")
 	// ErrInvalidDirectory 表示 Filename 指向的目录不可用。
 	ErrInvalidDirectory = errors.New("powersync: invalid database path")
 	// ErrDatabaseLocked 表示同一数据库文件已被另一个实例（进程/标签页）打开。

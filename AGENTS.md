@@ -178,7 +178,9 @@ go run ./cmd/psupload -endpoint $PS_URL -rest $REST_URL -rpc $RPC_URL -box D1-2 
 - **Change 通知（Watch 真推送）**：用户表触发器与同步物化都会把 `ps_internal_version` +1；
   `DB.Watch` 等 `VersionSignal()` 被关闭就重查，兜底轮询（`WatchInterval`）默认 2s 只用于漏通知。
   本地写/同步应用 → 推送延迟实测 ~毫秒级（测试里把兜底设为 10s 仍能立即收到）。
-- `Open` 不再强制要求 `Connector`（纯本地库/自管上传可用；`Connect()` 时才返回 `ErrNotConnected`）。
+- `Open` **强制要求 `Schema`**（与官方一致，`ErrSchemaRequired`）；schema 未声明的表只跳过物化
+  （`SkippedUnknownOps()` / `SkippedTables()` 可诊断），不会自动回填；
+不再强制要求 `Connector`（纯本地库/自管上传可用；`Connect()` 时才返回 `ErrNotConnected`）。
 
 **尚未实现**（不要以为已有）：
 

@@ -102,7 +102,9 @@ func main() {
 				errors.New("需要 -endpoint/-rpc/-box/-org（或环境变量 PS_URL/RPC_URL/BOX_CODE/ORG_CODE）"))
 		}
 		if *schemaF == "" {
-			fmt.Println("提示: real 模式建议用 -schema ./out/schema.json 传入真实 schema；否则只能看到内置示例表 todos")
+			fail("real 模式需要 -schema", errors.New(
+				"PowerSync 要求客户端声明 schema；请用 -schema ./out/schema.json"+
+					"（由 node scripts/js-reference/dump-schema.mjs 从 AppSchema.ts 导出）"))
 		}
 		ep := strings.TrimRight(*endpoint, "/")
 		switch *upload {
@@ -191,9 +193,12 @@ func main() {
 
 	if skipped := db.SkippedUnknownOps(); skipped > 0 {
 		fmt.Println()
-		fmt.Printf("⚠️ 有 %d 行因为表不在 schema 中被跳过（本地看不到这些表的数据）", skipped)
+		fmt.Printf("⚠️ 有 %d 行因表不在 schema 中被跳过（这些表本地没有数据）", skipped)
+		if tables := db.SkippedTables(); len(tables) > 0 {
+			fmt.Printf("：%s", strings.Join(tables, ", "))
+		}
 		fmt.Println()
-		fmt.Println("   真实表需要 -schema ./out/schema.json（由 scripts/js-reference/dump-schema.mjs 从 AppSchema.ts 导出）")
+		fmt.Println("   如果确实需要这些表：把它们加进 schema（AppSchema.ts）后重建本地库（DisconnectAndClear 或删除 .db）")
 	}
 
 	for _, name := range wanted {

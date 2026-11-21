@@ -77,12 +77,14 @@ func Open(ctx context.Context, opts Options) (*DB, error) {
 	if opts.WatchInterval <= 0 {
 		opts.WatchInterval = 2 * time.Second
 	}
-	var cs *core.Schema
-	if opts.Schema != nil {
-		var err error
-		if cs, err = opts.Schema.toCore(); err != nil {
-			return nil, err
-		}
+	// 与官方 SDK 一致：实例化时必须提供客户端 schema。
+	// 它是"本地有哪些表、每张表有哪些列"的唯一来源；服务端下发但 schema 未声明的表不会物化。
+	if opts.Schema == nil {
+		return nil, ErrSchemaRequired
+	}
+	cs, err := opts.Schema.toCore()
+	if err != nil {
+		return nil, err
 	}
 	store, err := core.Open(ctx, core.Options{
 		Path:       opts.Filename,
@@ -343,6 +345,14 @@ func (db *DB) SkippedUnknownOps() int64 {
 		return 0
 	}
 	return db.store.SkippedUnknown()
+}
+
+// SkippedTables 返回因不在 schema 中被跳过的表名（用于诊断"为什么本地没有某张表"）。
+func (db *DB) SkippedTables() []string {
+	if db.store == nil {
+		return nil
+	}
+	return db.store.SkippedTables()
 }
 
 // TriggerUpload 请求尽快跑一次上传（本地写后 SDK 会自动触发，通常无需手动调用）。

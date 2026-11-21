@@ -979,3 +979,22 @@ func TestNetworkStatusMonitor(t *testing.T) {
 		t.Errorf("离线时应有 Err: %+v", st)
 	}
 }
+
+// TestOpenRequiresSchema 验证与官方一致：实例化必须给 schema。
+func TestOpenRequiresSchema(t *testing.T) {
+	path := tempDBPath(t)
+	if _, err := powersync.Open(context.Background(), powersync.Options{
+		Filename: path,
+	}); !errors.Is(err, powersync.ErrSchemaRequired) {
+		t.Fatalf("Open(无 schema) err = %v, want ErrSchemaRequired", err)
+	}
+	// 给了 schema 就能开
+	db, err := powersync.Open(context.Background(), powersync.Options{
+		Filename: path,
+		Schema:   powersync.NewSchema(powersync.Table{Name: "t", Columns: []powersync.Column{{Name: "a", Type: powersync.TextColumn}}}),
+	})
+	if err != nil {
+		t.Fatalf("Open(schema): %v", err)
+	}
+	_ = db.Close(context.Background())
+}

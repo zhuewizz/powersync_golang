@@ -7,8 +7,10 @@ import (
 	"errors"
 	"fmt"
 	"os"
+	"sort"
 	"strconv"
 	"strings"
+	"sync"
 	"sync/atomic"
 	"time"
 
@@ -90,6 +92,9 @@ type DB struct {
 	version   *versionSignal
 	// skippedUnknown 记录因不在 schema 中被跳过物化的行数。
 	skippedUnknown atomic.Int64
+	// skippedTables 记录因不在 schema 中被跳过的表名（诊断用）。
+	skippedMu     sync.Mutex
+	skippedTables map[string]struct{}
 }
 
 // Open 打开（必要时创建）本地库，并应用 schema。
@@ -248,6 +253,28 @@ var ErrDatabaseLocked = errLocked
 // SQL 暴露底层 *sql.DB（供工具/测试执行自己的 SQL；库内部不要依赖它）。
 func (db *DB) SQL() *sql.DB { return db.sql }
 
+// noteSkippedTable 记录被跳过的表名。
+func (db *DB) noteSkippedTable(table string) {
+	db.skippedMu.Lock()
+	if db.skippedTables == nil {
+		db.skippedTables = map[string]struct{}{}
+	}
+	db.skippedTables[table] = struct{}{}
+	db.skippedMu.Unlock()
+}
+
+// SkippedTables 返回因不在 schema 中被跳过物化的表名（已排序）。
+func (db *DB) SkippedTables() []string {
+	db.skippedMu.Lock()
+	defer db.skippedMu.Unlock()
+	out := make([]string, 0, len(db.skippedTables))
+	for name := range db.skippedTables {
+		out = append(out, name)
+	}
+	sort.Strings(out)
+	return out
+}
+
 // StorageName 返回某张表的落盘对象名：JSON 表为 ps_data__*，direct/adhoc 表为表名本身。
 func (db *DB) StorageName(table string) string {
 	if s := db.Schema(); s != nil {
@@ -296,6 +323,7 @@ func (db *DB) upsertRowTx(ctx context.Context, tx *sql.Tx, table, rowID string, 
 			// 服务端的 sync rules 常常比 AppSchema 宽（例如多出 material_category 之类的表）。
 			// core 对 schema 未声明的表不做物化，这里同样跳过并计数（oplog/checksum 不受影响）。
 			db.skippedUnknown.Add(1)
+			db.noteSkippedTable(table)
 			return nil
 		}
 	}

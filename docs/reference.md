@@ -127,7 +127,7 @@ sch, err := powersync.LoadSchemaJSON(raw)
 ```go
 type Options struct {
     Filename  string    // 必填：SQLite 文件路径（:memory: 也支持）
-    Schema    *Schema   // 新库必填；老库可省略（沿用已存在的 schema）
+    Schema    *Schema   // **必填**（PowerSync 要求客户端声明 schema）；老库也要传（用于校验/迁移）
     Connector Connector // 可选：不接同步时可以不传，Connect() 会返回 ErrNotConnected
 
     Logger     *slog.Logger // 默认 slog.Default()
@@ -153,6 +153,8 @@ type Options struct {
 
 要点：
 
+- **Schema 是必填项**：`Open` 不给 schema 会返回 `ErrSchemaRequired`（与官方 SDK 一致）。
+  schema 决定本地建哪些表/视图；服务端下发但未声明的表会被跳过物化（见 §13）。
 - **Schema 变更会自动迁移**：`Open` 时若 `ps_kv.schema_json` 与传入 schema 不同，会经
   `ps_untyped` 暂存 → 重建 → 回填（加列/切 direct/删表都覆盖，删掉的列会丢数据）。
 - **同一个 DB 文件只能被一个实例打开**（跨进程文件锁），第二个会返回 `ErrDatabaseLocked`。
@@ -449,7 +451,7 @@ db, _ := powersync.Open(ctx, powersync.Options{
 | `Execute` 返回 0 行 | JSON 表是视图，SQLite 对视图写恒报 0（写入其实成功了，查一下数据确认） |
 | 服务端返回 400 `must have required property 'subscriptions'` 或 `'override_priority'` | 自建服务对 `streams` 校验较严；本库已按实测补齐，若自己发请求需带上这两个属性 |
 | 日志出现 `checksum mismatch, restarting iteration` | 本地数据与服务端漂移（或人为改动）→ SDK 自动重置该 bucket 从 `after=0` 重下；偶发一次属正常 |
-| 服务端下发但表不在 schema | 会被跳过物化（`db.SkippedUnknownOps()` 会 >0，不报错）；**不会自动回填**，需带正确 schema 重建（`DisconnectAndClear` 或删库后重连）。真实服务一定要用 `-schema ./out/schema.json` |
+| 服务端下发但表不在 schema | 会被跳过物化（`db.SkippedUnknownOps()`、`db.SkippedTables()` 可查，不报错）。**不会自动回填**，需把表加进 schema 后重建本地库（`DisconnectAndClear` 或删 .db）。实测：用 AppSchema 的 37 张表时，服务端仍会下发 `i` / `t` / `material_category` / `material_info`（sync rules 比 AppSchema 宽）→ 252 行被跳过 |
 | 同步一直不完成 | 检查 token 有效期/权限、服务端是否支持该 endpoint（`/sync/stream`）、网络代理 |
 | 上传一直重试 | `UploadData` 返回了错误；打印 `CurrentStatus().UploadError` 看具体原因 |
 
