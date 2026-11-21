@@ -33,17 +33,37 @@ go run ./examples/todo
 
 数据库写在 `out/example.db`，可以重复跑（每次会先删掉）。
 
-### 方式二：连真实服务（只下载）
+### 方式二：连真实服务（看真实表）
 
 ```bash
+# 先导出真实 schema（复用 e:/cutter_client 的 AppSchema.ts）
+node scripts/js-reference/dump-schema.mjs        # 生成 out/schema.json
+
 go run ./examples/todo -mode real \
-  -endpoint http://<host>:8080 \
-  -rpc http://<host>:8089/rest/rpc/fetch_credentials \
-  -box D1-2 -org ORG001
+  -endpoint http://120.24.7.22:8080 \
+  -rpc http://120.24.7.22:8089/rest/rpc/fetch_credentials \
+  -box D1-2 -org ORG001 \
+  -schema ./out/schema.json \
+  -tables sys_error_report,cutter_info
 ```
 
-> 示例的 `real` 模式下 `UploadData` 是空实现（打印后直接出队），避免误写生产数据。
-> 真实项目请参考 [`docs/reference.md`](../docs/reference.md) 第 4 节的 Connector 实现。
+实测输出（节选）：
+
+```
+schema: 来自 ./out/schema.json（37 张表）
+模式: real（http://120.24.7.22:8080）
+  [网络] online=true target=120.24.7.22:8080 latency=22ms err=
+  [状态] connected=true cursor=24429 lastSynced=18:42:58
+
+表 sys_error_report: 0 行（样例 0 行）
+表 cutter_info: 60 行（样例 3 行）
+    id=03b01053-… mat_name=按钮开关 mat_pn=PN-BTN-GRN org_code=ORG001 …
+（real 模式默认只读；要演示写入/上传请加 -write）
+```
+
+> - `real` 模式的 `UploadData` 是**空实现**（打印后直接出队），不会写你的后端；
+>   加 `-write` 会做“插入 → 更新 → 删除”的本地演示，同样不写后端。
+> - 真实项目请参考 [`docs/reference.md`](../docs/reference.md) 第 4 节的 Connector 实现。
 
 ### 参数
 
@@ -51,7 +71,11 @@ go run ./examples/todo -mode real \
 | --- | --- | --- |
 | `-mode` | `mock` | `mock` / `real` |
 | `-db` | `out/example.db` | 本地数据库路径 |
-| `-timeout` | `30s` | 整体超时 |
+| `-schema` | 空（内置示例 schema） | 真实 schema JSON（官方 `Schema.toJSON()` 形状） |
+| `-tables` | 空（schema 全部） | 只统计/打印这些表（逗号分隔） |
+| `-write` | `false` | real 模式下也做写入/上传演示（mock 默认就做） |
+| `-limit` | `3` | 每张表打印多少行样例 |
+| `-timeout` | `90s` | 整体超时 |
 | `-endpoint` `-rpc` `-box` `-org` | 环境变量 `PS_URL` `RPC_URL` `BOX_CODE` `ORG_CODE` | real 模式参数 |
 
 ### 代码重点
