@@ -37,6 +37,15 @@ go run ./examples/todo
 
 最简单：加 `-cutter` 用内置的 65 张表 schema（来自 `syncRules.yaml`，见 `schema_cutter.go`）：
 
+**PowerShell（Windows）**：先用 `. .\scripts\go-env.ps1` 修 GOROOT，且**不用 `\` 续行**：
+
+```powershell
+. .\scripts\go-env.ps1
+go run ./examples/todo -mode real -cutter -endpoint http://120.24.7.22:8080 -rest http://120.24.7.22:8089/rest -rpc http://120.24.7.22:8089/rest/rpc/fetch_credentials -box D1-2 -org ORG001 -tables cutter_info,sys_error_report,org
+```
+
+**bash/Git Bash**：
+
 ```bash
 go run ./examples/todo -mode real -cutter \
   -endpoint http://120.24.7.22:8080 \

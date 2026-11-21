@@ -22,6 +22,39 @@
 
 ## 快速开始
 
+### Windows PowerShell：先修 GOROOT
+
+如果 `go` 报 `cannot find GOROOT directory: C:\Users\<你>\.g\go`（被 `g` 之类版本管理器改坏了）：
+
+```powershell
+. .\scripts\go-env.ps1          # 当前会话生效（自动找 Go 安装目录）
+go version
+
+# 想永久修复（重开终端后生效）：
+[Environment]::SetEnvironmentVariable('GOROOT','D:\go','User')
+# 或者直接删掉这个坏变量，go 一般能自己找到：
+[Environment]::SetEnvironmentVariable('GOROOT',$null,'User')
+```
+
+> PowerShell **不用** `\` 续行；换行要写在反引号 `` ` `` 后面，或者干脆写成一行。
+
+跑真实服务（一行版，可直接复制）：
+
+```powershell
+. .\scripts\go-env.ps1
+go run ./examples/todo -mode real -cutter -endpoint http://120.24.7.22:8080 -rest http://120.24.7.22:8089/rest -rpc http://120.24.7.22:8089/rest/rpc/fetch_credentials -box D1-2 -org ORG001 -tables cutter_info,sys_error_report
+```
+
+```powershell
+# 多行版：反引号续行（注意反引号后面不能有空格）
+go run ./examples/todo -mode real -cutter `
+  -endpoint http://120.24.7.22:8080 -rest http://120.24.7.22:8089/rest `
+  -rpc http://120.24.7.22:8089/rest/rpc/fetch_credentials -box D1-2 -org ORG001 `
+  -tables cutter_info,sys_error_report
+```
+
+### 在自己的代码里
+
 ```go
 import powersync "msmkSync"
 
@@ -129,6 +162,7 @@ go run ./cmd/pstable -db ./out/cutter.db -schema ./examples/todo/schema-cutter.j
 | `cmd/psq` | 直接查本地 SQLite（`-ls`/`-q`/`-check`/**`-snapshot`**，核对落库或给图形工具做快照） |
 | `cmd/pstable` | **用 SDK 读/写路径**操作本地库：`-ls`/`-table`/`-q` 查询、`-exec` 写入/删除、`-i` 交互、`-upload` 自动上传、`-sync -report` 同步并逐表打印行数+样例 |
 | `cmd/genschema` | 从 syncRules.yaml + PostgREST OpenAPI 生成客户端 schema（`-pkg main` 可生成到任意项目） |
+| `scripts/go-env.ps1` | PowerShell 里点号执行（`. .scriptsgo-env.ps1`）修 GOROOT/PATH |
 | `scripts/ps-write.ps1` | Windows 一键写操作：`-Action insert/update/delete/query/list/exec` + 自动上传 + 前后端行数核对 |
 | `scripts/run-js-diff.sh` | Go vs 官方 `@powersync/node` 双实现差分（Node ≥ 22.15） |
 | `scripts/js-diff-container.sh` | 同上，WSL2/kiri 容器内跑（无需 Docker Desktop） |
