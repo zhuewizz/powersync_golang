@@ -32,7 +32,7 @@
   `DisableNetworkMonitor`。
 - **完整示例**：`examples/todo`（默认离线 mock，内置假服务与假后端；可切到真实服务）。
 - **使用手册**：`docs/reference.md`（对齐官方 Flutter SDK 参考的中文 API 文档，含与官方差异清单）。
-- **工具**：`cmd/psdiff`（真机差分）、`cmd/psdemo`（冒烟）、`cmd/psupload`（上传回显闭环）、
+- **工具**：`cmd/psq`（只读查询本地 SQLite，核对落库/同步状态）；`cmd/psdiff`（真机差分）、`cmd/psdemo`（冒烟）、`cmd/psupload`（上传回显闭环）、
   `cmd/psfixture-server`（离线假服务）、`cmd/pscompare`（双实现落库比对）；
   `scripts/probe-*.sh`、`scripts/run-js-diff.sh`、`scripts/js-diff-container.sh`。
 - **工程**：`internal/sync` / `internal/psclient` 直接单测（覆盖率 74%/83%）、工具共用

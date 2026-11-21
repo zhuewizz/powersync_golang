@@ -456,6 +456,25 @@ db, _ := powersync.Open(ctx, powersync.Options{
 | 同步一直不完成 | 检查 token 有效期/权限、服务端是否支持该 endpoint（`/sync/stream`）、网络代理 |
 | 上传一直重试 | `UploadData` 返回了错误；打印 `CurrentStatus().UploadError` 看具体原因 |
 
+### 核对"数据到底有没有落到本地"
+
+```bash
+# 列出本地库里的表/视图 + 行数（只读打开，不联网）
+go run ./cmd/psq -db ./out/verify.db -ls
+
+# 直接查视图（和 SDK 里 db.GetAll 读的是同一份数据）
+go run ./cmd/psq -db ./out/verify.db -q "select count(*) as n from cutter_info"
+go run ./cmd/psq -db ./out/verify.db -q "select id, mat_code, mat_name from cutter_info limit 3"
+
+# 后台与本地逐行比对（示例里的 -verify 也是这套规则）
+go run ./examples/todo -mode real -rest http://host:8089/rest ... -verify
+```
+
+同步状态（每个 bucket 已应用到哪个 op）：
+```bash
+go run ./cmd/psq -db ./out/verify.db -q "select name, last_applied_op, op_checksum from ps_buckets"
+```
+
 ### 自检工具
 
 | 命令 | 用途 |

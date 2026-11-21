@@ -84,6 +84,7 @@ go run ./examples/todo            # 离线完整示例（内置假服务，几�
 | `cmd/psupload` | 上传回显闭环：本地写 → PostgREST → 服务端回显 → 校验 → 删除 |
 | `cmd/psfixture-server` | 离线假服务（回放 `testdata/sync/*.ndjson`），给官方 JS SDK 做对照 |
 | `cmd/pscompare` | 比对两份 `rows.jsonl`（双实现差分门禁） |
+| `cmd/psq` | 直接查本地 SQLite（核对 local-first 数据是否真的落库，不经过 SDK/网络） |
 | `scripts/run-js-diff.sh` | Go vs 官方 `@powersync/node` 双实现差分（Node ≥ 22.15） |
 | `scripts/js-diff-container.sh` | 同上，WSL2/kiri 容器内跑（无需 Docker Desktop） |
 | `scripts/probe-*.sh` | 对真实服务验证增量/checksum/BSON 等场景 |
@@ -109,6 +110,7 @@ internal/sync       下载+上传循环
 internal/fixture    离线假服务（双实现差分用）
 internal/rowdiff    落库导出比对
 internal/psclient   工具共用的小 HTTP 客户端（RPC 取 token + PostgREST CRUD）
+cmd/psq             只读查询本地 SQLite 的小工具（核对落库）
 cmd/…               工具；examples/… 可运行示例；scripts/… 探针与 CI 辅助；testdata/… 抓包样本
 ```
 
