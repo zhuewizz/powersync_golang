@@ -101,6 +101,7 @@ go run ./cmd/psupload -endpoint $PS_URL -rest $REST_URL -rpc $RPC_URL -box D1-2 
   cmd/pscompare/   # 【已存在】比对两份 rows.jsonl（CI 门禁）
   .github/workflows/ci.yml # go test/vet + 双实现差分 job
   README.md   # 面向使用者的快速开始 + 能力/限制
+  docs/reference.md # 完整使用手册（对齐官方 Flutter 参考的中文 API 参考）
   STATUS.md   # 给非技术读者的项目状态一页纸
   CHANGELOG.md
   scripts/         # probe-sync.sh / probe-remove.mjs / probe-checksum.sh / probe-bson.sh /

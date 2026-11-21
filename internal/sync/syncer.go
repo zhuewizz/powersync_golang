@@ -94,15 +94,18 @@ type Options struct {
 	DisableBSON bool
 	// DisableDefaultStreams 为 true 时不请求默认流（streams.include_defaults=false）。
 	DisableDefaultStreams bool
+	// AdditionalHeaders 附加到同步请求上（如自定义网关的鉴权头）。
+	AdditionalHeaders map[string]string
 }
 
 // Syncer 驱动下载与上传两个循环，可重复 Start/Stop。
 type Syncer struct {
-	opts     Options
-	log      *slog.Logger
-	uploadCh chan struct{}
-	first    chan struct{}
-	firstOne sync.Once
+	opts      Options
+	log       *slog.Logger
+	uploadCh  chan struct{}
+	first     chan struct{}
+	firstOne  sync.Once
+	statusSig broadcast
 
 	mu     sync.Mutex
 	status Status
@@ -140,10 +143,11 @@ func New(opts Options) (*Syncer, error) {
 		opts.MaxLineSize = protocol.DefaultMaxLineSize
 	}
 	return &Syncer{
-		opts:     opts,
-		log:      opts.Logger,
-		uploadCh: make(chan struct{}, 1),
-		first:    make(chan struct{}),
+		opts:      opts,
+		log:       opts.Logger,
+		uploadCh:  make(chan struct{}, 1),
+		first:     make(chan struct{}),
+		statusSig: newBroadcast(),
 	}, nil
 }
 
@@ -209,7 +213,11 @@ func (s *Syncer) set(fn func(*Status)) {
 	s.mu.Lock()
 	fn(&s.status)
 	s.mu.Unlock()
+	s.statusSig.notify()
 }
+
+// StatusSignal 返回一个在同步状态变化时被关闭的 channel（供 WatchStatus 使用）。
+func (s *Syncer) StatusSignal() <-chan struct{} { return s.statusSig.wait() }
 
 // ---------------------------------------------------------------- 下载循环
 
@@ -306,6 +314,9 @@ func (s *Syncer) streamIteration(ctx context.Context) error {
 		req.Header.Set("Accept", "application/vnd.powersync.bson-stream;q=0.9,application/x-ndjson;q=0.8")
 	}
 	req.Header.Set("X-User-Agent", s.opts.UserAgent)
+	for k, v := range s.opts.AdditionalHeaders {
+		req.Header.Set(k, v)
+	}
 
 	resp, err := s.opts.HTTPClient.Do(req)
 	if err != nil {
@@ -602,6 +613,27 @@ func (s *Syncer) uploadLoop(ctx context.Context) {
 		delay = s.opts.RetryDelay
 		s.set(func(st *Status) { st.UploadErr = "" })
 	}
+}
+
+// broadcast 是"关闭即广播"的 channel 容器（状态/版本变化通知都用它）。
+type broadcast struct {
+	mu sync.Mutex
+	ch chan struct{}
+}
+
+func newBroadcast() broadcast { return broadcast{ch: make(chan struct{})} }
+
+func (b *broadcast) notify() {
+	b.mu.Lock()
+	close(b.ch)
+	b.ch = make(chan struct{})
+	b.mu.Unlock()
+}
+
+func (b *broadcast) wait() <-chan struct{} {
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	return b.ch
 }
 
 func sleepCtx(ctx context.Context, d time.Duration) bool {

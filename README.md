@@ -120,6 +120,7 @@ MIT，见 [`LICENSE`](./LICENSE)。
 
 ## 文档
 
+- **使用手册（完整 API 参考，中文）**：[`docs/reference.md`](./docs/reference.md)
 - 给非技术读者的项目状态：[`STATUS.md`](./STATUS.md)
 
 - 架构与硬性约定：[`AGENTS.md`](./AGENTS.md)（含服务端实测行为、踩坑记录、兼容性差异）

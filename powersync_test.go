@@ -853,3 +853,75 @@ func TestWatchTablesSkipsUnrelatedWrites(t *testing.T) {
 		t.Fatal("被监听表变化没有推送")
 	}
 }
+
+// TestGetExecuteBatchAndStatus 覆盖本轮新增的公开 API：
+// Get（0/1/多行）、ExecuteBatch、WatchStatus/WaitForStatus、DisconnectAndClear。
+func TestGetExecuteBatchAndStatus(t *testing.T) {
+	path := tempDBPath(t)
+	db, err := powersync.Open(context.Background(), powersync.Options{
+		Filename: path,
+		Schema: powersync.NewSchema(
+			powersync.Table{Name: "todos", Columns: []powersync.Column{{Name: "title", Type: powersync.TextColumn}}},
+			powersync.Table{Name: "notes", Columns: []powersync.Column{{Name: "body", Type: powersync.TextColumn}}, LocalOnly: true},
+		),
+		WatchInterval: 10 * time.Second,
+	})
+	if err != nil {
+		t.Fatalf("Open: %v", err)
+	}
+	cleanupDBPath(t, db, path)
+	ctx, cancel := context.WithTimeout(context.Background(), 8*time.Second)
+	defer cancel()
+
+	// Get：0 行 / 1 行 / 多行
+	if _, err := db.Get(ctx, `SELECT * FROM todos`); !errors.Is(err, powersync.ErrNoRows) {
+		t.Errorf("空表 Get err = %v, want ErrNoRows", err)
+	}
+	if err := db.ExecuteBatch(ctx, `INSERT INTO todos(id,title) VALUES(?,?)`, [][]any{
+		{"a", "x"}, {"b", "y"},
+	}); err != nil {
+		t.Fatalf("ExecuteBatch: %v", err)
+	}
+	row, err := db.Get(ctx, `SELECT title FROM todos WHERE id = ?`, "a")
+	if err != nil || row["title"] != "x" {
+		t.Fatalf("Get = %+v, %v", row, err)
+	}
+	if _, err := db.Get(ctx, `SELECT * FROM todos`); !errors.Is(err, powersync.ErrMultipleRows) {
+		t.Errorf("多行 Get err = %v, want ErrMultipleRows", err)
+	}
+
+	// 状态流：初值 + 状态变化（Connected 由 true→false 之类）
+	stCh, err := db.WatchStatus(ctx)
+	if err != nil {
+		t.Fatalf("WatchStatus: %v", err)
+	}
+	first := <-stCh
+	if first.Connected {
+		t.Errorf("未连接时状态不应 connected: %+v", first)
+	}
+
+	// WaitForStatus 谓词立即满足
+	if err := db.WaitForStatus(ctx, func(st powersync.SyncStatus) bool { return !st.Connected }); err != nil {
+		t.Fatalf("WaitForStatus: %v", err)
+	}
+
+	// DisconnectAndClear：默认保留 local_only 表
+	if _, err := db.Execute(ctx, `INSERT INTO notes(id,body) VALUES('n1','keep me')`); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.DisconnectAndClear(ctx); err != nil {
+		t.Fatalf("DisconnectAndClear: %v", err)
+	}
+	if rows, err := db.GetAll(ctx, `SELECT * FROM todos`); err != nil || len(rows) != 0 {
+		t.Errorf("清库后 todos 应为空: %v %v", rows, err)
+	}
+	if rows, err := db.GetAll(ctx, `SELECT * FROM notes`); err != nil || len(rows) != 1 {
+		t.Errorf("local_only 表默认应保留: %v %v", rows, err)
+	}
+	if err := db.DisconnectAndClear(ctx, powersync.WithClearLocalTables()); err != nil {
+		t.Fatalf("DisconnectAndClear(local): %v", err)
+	}
+	if rows, _ := db.GetAll(ctx, `SELECT * FROM notes`); len(rows) != 0 {
+		t.Errorf("WithClearLocalTables 后 notes 应为空: %v", rows)
+	}
+}

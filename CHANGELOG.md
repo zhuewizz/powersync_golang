@@ -23,9 +23,11 @@
   按优先级分批应用、多进程 `.lock` 文件锁。
 - **公开 API**：`Open/Connect/Disconnect/Close`、`Execute/GetAll/GetOptional/WriteTransaction`、
   `Watch`（触发器驱动推送 + 64 位哈希去重（0 分配），兜底轮询 2s）、`WatchTables`（表级版本，
-  无关写入不重查）、`powersync_crud.options` bit0 = `ignore_empty_update`、`GetCrudBatch/GetNextCrudTransaction`、
+  无关写入不重查）、`WatchStatus`/`WaitForStatus`、`Get`/`ExecuteBatch`/`DisconnectAndClear`、
+  `AdditionalHeaders`、`powersync_crud.options` bit0 = `ignore_empty_update`、`GetCrudBatch/GetNextCrudTransaction`、
   `SubscribeStream`（`WithTTL`/`WithPriority`）、`CurrentStatus`/`WaitForFirstSync`、
   `UpdateSchema`、`LoadSchemaJSON`。
+- **使用手册**：`docs/reference.md`（对齐官方 Flutter SDK 参考的中文 API 文档，含与官方差异清单）。
 - **工具**：`cmd/psdiff`（真机差分）、`cmd/psdemo`（冒烟）、`cmd/psupload`（上传回显闭环）、
   `cmd/psfixture-server`（离线假服务）、`cmd/pscompare`（双实现落库比对）；
   `scripts/probe-*.sh`、`scripts/run-js-diff.sh`、`scripts/js-diff-container.sh`。

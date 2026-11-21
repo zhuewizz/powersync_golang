@@ -3,6 +3,7 @@ package powersync
 import (
 	"context"
 	"database/sql"
+	"errors"
 	"fmt"
 	"hash/fnv"
 	"sort"
@@ -99,6 +100,56 @@ func (db *DB) WriteTransaction(ctx context.Context, fn func(ctx context.Context,
 		return fn(ctx, &Tx{tx: tx})
 	})
 	if err != nil {
+		return err
+	}
+	db.store.NotifyDataChange()
+	db.syncer.TriggerUpload()
+	return nil
+}
+
+// ErrNoRows 表示查询没有结果；ErrMultipleRows 表示期望一行却返回多行。
+var (
+	ErrNoRows       = errors.New("powersync: no rows")
+	ErrMultipleRows = errors.New("powersync: multiple rows returned for a single-row query")
+)
+
+// Get 查询**恰好一行**：0 行返回 ErrNoRows，多行返回 ErrMultipleRows。
+func (db *DB) Get(ctx context.Context, query string, args ...any) (map[string]any, error) {
+	rows, err := db.GetAll(ctx, query, args...)
+	if err != nil {
+		return nil, err
+	}
+	switch len(rows) {
+	case 0:
+		return nil, ErrNoRows
+	case 1:
+		return rows[0], nil
+	default:
+		return nil, fmt.Errorf("%w（%d 行）", ErrMultipleRows, len(rows))
+	}
+}
+
+// ExecuteBatch 用同一个 SQL 批量执行（同一个事务内），适合批量插入/更新。
+func (db *DB) ExecuteBatch(ctx context.Context, query string, argsList [][]any) error {
+	if err := db.check(); err != nil {
+		return err
+	}
+	tx, err := db.store.SQL().BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	stmt, err := tx.PrepareContext(ctx, query)
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+	for i, args := range argsList {
+		if _, err := stmt.ExecContext(ctx, args...); err != nil {
+			return fmt.Errorf("powersync: 批处理第 %d 条: %w", i+1, err)
+		}
+	}
+	if err := tx.Commit(); err != nil {
 		return err
 	}
 	db.store.NotifyDataChange()

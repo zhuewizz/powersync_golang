@@ -38,6 +38,8 @@ type Options struct {
 	DisableBSON bool
 	// DisableDefaultStreams 为 true 时不请求默认流（只有显式订阅的流会同步）。
 	DisableDefaultStreams bool
+	// AdditionalHeaders 附加到同步请求（例如自建网关需要的自定义鉴权头）。
+	AdditionalHeaders map[string]string
 }
 
 // DB 是一个 PowerSync 本地库 + 同步连接。
@@ -101,6 +103,7 @@ func Open(ctx context.Context, opts Options) (*DB, error) {
 		UploadInterval:        opts.UploadInterval,
 		DisableBSON:           opts.DisableBSON,
 		DisableDefaultStreams: opts.DisableDefaultStreams,
+		AdditionalHeaders:     opts.AdditionalHeaders,
 	})
 	if err != nil {
 		store.Close()
@@ -212,6 +215,99 @@ func (db *DB) WaitForFirstSync(ctx context.Context) error {
 
 // TriggerUpload 请求尽快跑一次上传（本地写后 SDK 会自动触发，通常无需手动调用）。
 func (db *DB) TriggerUpload() { db.syncer.TriggerUpload() }
+
+// WatchStatus 返回同步状态变化流（初值立即可读，之后每次状态变化推送一次）。
+func (db *DB) WatchStatus(ctx context.Context) (<-chan SyncStatus, error) {
+	if err := db.check(); err != nil {
+		return nil, err
+	}
+	ch := make(chan SyncStatus, 1)
+	go func() {
+		defer close(ch)
+		var last SyncStatus
+		first := true
+		emit := func() bool {
+			cur := db.CurrentStatus()
+			if !first && cur == last {
+				return true
+			}
+			first = false
+			last = cur
+			select {
+			case ch <- cur:
+				return true
+			case <-ctx.Done():
+				return false
+			}
+		}
+		if !emit() {
+			return
+		}
+		for {
+			signal := db.syncer.StatusSignal()
+			if !emit() {
+				return
+			}
+			select {
+			case <-ctx.Done():
+				return
+			case <-signal:
+			case <-time.After(2 * time.Second): // 兜底：捕捉漏掉的通知
+			}
+		}
+	}()
+	return ch, nil
+}
+
+// WaitForStatus 等待同步状态满足条件（例如 connected 或 lastSyncedAt 超过某时间）。
+func (db *DB) WaitForStatus(ctx context.Context, pred func(SyncStatus) bool) error {
+	ch, err := db.WatchStatus(ctx)
+	if err != nil {
+		return err
+	}
+	for {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		case st, ok := <-ch:
+			if !ok {
+				return ErrClosed
+			}
+			if pred(st) {
+				return nil
+			}
+		}
+	}
+}
+
+// DisconnectAndClear 断开同步并清空本地数据（默认保留 local_only 表，类似官方 disconnectAndClear）。
+//
+// 典型用法：切换账号/退出登录。schema、client_id 保留。
+func (db *DB) DisconnectAndClear(ctx context.Context, opts ...ClearOption) error {
+	if err := db.check(); err != nil {
+		return err
+	}
+	var cfg clearConfig
+	for _, o := range opts {
+		o(&cfg)
+	}
+	db.Disconnect()
+	if err := db.store.ClearAll(ctx, cfg.clearLocal); err != nil {
+		return err
+	}
+	db.store.NotifyDataChange()
+	return nil
+}
+
+// ClearOption 配置 DisconnectAndClear 的行为。
+type ClearOption func(*clearConfig)
+
+type clearConfig struct{ clearLocal bool }
+
+// WithClearLocalTables 让 DisconnectAndClear 连 local_only 表一起清空（默认保留）。
+func WithClearLocalTables() ClearOption {
+	return func(c *clearConfig) { c.clearLocal = true }
+}
 
 // UploadQueue 返回待上传变更条数。
 func (db *DB) UploadQueue(ctx context.Context) (int64, error) {

@@ -597,3 +597,33 @@ func TestWriteTransactionResetsTxIDOnPanic(t *testing.T) {
 		t.Errorf("事务外写不应有 tx_id，得到 %d", *entries[0].TxID)
 	}
 }
+
+// TestClearAll 验证 DisconnectAndClear 底层：默认保留 local_only 表，可选一起清。
+func TestClearAll(t *testing.T) {
+	db := openTestDB(t, true)
+	ctx := context.Background()
+	exec(t, db, `INSERT INTO todos(id, title) VALUES('a','x')`)
+	exec(t, db, `INSERT INTO notes(id, body) VALUES('n1','local only')`) // notes 是 local_only
+
+	if err := db.ClearAll(ctx, false); err != nil {
+		t.Fatalf("ClearAll: %v", err)
+	}
+	var n int
+	if err := db.SQL().QueryRow(`SELECT count(*) FROM todos`).Scan(&n); err != nil || n != 0 {
+		t.Errorf("todos 应被清空，得到 %d (%v)", n, err)
+	}
+	if err := db.SQL().QueryRow(`SELECT count(*) FROM notes`).Scan(&n); err != nil || n != 1 {
+		t.Errorf("local_only 表默认应保留，得到 %d (%v)", n, err)
+	}
+	if err := db.SQL().QueryRow(`SELECT count(*) FROM ps_crud`).Scan(&n); err != nil || n != 0 {
+		t.Errorf("ps_crud 应被清空，得到 %d (%v)", n, err)
+	}
+
+	// 再清一次，这次连 local 表也清
+	if err := db.ClearAll(ctx, true); err != nil {
+		t.Fatalf("ClearAll(local): %v", err)
+	}
+	if err := db.SQL().QueryRow(`SELECT count(*) FROM notes`).Scan(&n); err != nil || n != 0 {
+		t.Errorf("WithClearLocalTables 后 notes 应为空，得到 %d (%v)", n, err)
+	}
+}
