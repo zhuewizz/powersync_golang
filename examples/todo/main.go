@@ -1,19 +1,26 @@
 // Command todo 是 msmkSync 的完整可运行示例。
 //
 // 默认是**离线模式**：内置一个假的 PowerSync 服务（回放 fixture.ndjson）+ 假后端，
-// 不连任何真实服务，直接 `go run ./examples/todo` 就能跑完整个流程：
+// 不连任何真实服务，直接 `go run ./examples/todo` 就能跑完整个流程。
 //
-//	schema → 打开库 → 连接（下载）→ 监听查询/状态/网络 → 本地写 → 上传 → 删除
+// 连真实服务（只下载；上传是空实现）：
 //
-// 也可以连真实服务（只下载，上传是空实现）：
+//	go run ./examples/todo -mode real \
+//	    -endpoint http://120.24.7.22:8080 \
+//	    -rpc http://120.24.7.22:8089/rest/rpc/fetch_credentials \
+//	    -box D1-2 -org ORG001 \
+//	    -schema ./out/schema.json \
+//	    -tables sys_error_report,cutter_info
 //
-//	go run ./examples/todo -mode real -endpoint http://host:8080 \
-//	    -rpc http://host:8089/rest/rpc/fetch_credentials -box D1-2 -org ORG001
+// 真实 schema 用官方 Schema.toJSON() 形状，可这样导出（复用 e:/cutter_client）：
+//
+//	node scripts/js-reference/dump-schema.mjs
 package main
 
 import (
 	"context"
 	_ "embed"
+	"encoding/json"
 	"errors"
 	"flag"
 	"fmt"
@@ -21,6 +28,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
 	"time"
 
@@ -39,8 +47,12 @@ func main() {
 		rpc      = flag.String("rpc", os.Getenv("RPC_URL"), "real 模式：fetch_credentials RPC")
 		box      = flag.String("box", os.Getenv("BOX_CODE"), "real 模式：box_code")
 		org      = flag.String("org", os.Getenv("ORG_CODE"), "real 模式：org_code")
+		schemaF  = flag.String("schema", "", "schema JSON（官方 Schema.toJSON 形状）；real 模式通常必填")
+		tablesF  = flag.String("tables", "", "只统计/打印这些表（逗号分隔），空=全部")
 		dbPath   = flag.String("db", filepath.Join("out", "example.db"), "本地数据库文件")
-		timeout  = flag.Duration("timeout", 30*time.Second, "整体超时")
+		timeout  = flag.Duration("timeout", 90*time.Second, "整体超时")
+		write    = flag.Bool("write", false, "real 模式下也做本地写/上传演示（默认只读）")
+		limit    = flag.Int("limit", 3, "每张表打印多少行样例")
 	)
 	flag.Parse()
 
@@ -53,20 +65,11 @@ func main() {
 		_ = os.Remove(f)
 	}
 
-	schema := powersync.NewSchema(
-		powersync.Table{
-			Name: "todos",
-			Columns: []powersync.Column{
-				{Name: "title", Type: powersync.TextColumn},
-				{Name: "done", Type: powersync.IntegerColumn},
-			},
-		},
-		powersync.Table{
-			Name:      "local_notes",
-			Columns:   []powersync.Column{{Name: "body", Type: powersync.TextColumn}},
-			LocalOnly: true, // 只在本机：不同步、不入上传队列
-		},
-	)
+	// ---- 0. schema：优先 -schema（真实库），否则用内置示例 schema ----
+	schema, tableNames, err := loadSchema(*schemaF, *mode)
+	if err != nil {
+		fail("加载 schema", err)
+	}
 
 	// ---- 1. 准备“服务端” ----
 	var (
@@ -86,7 +89,11 @@ func main() {
 		fmt.Printf("模式: mock（内置假服务 %s）\n", mockServer.URL)
 	case "real":
 		if *endpoint == "" || *rpc == "" || *box == "" || *org == "" {
-			fail("real 模式参数不完整", errors.New("需要 -endpoint/-rpc/-box/-org（或对应环境变量）"))
+			fail("real 模式参数不完整", errors.New("需要 -endpoint/-rpc/-box/-org（或环境变量 PS_URL/RPC_URL/BOX_CODE/ORG_CODE）"))
+		}
+		if *schemaF == "" {
+			fmt.Println("提示: real 模式建议用 -schema ./out/schema.json 传入真实 schema；" +
+				"否则只能看到内置示例表 todos")
 		}
 		conn = &realConnector{
 			endpoint: strings.TrimRight(*endpoint, "/"),
@@ -97,6 +104,17 @@ func main() {
 		fmt.Printf("模式: real（%s）\n", *endpoint)
 	default:
 		fail("未知 -mode", fmt.Errorf("%q", *mode))
+	}
+
+	// 关心的表：-tables 或 schema 里全部表
+	wanted := tableNames
+	if *tablesF != "" {
+		wanted = nil
+		for _, name := range strings.Split(*tablesF, ",") {
+			if name = strings.TrimSpace(name); name != "" {
+				wanted = append(wanted, name)
+			}
+		}
 	}
 
 	// ---- 2. 打开数据库 ----
@@ -114,7 +132,7 @@ func main() {
 		fail("打开数据库", err)
 	}
 	defer db.Close(context.Background())
-	fmt.Printf("数据库: %s\nschema: todos（同步）+ local_notes（仅本地）\n\n", *dbPath)
+	fmt.Printf("数据库: %s\nschema: %d 张表；关注: %s\n\n", *dbPath, len(tableNames), strings.Join(wanted, ", "))
 
 	// ---- 3. 三个实时监听：状态 / 网络 / 查询 ----
 	go func() {
@@ -137,15 +155,9 @@ func main() {
 				n.Online, n.Target, n.Latency.Round(time.Millisecond), n.Err)
 		}
 	}()
-	go func() {
-		ch, err := db.WatchTables(ctx, []string{"todos"}, `SELECT count(*) AS n FROM todos`)
-		if err != nil {
-			return
-		}
-		for rows := range ch {
-			fmt.Printf("  [查询] todos 行数 = %v\n", rows[0]["n"])
-		}
-	}()
+	if len(wanted) > 0 && hasTable(tableNames, wanted[0]) {
+		go watchCount(ctx, db, wanted[0])
+	}
 
 	// ---- 4. 连接并等首次同步 ----
 	fmt.Println("— 连接并等待首次同步 —")
@@ -156,44 +168,19 @@ func main() {
 		fail("WaitForFirstSync", err)
 	}
 	time.Sleep(100 * time.Millisecond) // 等监听 goroutine 打印
-	printRows(ctx, db, "服务器下发的初始数据")
 
-	// ---- 5. 本地写 → 上传队列 ----
-	fmt.Println("\n— 本地插入一行（会自动进入上传队列并触发上传）—")
-	if _, err := db.Execute(ctx,
-		`INSERT INTO todos(id, title, done) VALUES(?, ?, ?)`, "local-1", "本地新建的任务", 0); err != nil {
-		fail("本地插入", err)
+	for _, name := range wanted {
+		printTable(ctx, db, name, *limit)
 	}
-	waitQueueEmpty(ctx, db)
-	printRows(ctx, db, "插入之后")
 
-	fmt.Println("\n— 批量插入两行（ExecuteBatch）—")
-	if err := db.ExecuteBatch(ctx, `INSERT INTO todos(id,title,done) VALUES(?,?,?)`, [][]any{
-		{"local-2", "批量任务 A", 1},
-		{"local-3", "批量任务 B", 0},
-	}); err != nil {
-		fail("ExecuteBatch", err)
+	// ---- 5. 写演示（mock 默认做；real 需要 -write）----
+	doWrite := *mode == "mock" || *write
+	if doWrite {
+		writeTable := pickWriteTable(tableNames)
+		runWriteDemo(ctx, db, writeTable, *mode)
+	} else {
+		fmt.Println("\n（real 模式默认只读；要演示写入/上传请加 -write）")
 	}
-	waitQueueEmpty(ctx, db)
-
-	fmt.Println("\n— 删除一行 —")
-	if _, err := db.Execute(ctx, `DELETE FROM todos WHERE id = ?`, "local-2"); err != nil {
-		fail("删除", err)
-	}
-	waitQueueEmpty(ctx, db)
-
-	fmt.Println("\n— 事务：改一行 + 写本地日志（local_only 表不入队）—")
-	if err := db.WriteTransaction(ctx, func(ctx context.Context, tx *powersync.Tx) error {
-		if _, err := tx.Execute(ctx, `UPDATE todos SET done = 1 WHERE id = ?`, "local-1"); err != nil {
-			return err
-		}
-		_, err := tx.Execute(ctx, `INSERT INTO local_notes(id, body) VALUES(?, ?)`, "n1", "只在本机")
-		return err
-	}); err != nil {
-		fail("WriteTransaction", err)
-	}
-	waitQueueEmpty(ctx, db)
-	printRows(ctx, db, "最终数据")
 
 	st := db.CurrentStatus()
 	net := db.CurrentNetworkStatus()
@@ -205,9 +192,149 @@ func main() {
 	fmt.Println("\n✅ 示例跑完（数据库在", *dbPath, "）")
 }
 
+// ---------------------------------------------------------------- schema
+
+func loadSchema(path, mode string) (*powersync.Schema, []string, error) {
+	if path != "" {
+		raw, err := os.ReadFile(path)
+		if err != nil {
+			return nil, nil, err
+		}
+		sch, err := powersync.LoadSchemaJSON(raw)
+		if err != nil {
+			return nil, nil, err
+		}
+		tables := make([]string, 0, len(sch.Tables()))
+		for _, t := range sch.Tables() {
+			tables = append(tables, t.Name)
+		}
+		fmt.Printf("schema: 来自 %s（%d 张表）\n", path, len(tables))
+		return sch, tables, nil
+	}
+	fmt.Println("schema: 使用内置示例（todos 同步 + local_notes 仅本地）")
+	return powersync.NewSchema(
+		powersync.Table{
+			Name: "todos",
+			Columns: []powersync.Column{
+				{Name: "title", Type: powersync.TextColumn},
+				{Name: "done", Type: powersync.IntegerColumn},
+			},
+		},
+		powersync.Table{
+			Name:      "local_notes",
+			Columns:   []powersync.Column{{Name: "body", Type: powersync.TextColumn}},
+			LocalOnly: true,
+		},
+	), []string{"todos", "local_notes"}, nil
+}
+
+func hasTable(tables []string, name string) bool {
+	for _, t := range tables {
+		if t == name {
+			return true
+		}
+	}
+	return false
+}
+
+// pickWriteTable 选一张适合演示写入的表（优先 todos，其次 sys_error_report）。
+func pickWriteTable(tables []string) string {
+	for _, want := range []string{"todos", "sys_error_report"} {
+		if hasTable(tables, want) {
+			return want
+		}
+	}
+	if len(tables) > 0 {
+		return tables[0]
+	}
+	return "todos"
+}
+
+// ---------------------------------------------------------------- 演示
+
+func watchCount(ctx context.Context, db *powersync.DB, table string) {
+	ch, err := db.WatchTables(ctx, []string{table},
+		fmt.Sprintf(`SELECT count(*) AS n FROM "%s"`, strings.ReplaceAll(table, `"`, `""`)))
+	if err != nil {
+		return
+	}
+	for rows := range ch {
+		fmt.Printf("  [查询] %s 行数 = %v\n", table, rows[0]["n"])
+	}
+}
+
+func printTable(ctx context.Context, db *powersync.DB, table string, limit int) {
+	q := fmt.Sprintf(`SELECT * FROM "%s" LIMIT %d`, strings.ReplaceAll(table, `"`, `""`), limit)
+	rows, err := db.GetAll(ctx, q)
+	if err != nil {
+		fmt.Printf("\n表 %s: 查询失败（该表可能不在 schema 里）：%v\n", table, err)
+		return
+	}
+	var n int64
+	if cnt, err := db.GetAll(ctx, fmt.Sprintf(`SELECT count(*) AS n FROM "%s"`,
+		strings.ReplaceAll(table, `"`, `""`))); err == nil && len(cnt) == 1 {
+		switch v := cnt[0]["n"].(type) {
+		case int64:
+			n = v
+		case float64:
+			n = int64(v)
+		}
+	}
+	fmt.Printf("\n表 %s: %d 行（样例 %d 行）\n", table, n, len(rows))
+	for _, r := range rows {
+		fmt.Printf("    %s\n", formatRow(r))
+	}
+}
+
+func formatRow(r map[string]any) string {
+	keys := make([]string, 0, len(r))
+	for k := range r {
+		keys = append(keys, k)
+	}
+	sort.Strings(keys)
+	parts := make([]string, 0, len(keys))
+	for _, k := range keys {
+		s := fmt.Sprint(r[k])
+		if len(s) > 40 {
+			s = s[:40] + "…"
+		}
+		parts = append(parts, k+"="+s)
+	}
+	return strings.Join(parts, " ")
+}
+
+// runWriteDemo 在指定表上做：插入 → 等上传 → 更新 → 等上传 → 删除 → 等上传。
+func runWriteDemo(ctx context.Context, db *powersync.DB, table, mode string) {
+	id := "example-" + fmt.Sprint(time.Now().UnixNano())
+	fmt.Printf("\n— 写入演示（表 %s，id=%s）—\n", table, id)
+
+	if _, err := db.Execute(ctx,
+		fmt.Sprintf(`INSERT INTO "%s"(id) VALUES(?)`, strings.ReplaceAll(table, `"`, `""`)), id); err != nil {
+		fmt.Printf("  插入失败（跳过写入演示）：%v\n", err)
+		return
+	}
+	waitQueueEmpty(ctx, db)
+
+	if _, err := db.Execute(ctx,
+		fmt.Sprintf(`UPDATE "%s" SET id = id WHERE id = ?`, strings.ReplaceAll(table, `"`, `""`)), id); err != nil {
+		fmt.Printf("  更新失败：%v\n", err)
+	} else {
+		waitQueueEmpty(ctx, db)
+	}
+
+	if _, err := db.Execute(ctx,
+		fmt.Sprintf(`DELETE FROM "%s" WHERE id = ?`, strings.ReplaceAll(table, `"`, `""`)), id); err != nil {
+		fmt.Printf("  删除失败：%v\n", err)
+	} else {
+		waitQueueEmpty(ctx, db)
+	}
+	if mode == "real" {
+		fmt.Println("  说明: real 模式的上传是空实现（只出队），不会写你的后端；本地演示行已删除")
+	}
+}
+
 // ---------------------------------------------------------------- 连接器
 
-// mockConnector：内置假服务 + 假后端（只打印上传内容，不真正落库）。
 type mockConnector struct{ endpoint string }
 
 func (c *mockConnector) FetchCredentials(ctx context.Context) (powersync.Credentials, error) {
@@ -220,9 +347,9 @@ func (c *mockConnector) UploadData(ctx context.Context, db *powersync.DB) error 
 		return err
 	}
 	for _, e := range batch.Entries {
-		fmt.Printf("  [上传] %-6s %s/%s data=%v\n", e.Op, e.Table, e.ID, e.Data)
+		data, _ := json.Marshal(e.Data)
+		fmt.Printf("  [上传] %-6s %s/%s data=%s\n", e.Op, e.Table, e.ID, truncate(string(data), 80))
 	}
-	// 真实项目里：把 entries 写到你的后端，拿到 write checkpoint 后 batch.Complete(ctx, wc)
 	return batch.Complete(ctx)
 }
 
@@ -249,23 +376,15 @@ func (c *realConnector) UploadData(ctx context.Context, db *powersync.DB) error 
 	if err != nil || batch == nil {
 		return err
 	}
+	for _, e := range batch.Entries {
+		data, _ := json.Marshal(e.Data)
+		fmt.Printf("  [上传-空实现] %-6s %s/%s data=%s\n", e.Op, e.Table, e.ID, truncate(string(data), 60))
+	}
 	c.logger.Warn("real 模式示例不实现上传，直接出队", "entries", len(batch.Entries))
 	return batch.Complete(ctx)
 }
 
 // ---------------------------------------------------------------- 工具
-
-func printRows(ctx context.Context, db *powersync.DB, title string) {
-	rows, err := db.GetAll(ctx, `SELECT id, title, done FROM todos ORDER BY id`)
-	if err != nil {
-		fmt.Printf("  查询失败: %v\n", err)
-		return
-	}
-	fmt.Printf("  %s（%d 行）:\n", title, len(rows))
-	for _, r := range rows {
-		fmt.Printf("    %-8v %-16v done=%v\n", r["id"], r["title"], r["done"])
-	}
-}
 
 func waitQueueEmpty(ctx context.Context, db *powersync.DB) {
 	deadline := time.Now().Add(5 * time.Second)
@@ -276,6 +395,13 @@ func waitQueueEmpty(ctx context.Context, db *powersync.DB) {
 		time.Sleep(20 * time.Millisecond)
 	}
 	fmt.Println("  ⚠️ 上传队列没有在 5s 内清空")
+}
+
+func truncate(s string, n int) string {
+	if len(s) <= n {
+		return s
+	}
+	return s[:n] + "…"
 }
 
 func fmtTime(t time.Time) string {
