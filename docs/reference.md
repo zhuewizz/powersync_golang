@@ -512,6 +512,59 @@ go run ./cmd/psq -db ./out/verify.db -q "select name, last_applied_op, op_checks
 脚本会自动修一下常见的 `GOROOT` 损坏（如被 `g` 改到 `C:\Users\...\.g\go`），
 并把控制台设为 UTF-8，避免中文乱码。
 
+### schema 是怎么来的（schema_cutter.go）
+
+PowerSync 的硬性要求：**客户端必须声明 schema**，没声明的表不会同步（哪怕服务端会下发）。
+本仓库的 schema 由 `cmd/genschema` 生成：
+
+| 来源 | 提供的信息 |
+| --- | --- |
+| `syncRules.yaml` | 哪些表（`FROM "schema"."table"`）、短别名（`AS i`） |
+| PostgREST OpenAPI（`GET <rest>/`） | 每张表的列名 + 类型 |
+| 抓包 NDJSON（`-stream`） | OpenAPI 也没有的表（如 `role`）的列名，按实际数据推断 |
+
+生成两个产物：
+
+- `schema_cutter.go`：`powersync.CutterSchema()`，一行一张表（`{Name: "cutter_info", Columns: cols("mat_code:TEXT", ...)}`），可直接手改；
+- `testdata/schema/cutter.json`：官方 `Schema.toJSON()` 形状，给 `-schema` 参数、其它语言、或 CI 使用。
+
+```bash
+go run ./cmd/genschema -rules E:/cutter/syncRules.yaml \
+  -rpc http://host:8089/rest/rpc/fetch_credentials -box D1-2 -org ORG001 \
+  -extra role -stream ./out/stream-raw.ndjson \
+  -out-go ./schema_cutter.go -out-json ./testdata/schema/cutter.json
+```
+
+在代码里直接用：
+
+```go
+db, err := powersync.Open(ctx, powersync.Options{
+    Filename: "app.db",
+    Schema:   powersync.CutterSchema(),
+    Connector: myConnector,
+})
+```
+
+#### 同步规则里的“短别名”是个坑
+
+`SELECT * FROM "mats"."material_inventory" AS i` 这种写法，服务端下发的
+`object_type` 是 **`i`**（不是 `material_inventory`），而且 `i` 被 material/tool/delivery
+三张 inventory 表共用、`t` 被三张 transaction 表共用。客户端只能把它们归到同一张表（列取并集）。
+
+**建议**：同步规则里去掉 `AS i/t/r/l/s/h/d`，或改成与表名一致的别名。否则这 9 张业务表
+在客户端会混在一起（数据不丢，但无法区分归属）。
+
+#### 全量同步 + 逐表核对
+
+```bash
+go run ./cmd/pstable -db ./out/cutter.db -schema ./testdata/schema/cutter.json \
+  -sync -report -limit 1 \
+  -endpoint http://host:8080 -rest http://host:8089/rest \
+  -rpc http://host:8089/rest/rpc/fetch_credentials -box D1-2 -org ORG001
+```
+
+输出每张表的行数与一行样例，结尾是合计与空表数（实测 65 张表 / 1644 行）。
+
 ### 用 SDK 读写本地库（cmd/pstable）
 
 `cmd/pstable` 走的就是 `powersync.Open` + `db.GetAll`/`db.Execute`（与 Flutter/JS 的

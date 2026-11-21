@@ -54,6 +54,8 @@ func main() {
 		org      = flag.String("org", os.Getenv("ORG_CODE"), "org_code")
 		restBase = flag.String("rest", os.Getenv("REST_URL"), "PostgREST base，如 http://host:8089/rest")
 		verifyT  = flag.String("verify-table", "", "上传后核对这些表（逗号分隔）本地与后端行数")
+		syncDown = flag.Bool("sync", false, "连接服务并等待首次同步（下载到本地；需要 -endpoint/-rpc/-box/-org）")
+		report   = flag.Bool("report", false, "逐表打印行数 + 样例数据（配合 -sync 看同步结果）")
 	)
 	flag.Parse()
 
@@ -61,11 +63,11 @@ func main() {
 	if *dbPath == "" {
 		fatalf("需要 -db")
 	}
-	if !*list && *table == "" && *query == "" && !writes {
-		fatalf("需要 -ls / -table / -q / -exec / -i 之一")
+	if !*list && *table == "" && *query == "" && !writes && !*report && !*syncDown {
+		fatalf("需要 -ls / -table / -q / -exec / -i / -report / -sync 之一")
 	}
-	if _, err := os.Stat(*dbPath); err != nil {
-		fatalf("打开 %s: %v", *dbPath, err)
+	if _, err := os.Stat(*dbPath); err != nil && !*syncDown {
+		fatalf("打开 %s: %v（同步新库请加 -sync）", *dbPath, err)
 	}
 	if *upload {
 		for name, v := range map[string]string{"endpoint": *endpoint, "rpc": *rpc, "box": *box, "org": *org, "rest": *restBase} {
@@ -75,7 +77,13 @@ func main() {
 		}
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
+	if *upload || *syncDown {
+		if *endpoint == "" || *rpc == "" || *box == "" || *org == "" {
+			fatalf("-upload/-sync 需要 -endpoint/-rpc/-box/-org（或环境变量 PS_URL/RPC_URL/BOX_CODE/ORG_CODE）")
+		}
+	}
+
+	ctx, cancel := context.WithTimeout(context.Background(), 300*time.Second)
 	defer cancel()
 
 	sch, err := loadSchema(ctx, *dbPath, *schemaF)
@@ -90,7 +98,7 @@ func main() {
 		NoFileLock: !writes,
 	}
 	var conn *restconn.Connector
-	if *upload {
+	if *upload || *syncDown {
 		conn = restconn.New(restconn.Config{
 			Endpoint: *endpoint, RPC: *rpc, Box: *box, Org: *org, RESTBase: *restBase,
 		})
@@ -111,6 +119,9 @@ func main() {
 	if *upload {
 		mode = "可读写 + 自动上传"
 	}
+	if *syncDown {
+		mode = "同步下载 + 可读写"
+	}
 	fmt.Fprintf(os.Stderr, "数据库: %s\nschema: %d 张表（来自 %s）\n", *dbPath, len(sch.Tables()), schemaSource(*schemaF))
 	fmt.Fprintf(os.Stderr, "模式: %s（走 SDK 读/写路径；写入会进入上传队列）\n", mode)
 
@@ -120,6 +131,29 @@ func main() {
 		}
 		defer db.Disconnect()
 		fmt.Fprintln(os.Stderr, "同步: 已连接，写入会自动上传")
+	}
+	if *syncDown {
+		start := time.Now()
+		if err := db.Connect(ctx); err != nil {
+			fatalf("Connect: %v", err)
+		}
+		defer db.Disconnect()
+		fmt.Fprintln(os.Stderr, "同步: 已连接，等待首次同步完成…")
+		if err := db.WaitForFirstSync(ctx); err != nil {
+			fatalf("WaitForFirstSync: %v", err)
+		}
+		st := db.CurrentStatus()
+		fmt.Fprintf(os.Stderr, "同步完成: 耗时 %s，cursor=%s，buckets=%d\n",
+			time.Since(start).Round(time.Millisecond), st.Cursor, st.Buckets)
+		if n := db.SkippedUnknownOps(); n > 0 {
+			fmt.Fprintf(os.Stderr, "⚠️ 有 %d 行因表不在 schema 中被跳过：%s\n",
+				n, strings.Join(db.SkippedTables(), ", "))
+		}
+	}
+
+	if *report {
+		reportTables(ctx, db, sch.Tables(), *limit)
+		return
 	}
 
 	switch {
@@ -371,6 +405,51 @@ func showTableSchema(ctx context.Context, db *powersync.DB, table string) {
 
 func abbreviate(s string, n int) string {
 	s = strings.Join(strings.Fields(s), " ")
+	if len(s) <= n {
+		return s
+	}
+	return s[:n] + "…"
+}
+
+// reportTables 逐表打印“行数 + 样例数据”（看同步结果用）。
+func reportTables(ctx context.Context, db *powersync.DB, tables []powersync.Table, limit int) {
+	if limit <= 0 {
+		limit = 2
+	}
+	var total int64
+	empty := 0
+	fmt.Printf("\n%-30s %8s  样例\n%s\n", "表", "行数", strings.Repeat("-", 78))
+	for _, t := range tables {
+		var n int64
+		if rows, err := db.GetAll(ctx, `SELECT count(*) AS n FROM `+quote(t.Name)); err == nil && len(rows) == 1 {
+			n = toInt64(rows[0]["n"])
+		}
+		total += n
+		if n == 0 {
+			empty++
+		}
+
+		sample := ""
+		if n > 0 {
+			if rows, err := db.GetAll(ctx, fmt.Sprintf(`SELECT * FROM %s LIMIT %d`, quote(t.Name), limit)); err == nil {
+				lines := make([]string, 0, len(rows))
+				for _, r := range rows {
+					b, _ := json.Marshal(sortedRow(r))
+					lines = append(lines, truncate(string(b), 180))
+				}
+				sample = strings.Join(lines, "\n"+strings.Repeat(" ", 41))
+			}
+		}
+		fmt.Printf("%-30s %8d  %s\n", t.Name, n, sample)
+	}
+	fmt.Printf("%s\n%-30s %8d  （空表 %d 张，共 %d 张）\n",
+		strings.Repeat("-", 78), "合计", total, empty, len(tables))
+}
+
+// sortedRow 把 map 变成按 key 有序的 map（json.Marshal 对 map 已按 key 排序，这里只是显式化）。
+func sortedRow(r map[string]any) map[string]any { return r }
+
+func truncate(s string, n int) string {
 	if len(s) <= n {
 		return s
 	}

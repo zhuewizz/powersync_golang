@@ -426,7 +426,7 @@ func (t *Table) jsonObjectExpr(prefix string) string {
 			continue // id 单独存列，不进 JSON（与 core 的 columns 不含 id 一致）
 		}
 		cur = append(cur, fmt.Sprintf("%s,%s.%s", sqlString(c.Name), prefix, c.Name))
-		if len(cur) == maxArgs*2 {
+		if len(cur) == maxArgs { // 每个元素是一对参数（列名+值）
 			flush()
 		}
 	}

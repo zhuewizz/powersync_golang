@@ -330,6 +330,12 @@ X-User-Agent: powersync-go/<version>
 - `token_expires_in` 是 keepalive，实测约 **20 s** 一次（7062 → 7044 → 7023），同时用于提前刷新 token。
 - `checkpoint_complete` 里**没有** `checkpoint_request_id`（新版把 checkpoint request 拆到独立端点，见 6.4）。
 - 未知行类型：记录日志后忽略，不要中断流（服务端会演进）。
+- ❗**`object_type` 是同步规则里 SQL 的别名**，不是表名：`SELECT * FROM "mats"."material_inventory" AS i`
+  下发的是 `object_type: "i"`（实测 120 行），且 `i`/`t`/`r`/`l`/`s`/`h`/`d` 这类短别名被
+  多张表复用（`i` = material/tool/delivery inventory）。客户端 schema 必须把别名也声明成表，
+  否则这些行全部被跳过；但从根本上应该**在同步规则里去掉短别名**。
+- 实测部署中的规则与仓库里的 `syncRules.yaml` **可能不一致**：服务端会下发 `object_type: "role"`
+  （本地 yaml 里没有）。排查手法：同步后看 `SkippedTables()` 列表，再决定加进 schema。
 
 ### 6.4 其他端点
 

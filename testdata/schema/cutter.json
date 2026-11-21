@@ -1,0 +1,6756 @@
+{
+  "tables": [
+    {
+      "name": "org",
+      "columns": [
+        {
+          "name": "created_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "created_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "deleted_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "deleted_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "is_active",
+          "type": "INTEGER"
+        },
+        {
+          "name": "is_cust",
+          "type": "INTEGER"
+        },
+        {
+          "name": "org_area",
+          "type": "TEXT"
+        },
+        {
+          "name": "org_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "org_name",
+          "type": "TEXT"
+        },
+        {
+          "name": "updated_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "updated_by",
+          "type": "TEXT"
+        }
+      ],
+      "indexes": null,
+      "local_only": false,
+      "insert_only": false
+    },
+    {
+      "name": "depart",
+      "columns": [
+        {
+          "name": "created_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "created_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "deleted_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "deleted_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "depart_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "depart_name",
+          "type": "TEXT"
+        },
+        {
+          "name": "is_active",
+          "type": "INTEGER"
+        },
+        {
+          "name": "org_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "updated_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "updated_by",
+          "type": "TEXT"
+        }
+      ],
+      "indexes": null,
+      "local_only": false,
+      "insert_only": false
+    },
+    {
+      "name": "func_menu",
+      "columns": [
+        {
+          "name": "box_type",
+          "type": "TEXT"
+        },
+        {
+          "name": "cfg_desc",
+          "type": "TEXT"
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "created_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "deleted_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "deleted_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "func_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "func_menu",
+          "type": "TEXT"
+        },
+        {
+          "name": "func_name",
+          "type": "TEXT"
+        },
+        {
+          "name": "is_active",
+          "type": "INTEGER"
+        },
+        {
+          "name": "is_back",
+          "type": "INTEGER"
+        },
+        {
+          "name": "is_front",
+          "type": "INTEGER"
+        },
+        {
+          "name": "menu_desc",
+          "type": "TEXT"
+        },
+        {
+          "name": "order_no",
+          "type": "INTEGER"
+        },
+        {
+          "name": "org_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "updated_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "updated_by",
+          "type": "TEXT"
+        }
+      ],
+      "indexes": null,
+      "local_only": false,
+      "insert_only": false
+    },
+    {
+      "name": "work_card",
+      "columns": [
+        {
+          "name": "aircraft_reg",
+          "type": "TEXT"
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "created_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "deleted_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "deleted_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "org_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "project",
+          "type": "TEXT"
+        },
+        {
+          "name": "updated_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "updated_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "work_card_base64",
+          "type": "TEXT"
+        },
+        {
+          "name": "work_card_end",
+          "type": "TEXT"
+        },
+        {
+          "name": "work_card_no",
+          "type": "TEXT"
+        },
+        {
+          "name": "work_card_start",
+          "type": "TEXT"
+        },
+        {
+          "name": "work_card_status",
+          "type": "TEXT"
+        },
+        {
+          "name": "work_card_type",
+          "type": "TEXT"
+        }
+      ],
+      "indexes": null,
+      "local_only": false,
+      "insert_only": false
+    },
+    {
+      "name": "sys_config",
+      "columns": [
+        {
+          "name": "box_type",
+          "type": "TEXT"
+        },
+        {
+          "name": "cfg_desc",
+          "type": "TEXT"
+        },
+        {
+          "name": "cfg_key",
+          "type": "TEXT"
+        },
+        {
+          "name": "cfg_type",
+          "type": "TEXT"
+        },
+        {
+          "name": "cfg_value",
+          "type": "TEXT"
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "created_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "deleted_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "deleted_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "is_active",
+          "type": "INTEGER"
+        },
+        {
+          "name": "is_back",
+          "type": "INTEGER"
+        },
+        {
+          "name": "is_front",
+          "type": "INTEGER"
+        },
+        {
+          "name": "org_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "updated_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "updated_by",
+          "type": "TEXT"
+        }
+      ],
+      "indexes": null,
+      "local_only": false,
+      "insert_only": false
+    },
+    {
+      "name": "users",
+      "columns": [
+        {
+          "name": "created_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "created_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "deleted_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "deleted_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "delivery_back_func_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "delivery_func_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "depart_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "emp_card",
+          "type": "TEXT"
+        },
+        {
+          "name": "is_active",
+          "type": "INTEGER"
+        },
+        {
+          "name": "is_admin",
+          "type": "INTEGER"
+        },
+        {
+          "name": "is_email",
+          "type": "INTEGER"
+        },
+        {
+          "name": "is_superuser",
+          "type": "INTEGER"
+        },
+        {
+          "name": "lang",
+          "type": "TEXT"
+        },
+        {
+          "name": "mat_back_func_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "mat_func_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "org_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "other_back_func_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "other_func_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "password",
+          "type": "TEXT"
+        },
+        {
+          "name": "role_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "tool_back_car_func_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "tool_back_func_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "tool_car_func_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "tool_func_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "updated_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "updated_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "user_acct",
+          "type": "TEXT"
+        },
+        {
+          "name": "user_email",
+          "type": "TEXT"
+        },
+        {
+          "name": "user_face",
+          "type": "INTEGER"
+        },
+        {
+          "name": "user_figer",
+          "type": "TEXT"
+        },
+        {
+          "name": "user_id",
+          "type": "TEXT"
+        },
+        {
+          "name": "user_mobile",
+          "type": "TEXT"
+        },
+        {
+          "name": "user_name",
+          "type": "TEXT"
+        },
+        {
+          "name": "user_tel",
+          "type": "TEXT"
+        }
+      ],
+      "indexes": null,
+      "local_only": false,
+      "insert_only": false
+    },
+    {
+      "name": "dict",
+      "columns": [
+        {
+          "name": "box_type",
+          "type": "TEXT"
+        },
+        {
+          "name": "code",
+          "type": "TEXT"
+        },
+        {
+          "name": "code_cn",
+          "type": "TEXT"
+        },
+        {
+          "name": "code_desc",
+          "type": "TEXT"
+        },
+        {
+          "name": "code_en",
+          "type": "TEXT"
+        },
+        {
+          "name": "code_parent",
+          "type": "TEXT"
+        },
+        {
+          "name": "code_type",
+          "type": "TEXT"
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "created_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "deleted_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "deleted_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "is_active",
+          "type": "INTEGER"
+        },
+        {
+          "name": "org_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "updated_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "updated_by",
+          "type": "TEXT"
+        }
+      ],
+      "indexes": null,
+      "local_only": false,
+      "insert_only": false
+    },
+    {
+      "name": "user_box_tool_mat_permission",
+      "columns": [
+        {
+          "name": "created_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "created_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "deleted_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "deleted_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "depart_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "mat_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "month_max",
+          "type": "INTEGER"
+        },
+        {
+          "name": "month_used",
+          "type": "INTEGER"
+        },
+        {
+          "name": "org_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "quarter_max",
+          "type": "INTEGER"
+        },
+        {
+          "name": "quarter_used",
+          "type": "INTEGER"
+        },
+        {
+          "name": "updated_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "updated_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "user_id",
+          "type": "TEXT"
+        },
+        {
+          "name": "week_max",
+          "type": "INTEGER"
+        },
+        {
+          "name": "week_used",
+          "type": "INTEGER"
+        },
+        {
+          "name": "year_max",
+          "type": "INTEGER"
+        },
+        {
+          "name": "year_used",
+          "type": "INTEGER"
+        }
+      ],
+      "indexes": null,
+      "local_only": false,
+      "insert_only": false
+    },
+    {
+      "name": "user_box_permission",
+      "columns": [
+        {
+          "name": "box_code_group",
+          "type": "TEXT"
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "created_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "deleted_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "deleted_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "depart_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "is_active",
+          "type": "INTEGER"
+        },
+        {
+          "name": "org_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "updated_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "updated_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "user_id",
+          "type": "TEXT"
+        }
+      ],
+      "indexes": null,
+      "local_only": false,
+      "insert_only": false
+    },
+    {
+      "name": "maintenance_key",
+      "columns": [
+        {
+          "name": "created_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "created_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "deleted_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "deleted_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "is_rule",
+          "type": "TEXT"
+        },
+        {
+          "name": "main_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "main_desc",
+          "type": "TEXT"
+        },
+        {
+          "name": "main_time",
+          "type": "TEXT"
+        },
+        {
+          "name": "org_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "updated_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "updated_by",
+          "type": "TEXT"
+        }
+      ],
+      "indexes": null,
+      "local_only": false,
+      "insert_only": false
+    },
+    {
+      "name": "maintenance",
+      "columns": [
+        {
+          "name": "box_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "box_status",
+          "type": "TEXT"
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "created_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "deleted_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "deleted_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "last_date",
+          "type": "TEXT"
+        },
+        {
+          "name": "main_content",
+          "type": "TEXT"
+        },
+        {
+          "name": "org_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "updated_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "updated_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "user_id",
+          "type": "TEXT"
+        },
+        {
+          "name": "user_name",
+          "type": "TEXT"
+        }
+      ],
+      "indexes": null,
+      "local_only": false,
+      "insert_only": false
+    },
+    {
+      "name": "maintenance_detail",
+      "columns": [
+        {
+          "name": "box_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "box_status",
+          "type": "TEXT"
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "created_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "deleted_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "deleted_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "main_content",
+          "type": "TEXT"
+        },
+        {
+          "name": "main_date",
+          "type": "TEXT"
+        },
+        {
+          "name": "org_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "updated_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "updated_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "user_id",
+          "type": "TEXT"
+        },
+        {
+          "name": "user_name",
+          "type": "TEXT"
+        }
+      ],
+      "indexes": null,
+      "local_only": false,
+      "insert_only": false
+    },
+    {
+      "name": "cutters_return_cause",
+      "columns": [
+        {
+          "name": "cause_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "cause_name",
+          "type": "TEXT"
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "created_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "deleted_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "deleted_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "label",
+          "type": "TEXT"
+        },
+        {
+          "name": "org_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "status",
+          "type": "INTEGER"
+        },
+        {
+          "name": "updated_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "updated_by",
+          "type": "TEXT"
+        }
+      ],
+      "indexes": null,
+      "local_only": false,
+      "insert_only": false
+    },
+    {
+      "name": "role_cabinet_permissions",
+      "columns": [
+        {
+          "name": "box_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "created_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "deleted_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "deleted_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "depart_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "org_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "permission",
+          "type": "TEXT"
+        },
+        {
+          "name": "role_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "scope_type",
+          "type": "TEXT"
+        },
+        {
+          "name": "updated_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "updated_by",
+          "type": "TEXT"
+        }
+      ],
+      "indexes": null,
+      "local_only": false,
+      "insert_only": false
+    },
+    {
+      "name": "role_material_permissions",
+      "columns": [
+        {
+          "name": "created_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "created_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "deleted_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "deleted_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "depart_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "material_category",
+          "type": "TEXT"
+        },
+        {
+          "name": "material_id",
+          "type": "TEXT"
+        },
+        {
+          "name": "org_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "role_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "scope_type",
+          "type": "TEXT"
+        },
+        {
+          "name": "updated_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "updated_by",
+          "type": "TEXT"
+        }
+      ],
+      "indexes": null,
+      "local_only": false,
+      "insert_only": false
+    },
+    {
+      "name": "issue_limits",
+      "columns": [
+        {
+          "name": "created_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "created_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "deleted_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "deleted_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "enabled",
+          "type": "INTEGER"
+        },
+        {
+          "name": "material_id",
+          "type": "TEXT"
+        },
+        {
+          "name": "max_quantity",
+          "type": "REAL"
+        },
+        {
+          "name": "org_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "period_type",
+          "type": "TEXT"
+        },
+        {
+          "name": "role_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "updated_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "updated_by",
+          "type": "TEXT"
+        }
+      ],
+      "indexes": null,
+      "local_only": false,
+      "insert_only": false
+    },
+    {
+      "name": "cutter_category",
+      "columns": [
+        {
+          "name": "created_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "created_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "deleted_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "deleted_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "is_active",
+          "type": "INTEGER"
+        },
+        {
+          "name": "mat_cat_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "mat_cat_name",
+          "type": "TEXT"
+        },
+        {
+          "name": "mat_cat_parent",
+          "type": "TEXT"
+        },
+        {
+          "name": "org_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "updated_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "updated_by",
+          "type": "TEXT"
+        }
+      ],
+      "indexes": null,
+      "local_only": false,
+      "insert_only": false
+    },
+    {
+      "name": "cutter_info",
+      "columns": [
+        {
+          "name": "created_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "created_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "deleted_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "deleted_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "image_url",
+          "type": "TEXT"
+        },
+        {
+          "name": "is_active",
+          "type": "INTEGER"
+        },
+        {
+          "name": "is_adjust",
+          "type": "INTEGER"
+        },
+        {
+          "name": "is_max",
+          "type": "INTEGER"
+        },
+        {
+          "name": "is_sn",
+          "type": "INTEGER"
+        },
+        {
+          "name": "mat_barcode",
+          "type": "TEXT"
+        },
+        {
+          "name": "mat_brand",
+          "type": "TEXT"
+        },
+        {
+          "name": "mat_cat_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "mat_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "mat_desc",
+          "type": "TEXT"
+        },
+        {
+          "name": "mat_dim",
+          "type": "TEXT"
+        },
+        {
+          "name": "mat_model",
+          "type": "TEXT"
+        },
+        {
+          "name": "mat_name",
+          "type": "TEXT"
+        },
+        {
+          "name": "mat_pn",
+          "type": "TEXT"
+        },
+        {
+          "name": "mat_remark",
+          "type": "TEXT"
+        },
+        {
+          "name": "mat_spec",
+          "type": "TEXT"
+        },
+        {
+          "name": "mat_unit",
+          "type": "TEXT"
+        },
+        {
+          "name": "mat_weight",
+          "type": "REAL"
+        },
+        {
+          "name": "org_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "unit_qty",
+          "type": "INTEGER"
+        },
+        {
+          "name": "updated_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "updated_by",
+          "type": "TEXT"
+        }
+      ],
+      "indexes": null,
+      "local_only": false,
+      "insert_only": false
+    },
+    {
+      "name": "cutter_favorite",
+      "columns": [
+        {
+          "name": "created_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "created_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "deleted_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "deleted_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "mat_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "org_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "remark",
+          "type": "TEXT"
+        },
+        {
+          "name": "sort_no",
+          "type": "INTEGER"
+        },
+        {
+          "name": "updated_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "updated_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "user_id",
+          "type": "TEXT"
+        }
+      ],
+      "indexes": null,
+      "local_only": false,
+      "insert_only": false
+    },
+    {
+      "name": "work_code_bom",
+      "columns": [
+        {
+          "name": "created_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "created_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "deleted_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "deleted_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "depart_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "mat_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "mat_pn",
+          "type": "TEXT"
+        },
+        {
+          "name": "max_qty",
+          "type": "INTEGER"
+        },
+        {
+          "name": "org_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "process_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "real_qty",
+          "type": "INTEGER"
+        },
+        {
+          "name": "updated_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "updated_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "work_order",
+          "type": "TEXT"
+        },
+        {
+          "name": "work_time",
+          "type": "TEXT"
+        }
+      ],
+      "indexes": null,
+      "local_only": false,
+      "insert_only": false
+    },
+    {
+      "name": "work_code_process",
+      "columns": [
+        {
+          "name": "created_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "created_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "deleted_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "deleted_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "depart_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "mac_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "org_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "process_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "process_name",
+          "type": "TEXT"
+        },
+        {
+          "name": "updated_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "updated_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "work_order",
+          "type": "TEXT"
+        }
+      ],
+      "indexes": null,
+      "local_only": false,
+      "insert_only": false
+    },
+    {
+      "name": "material_category",
+      "columns": [
+        {
+          "name": "created_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "created_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "deleted_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "deleted_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "is_active",
+          "type": "INTEGER"
+        },
+        {
+          "name": "mat_cat_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "mat_cat_name",
+          "type": "TEXT"
+        },
+        {
+          "name": "mat_cat_parent",
+          "type": "TEXT"
+        },
+        {
+          "name": "org_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "updated_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "updated_by",
+          "type": "TEXT"
+        }
+      ],
+      "indexes": null,
+      "local_only": false,
+      "insert_only": false
+    },
+    {
+      "name": "material_info",
+      "columns": [
+        {
+          "name": "created_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "created_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "deleted_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "deleted_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "image_url",
+          "type": "TEXT"
+        },
+        {
+          "name": "is_active",
+          "type": "INTEGER"
+        },
+        {
+          "name": "is_adjust",
+          "type": "INTEGER"
+        },
+        {
+          "name": "is_max",
+          "type": "INTEGER"
+        },
+        {
+          "name": "is_sn",
+          "type": "INTEGER"
+        },
+        {
+          "name": "mat_barcode",
+          "type": "TEXT"
+        },
+        {
+          "name": "mat_brand",
+          "type": "TEXT"
+        },
+        {
+          "name": "mat_cat_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "mat_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "mat_desc",
+          "type": "TEXT"
+        },
+        {
+          "name": "mat_dim",
+          "type": "TEXT"
+        },
+        {
+          "name": "mat_model",
+          "type": "TEXT"
+        },
+        {
+          "name": "mat_name",
+          "type": "TEXT"
+        },
+        {
+          "name": "mat_pn",
+          "type": "TEXT"
+        },
+        {
+          "name": "mat_remark",
+          "type": "TEXT"
+        },
+        {
+          "name": "mat_spec",
+          "type": "TEXT"
+        },
+        {
+          "name": "mat_unit",
+          "type": "TEXT"
+        },
+        {
+          "name": "mat_weight",
+          "type": "REAL"
+        },
+        {
+          "name": "org_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "updated_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "updated_by",
+          "type": "TEXT"
+        }
+      ],
+      "indexes": null,
+      "local_only": false,
+      "insert_only": false
+    },
+    {
+      "name": "tool_category",
+      "columns": [
+        {
+          "name": "created_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "created_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "deleted_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "deleted_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "is_active",
+          "type": "INTEGER"
+        },
+        {
+          "name": "org_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "tool_cat_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "tool_cat_name",
+          "type": "TEXT"
+        },
+        {
+          "name": "tool_cat_parent",
+          "type": "TEXT"
+        },
+        {
+          "name": "updated_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "updated_by",
+          "type": "TEXT"
+        }
+      ],
+      "indexes": null,
+      "local_only": false,
+      "insert_only": false
+    },
+    {
+      "name": "tool_info",
+      "columns": [
+        {
+          "name": "calibration_days",
+          "type": "INTEGER"
+        },
+        {
+          "name": "check_period",
+          "type": "INTEGER"
+        },
+        {
+          "name": "check_remark",
+          "type": "TEXT"
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "created_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "deleted_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "deleted_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "image_url",
+          "type": "TEXT"
+        },
+        {
+          "name": "is_active",
+          "type": "INTEGER"
+        },
+        {
+          "name": "is_calibration",
+          "type": "INTEGER"
+        },
+        {
+          "name": "is_sn",
+          "type": "INTEGER"
+        },
+        {
+          "name": "org_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "return_time",
+          "type": "INTEGER"
+        },
+        {
+          "name": "tool_barcode",
+          "type": "TEXT"
+        },
+        {
+          "name": "tool_brand",
+          "type": "TEXT"
+        },
+        {
+          "name": "tool_cat_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "tool_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "tool_desc",
+          "type": "TEXT"
+        },
+        {
+          "name": "tool_dim",
+          "type": "TEXT"
+        },
+        {
+          "name": "tool_model",
+          "type": "TEXT"
+        },
+        {
+          "name": "tool_name",
+          "type": "TEXT"
+        },
+        {
+          "name": "tool_pn",
+          "type": "TEXT"
+        },
+        {
+          "name": "tool_spec",
+          "type": "TEXT"
+        },
+        {
+          "name": "tool_unit",
+          "type": "TEXT"
+        },
+        {
+          "name": "tool_weight",
+          "type": "REAL"
+        },
+        {
+          "name": "updated_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "updated_by",
+          "type": "TEXT"
+        }
+      ],
+      "indexes": null,
+      "local_only": false,
+      "insert_only": false
+    },
+    {
+      "name": "delivery_category",
+      "columns": [
+        {
+          "name": "cat_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "cat_name",
+          "type": "TEXT"
+        },
+        {
+          "name": "cat_parent",
+          "type": "TEXT"
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "created_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "deleted_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "deleted_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "is_active",
+          "type": "INTEGER"
+        },
+        {
+          "name": "org_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "status",
+          "type": "TEXT"
+        },
+        {
+          "name": "updated_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "updated_by",
+          "type": "TEXT"
+        }
+      ],
+      "indexes": null,
+      "local_only": false,
+      "insert_only": false
+    },
+    {
+      "name": "delivery_material_info",
+      "columns": [
+        {
+          "name": "created_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "created_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "deleted_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "deleted_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "image_url",
+          "type": "TEXT"
+        },
+        {
+          "name": "is_active",
+          "type": "INTEGER"
+        },
+        {
+          "name": "is_adjust",
+          "type": "INTEGER"
+        },
+        {
+          "name": "is_max",
+          "type": "INTEGER"
+        },
+        {
+          "name": "is_sn",
+          "type": "INTEGER"
+        },
+        {
+          "name": "mat_barcode",
+          "type": "TEXT"
+        },
+        {
+          "name": "mat_brand",
+          "type": "TEXT"
+        },
+        {
+          "name": "mat_cat_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "mat_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "mat_desc",
+          "type": "TEXT"
+        },
+        {
+          "name": "mat_dim",
+          "type": "TEXT"
+        },
+        {
+          "name": "mat_model",
+          "type": "TEXT"
+        },
+        {
+          "name": "mat_name",
+          "type": "TEXT"
+        },
+        {
+          "name": "mat_pn",
+          "type": "TEXT"
+        },
+        {
+          "name": "mat_remark",
+          "type": "TEXT"
+        },
+        {
+          "name": "mat_spec",
+          "type": "TEXT"
+        },
+        {
+          "name": "mat_unit",
+          "type": "TEXT"
+        },
+        {
+          "name": "mat_weight",
+          "type": "REAL"
+        },
+        {
+          "name": "org_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "remark",
+          "type": "TEXT"
+        },
+        {
+          "name": "status",
+          "type": "TEXT"
+        },
+        {
+          "name": "svg_url",
+          "type": "TEXT"
+        },
+        {
+          "name": "updated_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "updated_by",
+          "type": "TEXT"
+        }
+      ],
+      "indexes": null,
+      "local_only": false,
+      "insert_only": false
+    },
+    {
+      "name": "delivery_tool_info",
+      "columns": [
+        {
+          "name": "calibration_days",
+          "type": "INTEGER"
+        },
+        {
+          "name": "check_period",
+          "type": "INTEGER"
+        },
+        {
+          "name": "check_remark",
+          "type": "TEXT"
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "created_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "deleted_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "deleted_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "image_url",
+          "type": "TEXT"
+        },
+        {
+          "name": "is_active",
+          "type": "INTEGER"
+        },
+        {
+          "name": "is_adjust",
+          "type": "INTEGER"
+        },
+        {
+          "name": "is_calibration",
+          "type": "INTEGER"
+        },
+        {
+          "name": "is_sn",
+          "type": "INTEGER"
+        },
+        {
+          "name": "org_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "remark",
+          "type": "TEXT"
+        },
+        {
+          "name": "return_time",
+          "type": "INTEGER"
+        },
+        {
+          "name": "status",
+          "type": "TEXT"
+        },
+        {
+          "name": "svg_url",
+          "type": "TEXT"
+        },
+        {
+          "name": "tool_barcode",
+          "type": "TEXT"
+        },
+        {
+          "name": "tool_brand",
+          "type": "TEXT"
+        },
+        {
+          "name": "tool_cat_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "tool_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "tool_desc",
+          "type": "TEXT"
+        },
+        {
+          "name": "tool_dim",
+          "type": "TEXT"
+        },
+        {
+          "name": "tool_model",
+          "type": "TEXT"
+        },
+        {
+          "name": "tool_name",
+          "type": "TEXT"
+        },
+        {
+          "name": "tool_pn",
+          "type": "TEXT"
+        },
+        {
+          "name": "tool_remark",
+          "type": "TEXT"
+        },
+        {
+          "name": "tool_spec",
+          "type": "TEXT"
+        },
+        {
+          "name": "tool_unit",
+          "type": "TEXT"
+        },
+        {
+          "name": "tool_weight",
+          "type": "REAL"
+        },
+        {
+          "name": "updated_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "updated_by",
+          "type": "TEXT"
+        }
+      ],
+      "indexes": null,
+      "local_only": false,
+      "insert_only": false
+    },
+    {
+      "name": "box",
+      "columns": [
+        {
+          "name": "box_cell_num",
+          "type": "INTEGER"
+        },
+        {
+          "name": "box_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "box_desc",
+          "type": "TEXT"
+        },
+        {
+          "name": "box_name",
+          "type": "TEXT"
+        },
+        {
+          "name": "box_status",
+          "type": "TEXT"
+        },
+        {
+          "name": "box_type",
+          "type": "TEXT"
+        },
+        {
+          "name": "cam_ip",
+          "type": "TEXT"
+        },
+        {
+          "name": "cam_pass",
+          "type": "TEXT"
+        },
+        {
+          "name": "cam_user",
+          "type": "TEXT"
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "created_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "deleted_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "deleted_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "depart_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "is_active",
+          "type": "INTEGER"
+        },
+        {
+          "name": "is_master",
+          "type": "INTEGER"
+        },
+        {
+          "name": "location",
+          "type": "TEXT"
+        },
+        {
+          "name": "master_box_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "org_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "updated_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "updated_by",
+          "type": "TEXT"
+        }
+      ],
+      "indexes": null,
+      "local_only": false,
+      "insert_only": false
+    },
+    {
+      "name": "box_seq",
+      "columns": [
+        {
+          "name": "box_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "created_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "days",
+          "type": "TEXT"
+        },
+        {
+          "name": "deleted_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "deleted_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "last_user_id",
+          "type": "TEXT"
+        },
+        {
+          "name": "org_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "seq",
+          "type": "INTEGER"
+        },
+        {
+          "name": "updated_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "updated_by",
+          "type": "TEXT"
+        }
+      ],
+      "indexes": null,
+      "local_only": false,
+      "insert_only": false
+    },
+    {
+      "name": "box_hard_setting",
+      "columns": [
+        {
+          "name": "box_cell",
+          "type": "TEXT"
+        },
+        {
+          "name": "box_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "cam_point",
+          "type": "INTEGER"
+        },
+        {
+          "name": "cell_channel",
+          "type": "INTEGER"
+        },
+        {
+          "name": "cell_status",
+          "type": "TEXT"
+        },
+        {
+          "name": "cell_type",
+          "type": "TEXT"
+        },
+        {
+          "name": "close_door",
+          "type": "INTEGER"
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "created_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "deleted_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "deleted_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "grid_channel",
+          "type": "INTEGER"
+        },
+        {
+          "name": "image_url",
+          "type": "TEXT"
+        },
+        {
+          "name": "is_active",
+          "type": "INTEGER"
+        },
+        {
+          "name": "is_kit",
+          "type": "INTEGER"
+        },
+        {
+          "name": "is_light",
+          "type": "INTEGER"
+        },
+        {
+          "name": "is_locker",
+          "type": "INTEGER"
+        },
+        {
+          "name": "is_master_door",
+          "type": "INTEGER"
+        },
+        {
+          "name": "is_out_light",
+          "type": "INTEGER"
+        },
+        {
+          "name": "is_out_locker",
+          "type": "INTEGER"
+        },
+        {
+          "name": "main_board_number",
+          "type": "INTEGER"
+        },
+        {
+          "name": "max_capacity",
+          "type": "INTEGER"
+        },
+        {
+          "name": "max_weight",
+          "type": "INTEGER"
+        },
+        {
+          "name": "open_door",
+          "type": "INTEGER"
+        },
+        {
+          "name": "org_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "updated_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "updated_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "weight_channel",
+          "type": "INTEGER"
+        }
+      ],
+      "indexes": null,
+      "local_only": false,
+      "insert_only": false
+    },
+    {
+      "name": "box_hard_setting_detail",
+      "columns": [
+        {
+          "name": "box_cell",
+          "type": "TEXT"
+        },
+        {
+          "name": "box_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "cell_channel",
+          "type": "INTEGER"
+        },
+        {
+          "name": "close_door",
+          "type": "INTEGER"
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "created_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "deleted_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "deleted_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "grid_channel",
+          "type": "INTEGER"
+        },
+        {
+          "name": "hard_type",
+          "type": "TEXT"
+        },
+        {
+          "name": "is_active",
+          "type": "INTEGER"
+        },
+        {
+          "name": "main_board_number",
+          "type": "INTEGER"
+        },
+        {
+          "name": "open_door",
+          "type": "INTEGER"
+        },
+        {
+          "name": "org_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "updated_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "updated_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "weight_channel",
+          "type": "INTEGER"
+        }
+      ],
+      "indexes": null,
+      "local_only": false,
+      "insert_only": false
+    },
+    {
+      "name": "box_status",
+      "columns": [
+        {
+          "name": "box_cell",
+          "type": "TEXT"
+        },
+        {
+          "name": "box_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "box_status",
+          "type": "TEXT"
+        },
+        {
+          "name": "camera_status",
+          "type": "TEXT"
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "humidity",
+          "type": "TEXT"
+        },
+        {
+          "name": "light_status",
+          "type": "TEXT"
+        },
+        {
+          "name": "location",
+          "type": "TEXT"
+        },
+        {
+          "name": "network_status",
+          "type": "TEXT"
+        },
+        {
+          "name": "org_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "power_status",
+          "type": "TEXT"
+        },
+        {
+          "name": "remark",
+          "type": "TEXT"
+        },
+        {
+          "name": "sound_status",
+          "type": "TEXT"
+        },
+        {
+          "name": "temperature",
+          "type": "TEXT"
+        }
+      ],
+      "indexes": null,
+      "local_only": false,
+      "insert_only": false
+    },
+    {
+      "name": "sys_error_report",
+      "columns": [
+        {
+          "name": "box_cell",
+          "type": "TEXT"
+        },
+        {
+          "name": "box_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "box_type",
+          "type": "TEXT"
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "created_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "deleted_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "deleted_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "error_date",
+          "type": "TEXT"
+        },
+        {
+          "name": "error_desc",
+          "type": "TEXT"
+        },
+        {
+          "name": "is_submit",
+          "type": "INTEGER"
+        },
+        {
+          "name": "op_status",
+          "type": "TEXT"
+        },
+        {
+          "name": "org_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "submit_result",
+          "type": "TEXT"
+        },
+        {
+          "name": "trans_type",
+          "type": "TEXT"
+        },
+        {
+          "name": "updated_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "updated_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "user_id",
+          "type": "TEXT"
+        },
+        {
+          "name": "user_name",
+          "type": "TEXT"
+        }
+      ],
+      "indexes": null,
+      "local_only": false,
+      "insert_only": false
+    },
+    {
+      "name": "cutter_transaction",
+      "columns": [
+        {
+          "name": "access_method",
+          "type": "TEXT"
+        },
+        {
+          "name": "actual_qty",
+          "type": "INTEGER"
+        },
+        {
+          "name": "assigned_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "assigned_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "assigned_to",
+          "type": "TEXT"
+        },
+        {
+          "name": "barcode",
+          "type": "TEXT"
+        },
+        {
+          "name": "box_cell",
+          "type": "TEXT"
+        },
+        {
+          "name": "box_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "created_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "deleted_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "deleted_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "depart_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "depart_name",
+          "type": "TEXT"
+        },
+        {
+          "name": "emp_card",
+          "type": "TEXT"
+        },
+        {
+          "name": "expiry_date",
+          "type": "TEXT"
+        },
+        {
+          "name": "grn_no",
+          "type": "TEXT"
+        },
+        {
+          "name": "is_return",
+          "type": "INTEGER"
+        },
+        {
+          "name": "is_submit",
+          "type": "INTEGER"
+        },
+        {
+          "name": "mac_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "mat_batch_no",
+          "type": "TEXT"
+        },
+        {
+          "name": "mat_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "mat_name",
+          "type": "TEXT"
+        },
+        {
+          "name": "mat_pn",
+          "type": "TEXT"
+        },
+        {
+          "name": "mat_sn",
+          "type": "TEXT"
+        },
+        {
+          "name": "mat_stock_from",
+          "type": "TEXT"
+        },
+        {
+          "name": "mat_stock_to",
+          "type": "TEXT"
+        },
+        {
+          "name": "org_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "plan_qty",
+          "type": "INTEGER"
+        },
+        {
+          "name": "print_num",
+          "type": "INTEGER"
+        },
+        {
+          "name": "process_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "rdn_no",
+          "type": "TEXT"
+        },
+        {
+          "name": "re_order_no",
+          "type": "TEXT"
+        },
+        {
+          "name": "remove_qty",
+          "type": "INTEGER"
+        },
+        {
+          "name": "request_qty",
+          "type": "INTEGER"
+        },
+        {
+          "name": "reservation_qty",
+          "type": "INTEGER"
+        },
+        {
+          "name": "submit_result",
+          "type": "TEXT"
+        },
+        {
+          "name": "system_qty",
+          "type": "INTEGER"
+        },
+        {
+          "name": "trans_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "trans_remark",
+          "type": "TEXT"
+        },
+        {
+          "name": "trans_status",
+          "type": "TEXT"
+        },
+        {
+          "name": "trans_time",
+          "type": "TEXT"
+        },
+        {
+          "name": "trans_type",
+          "type": "TEXT"
+        },
+        {
+          "name": "updated_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "updated_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "use_time",
+          "type": "TEXT"
+        },
+        {
+          "name": "user_id",
+          "type": "TEXT"
+        },
+        {
+          "name": "user_name",
+          "type": "TEXT"
+        },
+        {
+          "name": "work_order",
+          "type": "TEXT"
+        }
+      ],
+      "indexes": null,
+      "local_only": false,
+      "insert_only": false
+    },
+    {
+      "name": "cutter_inventory",
+      "columns": [
+        {
+          "name": "box_cell",
+          "type": "TEXT"
+        },
+        {
+          "name": "box_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "condition",
+          "type": "TEXT"
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "created_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "deleted_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "deleted_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "depart_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "grn_no",
+          "type": "TEXT"
+        },
+        {
+          "name": "hold_quantity",
+          "type": "INTEGER"
+        },
+        {
+          "name": "mat_batch_no",
+          "type": "TEXT"
+        },
+        {
+          "name": "mat_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "mat_name",
+          "type": "TEXT"
+        },
+        {
+          "name": "mat_pn",
+          "type": "TEXT"
+        },
+        {
+          "name": "mat_remark",
+          "type": "TEXT"
+        },
+        {
+          "name": "mat_sn",
+          "type": "TEXT"
+        },
+        {
+          "name": "mat_status",
+          "type": "TEXT"
+        },
+        {
+          "name": "max_qty",
+          "type": "INTEGER"
+        },
+        {
+          "name": "min_qty",
+          "type": "INTEGER"
+        },
+        {
+          "name": "org_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "quantity",
+          "type": "INTEGER"
+        },
+        {
+          "name": "rdn_no",
+          "type": "TEXT"
+        },
+        {
+          "name": "re_order_no",
+          "type": "TEXT"
+        },
+        {
+          "name": "updated_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "updated_by",
+          "type": "TEXT"
+        }
+      ],
+      "indexes": null,
+      "local_only": false,
+      "insert_only": false
+    },
+    {
+      "name": "cutter_re_order",
+      "columns": [
+        {
+          "name": "access_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "aircraft_registration",
+          "type": "TEXT"
+        },
+        {
+          "name": "amos_status",
+          "type": "TEXT"
+        },
+        {
+          "name": "barcode",
+          "type": "TEXT"
+        },
+        {
+          "name": "box_cell",
+          "type": "TEXT"
+        },
+        {
+          "name": "box_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "created_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "deleted_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "deleted_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "expiry_date",
+          "type": "TEXT"
+        },
+        {
+          "name": "grn_no",
+          "type": "TEXT"
+        },
+        {
+          "name": "m_owner",
+          "type": "TEXT"
+        },
+        {
+          "name": "mat_batch_no",
+          "type": "TEXT"
+        },
+        {
+          "name": "mat_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "mat_name",
+          "type": "TEXT"
+        },
+        {
+          "name": "mat_pn",
+          "type": "TEXT"
+        },
+        {
+          "name": "mat_remark",
+          "type": "TEXT"
+        },
+        {
+          "name": "mr",
+          "type": "TEXT"
+        },
+        {
+          "name": "order_status",
+          "type": "TEXT"
+        },
+        {
+          "name": "org_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "pickslip",
+          "type": "TEXT"
+        },
+        {
+          "name": "pickslip_id",
+          "type": "TEXT"
+        },
+        {
+          "name": "project",
+          "type": "TEXT"
+        },
+        {
+          "name": "qr_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "quantity",
+          "type": "INTEGER"
+        },
+        {
+          "name": "rdn_no",
+          "type": "TEXT"
+        },
+        {
+          "name": "re_order_no",
+          "type": "TEXT"
+        },
+        {
+          "name": "req_mat_time",
+          "type": "TEXT"
+        },
+        {
+          "name": "section",
+          "type": "TEXT"
+        },
+        {
+          "name": "updated_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "updated_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "use_time",
+          "type": "TEXT"
+        },
+        {
+          "name": "user_emp_card",
+          "type": "TEXT"
+        },
+        {
+          "name": "user_id",
+          "type": "TEXT"
+        },
+        {
+          "name": "valid_until",
+          "type": "TEXT"
+        },
+        {
+          "name": "work_order",
+          "type": "TEXT"
+        }
+      ],
+      "indexes": null,
+      "local_only": false,
+      "insert_only": false
+    },
+    {
+      "name": "cutter_op_log",
+      "columns": [
+        {
+          "name": "barcode",
+          "type": "TEXT"
+        },
+        {
+          "name": "box_cell",
+          "type": "TEXT"
+        },
+        {
+          "name": "box_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "created_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "deleted_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "deleted_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "depart_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "depart_name",
+          "type": "TEXT"
+        },
+        {
+          "name": "emp_card",
+          "type": "TEXT"
+        },
+        {
+          "name": "op_time",
+          "type": "TEXT"
+        },
+        {
+          "name": "open_door",
+          "type": "TEXT"
+        },
+        {
+          "name": "org_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "tool_pn",
+          "type": "TEXT"
+        },
+        {
+          "name": "tool_sn",
+          "type": "TEXT"
+        },
+        {
+          "name": "trans_type",
+          "type": "TEXT"
+        },
+        {
+          "name": "updated_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "updated_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "user_id",
+          "type": "TEXT"
+        },
+        {
+          "name": "user_name",
+          "type": "TEXT"
+        },
+        {
+          "name": "work_order",
+          "type": "TEXT"
+        }
+      ],
+      "indexes": null,
+      "local_only": false,
+      "insert_only": false
+    },
+    {
+      "name": "cutter_return",
+      "columns": [
+        {
+          "name": "barcode",
+          "type": "TEXT"
+        },
+        {
+          "name": "box_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "created_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "deleted_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "deleted_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "depart_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "depart_name",
+          "type": "TEXT"
+        },
+        {
+          "name": "emp_card",
+          "type": "TEXT"
+        },
+        {
+          "name": "mac_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "mat_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "mat_pn",
+          "type": "TEXT"
+        },
+        {
+          "name": "mat_sn",
+          "type": "TEXT"
+        },
+        {
+          "name": "op_time",
+          "type": "TEXT"
+        },
+        {
+          "name": "open_door",
+          "type": "TEXT"
+        },
+        {
+          "name": "org_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "process_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "return_cause",
+          "type": "TEXT"
+        },
+        {
+          "name": "updated_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "updated_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "user_id",
+          "type": "TEXT"
+        },
+        {
+          "name": "user_name",
+          "type": "TEXT"
+        },
+        {
+          "name": "work_order",
+          "type": "TEXT"
+        },
+        {
+          "name": "work_time_num",
+          "type": "TEXT"
+        }
+      ],
+      "indexes": null,
+      "local_only": false,
+      "insert_only": false
+    },
+    {
+      "name": "cutter_box",
+      "columns": [
+        {
+          "name": "alloc_dim",
+          "type": "TEXT"
+        },
+        {
+          "name": "alloc_key",
+          "type": "TEXT"
+        },
+        {
+          "name": "alloc_name",
+          "type": "TEXT"
+        },
+        {
+          "name": "box_cell",
+          "type": "TEXT"
+        },
+        {
+          "name": "box_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "box_type",
+          "type": "TEXT"
+        },
+        {
+          "name": "capacity",
+          "type": "INTEGER"
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "created_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "deleted_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "deleted_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "is_active",
+          "type": "TEXT"
+        },
+        {
+          "name": "is_weight",
+          "type": "TEXT"
+        },
+        {
+          "name": "org_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "remark",
+          "type": "TEXT"
+        },
+        {
+          "name": "updated_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "updated_by",
+          "type": "TEXT"
+        }
+      ],
+      "indexes": null,
+      "local_only": false,
+      "insert_only": false
+    },
+    {
+      "name": "cutter_box_item",
+      "columns": [
+        {
+          "name": "abnormal_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "abnormal_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "abnormal_desc",
+          "type": "TEXT"
+        },
+        {
+          "name": "abnormal_type",
+          "type": "TEXT"
+        },
+        {
+          "name": "barcode",
+          "type": "TEXT"
+        },
+        {
+          "name": "box_cell",
+          "type": "TEXT"
+        },
+        {
+          "name": "box_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "box_type",
+          "type": "TEXT"
+        },
+        {
+          "name": "condition",
+          "type": "TEXT"
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "created_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "deleted_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "deleted_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "depart_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "depart_name",
+          "type": "TEXT"
+        },
+        {
+          "name": "emp_card",
+          "type": "TEXT"
+        },
+        {
+          "name": "ext_info",
+          "type": "TEXT"
+        },
+        {
+          "name": "factory",
+          "type": "TEXT"
+        },
+        {
+          "name": "factory_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "humidity",
+          "type": "TEXT"
+        },
+        {
+          "name": "id_mode",
+          "type": "TEXT"
+        },
+        {
+          "name": "in_action",
+          "type": "TEXT"
+        },
+        {
+          "name": "in_time",
+          "type": "TEXT"
+        },
+        {
+          "name": "info",
+          "type": "TEXT"
+        },
+        {
+          "name": "issued_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "issued_user",
+          "type": "TEXT"
+        },
+        {
+          "name": "issued_user_name",
+          "type": "TEXT"
+        },
+        {
+          "name": "item_no",
+          "type": "TEXT"
+        },
+        {
+          "name": "last_action",
+          "type": "TEXT"
+        },
+        {
+          "name": "last_op_time",
+          "type": "TEXT"
+        },
+        {
+          "name": "limit_time",
+          "type": "TEXT"
+        },
+        {
+          "name": "mac_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "mat_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "mat_name",
+          "type": "TEXT"
+        },
+        {
+          "name": "mat_pn",
+          "type": "TEXT"
+        },
+        {
+          "name": "mat_sn",
+          "type": "TEXT"
+        },
+        {
+          "name": "org_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "out_time",
+          "type": "TEXT"
+        },
+        {
+          "name": "packed_date",
+          "type": "TEXT"
+        },
+        {
+          "name": "photo_url",
+          "type": "TEXT"
+        },
+        {
+          "name": "process_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "quantity",
+          "type": "INTEGER"
+        },
+        {
+          "name": "remark",
+          "type": "TEXT"
+        },
+        {
+          "name": "returned_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "scrapped_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "seq_no",
+          "type": "TEXT"
+        },
+        {
+          "name": "status",
+          "type": "TEXT"
+        },
+        {
+          "name": "temperature",
+          "type": "TEXT"
+        },
+        {
+          "name": "updated_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "updated_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "used_time",
+          "type": "TEXT"
+        },
+        {
+          "name": "user_id",
+          "type": "TEXT"
+        },
+        {
+          "name": "user_name",
+          "type": "TEXT"
+        },
+        {
+          "name": "weight_value",
+          "type": "REAL"
+        },
+        {
+          "name": "work_order",
+          "type": "TEXT"
+        }
+      ],
+      "indexes": null,
+      "local_only": false,
+      "insert_only": false
+    },
+    {
+      "name": "cutter_box_log",
+      "columns": [
+        {
+          "name": "action",
+          "type": "TEXT"
+        },
+        {
+          "name": "barcode",
+          "type": "TEXT"
+        },
+        {
+          "name": "box_cell",
+          "type": "TEXT"
+        },
+        {
+          "name": "box_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "box_type",
+          "type": "TEXT"
+        },
+        {
+          "name": "condition",
+          "type": "TEXT"
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "created_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "deleted_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "deleted_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "depart_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "item_id",
+          "type": "TEXT"
+        },
+        {
+          "name": "item_no",
+          "type": "TEXT"
+        },
+        {
+          "name": "mac_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "mat_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "mat_pn",
+          "type": "TEXT"
+        },
+        {
+          "name": "op_time",
+          "type": "TEXT"
+        },
+        {
+          "name": "operator",
+          "type": "TEXT"
+        },
+        {
+          "name": "org_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "payload",
+          "type": "TEXT"
+        },
+        {
+          "name": "process_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "quantity",
+          "type": "INTEGER"
+        },
+        {
+          "name": "remark",
+          "type": "TEXT"
+        },
+        {
+          "name": "status",
+          "type": "TEXT"
+        },
+        {
+          "name": "updated_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "updated_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "weight",
+          "type": "REAL"
+        },
+        {
+          "name": "work_order",
+          "type": "TEXT"
+        }
+      ],
+      "indexes": null,
+      "local_only": false,
+      "insert_only": false
+    },
+    {
+      "name": "material_inventory",
+      "columns": [
+        {
+          "name": "bin",
+          "type": "TEXT"
+        },
+        {
+          "name": "bind_id",
+          "type": "TEXT"
+        },
+        {
+          "name": "bind_type",
+          "type": "INTEGER"
+        },
+        {
+          "name": "box_cell",
+          "type": "TEXT"
+        },
+        {
+          "name": "box_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "created_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "deleted_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "deleted_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "demander",
+          "type": "TEXT"
+        },
+        {
+          "name": "depart_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "expiry_date",
+          "type": "TEXT"
+        },
+        {
+          "name": "grn_no",
+          "type": "TEXT"
+        },
+        {
+          "name": "hold_quantity",
+          "type": "INTEGER"
+        },
+        {
+          "name": "info",
+          "type": "TEXT"
+        },
+        {
+          "name": "issue",
+          "type": "TEXT"
+        },
+        {
+          "name": "m_from",
+          "type": "TEXT"
+        },
+        {
+          "name": "m_keyword",
+          "type": "TEXT"
+        },
+        {
+          "name": "m_owner",
+          "type": "TEXT"
+        },
+        {
+          "name": "mat_batch_no",
+          "type": "TEXT"
+        },
+        {
+          "name": "mat_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "mat_name",
+          "type": "TEXT"
+        },
+        {
+          "name": "mat_pn",
+          "type": "TEXT"
+        },
+        {
+          "name": "mat_remark",
+          "type": "TEXT"
+        },
+        {
+          "name": "mat_sn",
+          "type": "TEXT"
+        },
+        {
+          "name": "mat_status",
+          "type": "TEXT"
+        },
+        {
+          "name": "max_qty",
+          "type": "INTEGER"
+        },
+        {
+          "name": "mfr",
+          "type": "TEXT"
+        },
+        {
+          "name": "min_qty",
+          "type": "INTEGER"
+        },
+        {
+          "name": "org_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "quantity",
+          "type": "INTEGER"
+        },
+        {
+          "name": "rdn_no",
+          "type": "TEXT"
+        },
+        {
+          "name": "re_order_no",
+          "type": "TEXT"
+        },
+        {
+          "name": "rerol",
+          "type": "INTEGER"
+        },
+        {
+          "name": "send_datetime",
+          "type": "TEXT"
+        },
+        {
+          "name": "space_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "store",
+          "type": "TEXT"
+        },
+        {
+          "name": "task_id",
+          "type": "TEXT"
+        },
+        {
+          "name": "task_no",
+          "type": "TEXT"
+        },
+        {
+          "name": "updated_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "updated_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "work_package",
+          "type": "TEXT"
+        },
+        {
+          "name": "zone",
+          "type": "TEXT"
+        }
+      ],
+      "indexes": null,
+      "local_only": false,
+      "insert_only": false
+    },
+    {
+      "name": "material_op_log",
+      "columns": [
+        {
+          "name": "barcode",
+          "type": "TEXT"
+        },
+        {
+          "name": "box_cell",
+          "type": "TEXT"
+        },
+        {
+          "name": "box_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "created_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "deleted_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "deleted_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "depart_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "depart_name",
+          "type": "TEXT"
+        },
+        {
+          "name": "emp_card",
+          "type": "TEXT"
+        },
+        {
+          "name": "op_time",
+          "type": "TEXT"
+        },
+        {
+          "name": "open_door",
+          "type": "TEXT"
+        },
+        {
+          "name": "org_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "tool_pn",
+          "type": "TEXT"
+        },
+        {
+          "name": "tool_sn",
+          "type": "TEXT"
+        },
+        {
+          "name": "trans_type",
+          "type": "TEXT"
+        },
+        {
+          "name": "updated_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "updated_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "user_id",
+          "type": "TEXT"
+        },
+        {
+          "name": "user_name",
+          "type": "TEXT"
+        },
+        {
+          "name": "work_order",
+          "type": "TEXT"
+        }
+      ],
+      "indexes": null,
+      "local_only": false,
+      "insert_only": false
+    },
+    {
+      "name": "material_re_order",
+      "columns": [
+        {
+          "name": "access_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "aircraft_registration",
+          "type": "TEXT"
+        },
+        {
+          "name": "amos_status",
+          "type": "TEXT"
+        },
+        {
+          "name": "barcode",
+          "type": "TEXT"
+        },
+        {
+          "name": "box_cell",
+          "type": "TEXT"
+        },
+        {
+          "name": "box_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "created_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "deleted_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "deleted_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "expiry_date",
+          "type": "TEXT"
+        },
+        {
+          "name": "grn_no",
+          "type": "TEXT"
+        },
+        {
+          "name": "m_owner",
+          "type": "TEXT"
+        },
+        {
+          "name": "mat_batch_no",
+          "type": "TEXT"
+        },
+        {
+          "name": "mat_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "mat_name",
+          "type": "TEXT"
+        },
+        {
+          "name": "mat_pn",
+          "type": "TEXT"
+        },
+        {
+          "name": "mat_remark",
+          "type": "TEXT"
+        },
+        {
+          "name": "mr",
+          "type": "TEXT"
+        },
+        {
+          "name": "order_status",
+          "type": "TEXT"
+        },
+        {
+          "name": "org_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "pickslip",
+          "type": "TEXT"
+        },
+        {
+          "name": "pickslip_id",
+          "type": "TEXT"
+        },
+        {
+          "name": "project",
+          "type": "TEXT"
+        },
+        {
+          "name": "qr_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "quantity",
+          "type": "INTEGER"
+        },
+        {
+          "name": "rdn_no",
+          "type": "TEXT"
+        },
+        {
+          "name": "re_order_no",
+          "type": "TEXT"
+        },
+        {
+          "name": "req_mat_time",
+          "type": "TEXT"
+        },
+        {
+          "name": "section",
+          "type": "TEXT"
+        },
+        {
+          "name": "updated_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "updated_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "use_time",
+          "type": "TEXT"
+        },
+        {
+          "name": "user_emp_card",
+          "type": "TEXT"
+        },
+        {
+          "name": "user_id",
+          "type": "TEXT"
+        },
+        {
+          "name": "valid_until",
+          "type": "TEXT"
+        },
+        {
+          "name": "work_order",
+          "type": "TEXT"
+        }
+      ],
+      "indexes": null,
+      "local_only": false,
+      "insert_only": false
+    },
+    {
+      "name": "material_transaction",
+      "columns": [
+        {
+          "name": "access_method",
+          "type": "TEXT"
+        },
+        {
+          "name": "actual_qty",
+          "type": "INTEGER"
+        },
+        {
+          "name": "assigned_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "assigned_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "assigned_to",
+          "type": "TEXT"
+        },
+        {
+          "name": "barcode",
+          "type": "TEXT"
+        },
+        {
+          "name": "bin",
+          "type": "TEXT"
+        },
+        {
+          "name": "box_cell",
+          "type": "TEXT"
+        },
+        {
+          "name": "box_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "created_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "deleted_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "deleted_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "demander",
+          "type": "TEXT"
+        },
+        {
+          "name": "depart_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "depart_name",
+          "type": "TEXT"
+        },
+        {
+          "name": "emp_card",
+          "type": "TEXT"
+        },
+        {
+          "name": "expiry_date",
+          "type": "TEXT"
+        },
+        {
+          "name": "grn_no",
+          "type": "TEXT"
+        },
+        {
+          "name": "humidity",
+          "type": "TEXT"
+        },
+        {
+          "name": "info",
+          "type": "TEXT"
+        },
+        {
+          "name": "is_return",
+          "type": "INTEGER"
+        },
+        {
+          "name": "is_submit",
+          "type": "INTEGER"
+        },
+        {
+          "name": "issue",
+          "type": "TEXT"
+        },
+        {
+          "name": "m_from",
+          "type": "TEXT"
+        },
+        {
+          "name": "m_keyword",
+          "type": "TEXT"
+        },
+        {
+          "name": "m_owner",
+          "type": "TEXT"
+        },
+        {
+          "name": "mat_batch_no",
+          "type": "TEXT"
+        },
+        {
+          "name": "mat_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "mat_name",
+          "type": "TEXT"
+        },
+        {
+          "name": "mat_pn",
+          "type": "TEXT"
+        },
+        {
+          "name": "mat_sn",
+          "type": "TEXT"
+        },
+        {
+          "name": "mat_stock_from",
+          "type": "TEXT"
+        },
+        {
+          "name": "mat_stock_to",
+          "type": "TEXT"
+        },
+        {
+          "name": "org_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "plan_qty",
+          "type": "INTEGER"
+        },
+        {
+          "name": "print_num",
+          "type": "INTEGER"
+        },
+        {
+          "name": "rdn_no",
+          "type": "TEXT"
+        },
+        {
+          "name": "re_order_no",
+          "type": "TEXT"
+        },
+        {
+          "name": "remove_qty",
+          "type": "INTEGER"
+        },
+        {
+          "name": "request_qty",
+          "type": "INTEGER"
+        },
+        {
+          "name": "reservation_qty",
+          "type": "INTEGER"
+        },
+        {
+          "name": "send_datetime",
+          "type": "TEXT"
+        },
+        {
+          "name": "space_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "store",
+          "type": "TEXT"
+        },
+        {
+          "name": "submit_result",
+          "type": "TEXT"
+        },
+        {
+          "name": "system_qty",
+          "type": "INTEGER"
+        },
+        {
+          "name": "task_id",
+          "type": "TEXT"
+        },
+        {
+          "name": "task_no",
+          "type": "TEXT"
+        },
+        {
+          "name": "temperature",
+          "type": "TEXT"
+        },
+        {
+          "name": "trans_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "trans_remark",
+          "type": "TEXT"
+        },
+        {
+          "name": "trans_status",
+          "type": "TEXT"
+        },
+        {
+          "name": "trans_time",
+          "type": "TEXT"
+        },
+        {
+          "name": "trans_type",
+          "type": "TEXT"
+        },
+        {
+          "name": "updated_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "updated_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "use_time",
+          "type": "TEXT"
+        },
+        {
+          "name": "user_id",
+          "type": "TEXT"
+        },
+        {
+          "name": "user_name",
+          "type": "TEXT"
+        },
+        {
+          "name": "work_order",
+          "type": "TEXT"
+        },
+        {
+          "name": "work_package",
+          "type": "TEXT"
+        },
+        {
+          "name": "zone",
+          "type": "TEXT"
+        }
+      ],
+      "indexes": null,
+      "local_only": false,
+      "insert_only": false
+    },
+    {
+      "name": "tool_check_history",
+      "columns": [
+        {
+          "name": "box_cell",
+          "type": "TEXT"
+        },
+        {
+          "name": "box_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "created_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "deleted_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "deleted_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "depart_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "op_depart_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "op_depart_name",
+          "type": "TEXT"
+        },
+        {
+          "name": "op_emp_card",
+          "type": "TEXT"
+        },
+        {
+          "name": "op_user_id",
+          "type": "TEXT"
+        },
+        {
+          "name": "op_user_name",
+          "type": "TEXT"
+        },
+        {
+          "name": "org_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "tool_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "tool_name",
+          "type": "TEXT"
+        },
+        {
+          "name": "tool_pn",
+          "type": "TEXT"
+        },
+        {
+          "name": "tool_remark",
+          "type": "TEXT"
+        },
+        {
+          "name": "tool_sn",
+          "type": "TEXT"
+        },
+        {
+          "name": "tool_status",
+          "type": "TEXT"
+        },
+        {
+          "name": "trans_remark",
+          "type": "TEXT"
+        },
+        {
+          "name": "trans_time",
+          "type": "TEXT"
+        },
+        {
+          "name": "trans_type",
+          "type": "TEXT"
+        },
+        {
+          "name": "updated_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "updated_by",
+          "type": "TEXT"
+        }
+      ],
+      "indexes": null,
+      "local_only": false,
+      "insert_only": false
+    },
+    {
+      "name": "tool_inventory",
+      "columns": [
+        {
+          "name": "box_cell",
+          "type": "TEXT"
+        },
+        {
+          "name": "box_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "created_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "deleted_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "deleted_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "depart_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "hold_quantity",
+          "type": "INTEGER"
+        },
+        {
+          "name": "org_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "quantity",
+          "type": "INTEGER"
+        },
+        {
+          "name": "re_order_no",
+          "type": "TEXT"
+        },
+        {
+          "name": "tool_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "tool_name",
+          "type": "TEXT"
+        },
+        {
+          "name": "tool_pn",
+          "type": "TEXT"
+        },
+        {
+          "name": "tool_remark",
+          "type": "TEXT"
+        },
+        {
+          "name": "updated_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "updated_by",
+          "type": "TEXT"
+        }
+      ],
+      "indexes": null,
+      "local_only": false,
+      "insert_only": false
+    },
+    {
+      "name": "tool_op_log",
+      "columns": [
+        {
+          "name": "barcode",
+          "type": "TEXT"
+        },
+        {
+          "name": "box_cell",
+          "type": "TEXT"
+        },
+        {
+          "name": "box_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "created_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "deleted_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "deleted_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "depart_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "depart_name",
+          "type": "TEXT"
+        },
+        {
+          "name": "emp_card",
+          "type": "TEXT"
+        },
+        {
+          "name": "op_time",
+          "type": "TEXT"
+        },
+        {
+          "name": "open_door",
+          "type": "TEXT"
+        },
+        {
+          "name": "org_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "tool_pn",
+          "type": "TEXT"
+        },
+        {
+          "name": "tool_sn",
+          "type": "TEXT"
+        },
+        {
+          "name": "trans_type",
+          "type": "TEXT"
+        },
+        {
+          "name": "updated_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "updated_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "user_id",
+          "type": "TEXT"
+        },
+        {
+          "name": "user_name",
+          "type": "TEXT"
+        },
+        {
+          "name": "work_order",
+          "type": "TEXT"
+        }
+      ],
+      "indexes": null,
+      "local_only": false,
+      "insert_only": false
+    },
+    {
+      "name": "tool_re_order",
+      "columns": [
+        {
+          "name": "access_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "aircraft_number",
+          "type": "TEXT"
+        },
+        {
+          "name": "box_cell",
+          "type": "TEXT"
+        },
+        {
+          "name": "box_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "created_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "deleted_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "deleted_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "order_status",
+          "type": "TEXT"
+        },
+        {
+          "name": "org_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "qr_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "quantity",
+          "type": "INTEGER"
+        },
+        {
+          "name": "re_order_no",
+          "type": "TEXT"
+        },
+        {
+          "name": "req_tool_time",
+          "type": "TEXT"
+        },
+        {
+          "name": "tool_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "tool_name",
+          "type": "TEXT"
+        },
+        {
+          "name": "tool_pn",
+          "type": "TEXT"
+        },
+        {
+          "name": "tool_remark",
+          "type": "TEXT"
+        },
+        {
+          "name": "tool_sn",
+          "type": "TEXT"
+        },
+        {
+          "name": "updated_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "updated_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "use_remark",
+          "type": "TEXT"
+        },
+        {
+          "name": "use_time",
+          "type": "TEXT"
+        },
+        {
+          "name": "user_emp_card",
+          "type": "TEXT"
+        },
+        {
+          "name": "user_id",
+          "type": "TEXT"
+        },
+        {
+          "name": "valid_until",
+          "type": "TEXT"
+        },
+        {
+          "name": "work_order",
+          "type": "TEXT"
+        }
+      ],
+      "indexes": null,
+      "local_only": false,
+      "insert_only": false
+    },
+    {
+      "name": "tool_sn",
+      "columns": [
+        {
+          "name": "amosid",
+          "type": "TEXT"
+        },
+        {
+          "name": "barcode",
+          "type": "TEXT"
+        },
+        {
+          "name": "box_cell",
+          "type": "TEXT"
+        },
+        {
+          "name": "box_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "calibration_date",
+          "type": "TEXT"
+        },
+        {
+          "name": "check_period",
+          "type": "INTEGER"
+        },
+        {
+          "name": "check_remark",
+          "type": "TEXT"
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "created_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "deleted_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "deleted_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "expiry_date",
+          "type": "TEXT"
+        },
+        {
+          "name": "is_active",
+          "type": "INTEGER"
+        },
+        {
+          "name": "kit_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "last_check_emp",
+          "type": "TEXT"
+        },
+        {
+          "name": "last_check_time",
+          "type": "TEXT"
+        },
+        {
+          "name": "org_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "overdue_days",
+          "type": "INTEGER"
+        },
+        {
+          "name": "tool_class",
+          "type": "TEXT"
+        },
+        {
+          "name": "tool_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "tool_dim",
+          "type": "TEXT"
+        },
+        {
+          "name": "tool_id",
+          "type": "TEXT"
+        },
+        {
+          "name": "tool_pn",
+          "type": "TEXT"
+        },
+        {
+          "name": "tool_sn",
+          "type": "TEXT"
+        },
+        {
+          "name": "tool_status",
+          "type": "TEXT"
+        },
+        {
+          "name": "tool_unuse_remark",
+          "type": "TEXT"
+        },
+        {
+          "name": "tool_use_status",
+          "type": "TEXT"
+        },
+        {
+          "name": "tool_weight",
+          "type": "REAL"
+        },
+        {
+          "name": "updated_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "updated_by",
+          "type": "TEXT"
+        }
+      ],
+      "indexes": null,
+      "local_only": false,
+      "insert_only": false
+    },
+    {
+      "name": "tool_transaction",
+      "columns": [
+        {
+          "name": "access_method",
+          "type": "TEXT"
+        },
+        {
+          "name": "actual_qty",
+          "type": "INTEGER"
+        },
+        {
+          "name": "aircraft_number",
+          "type": "TEXT"
+        },
+        {
+          "name": "amosid",
+          "type": "TEXT"
+        },
+        {
+          "name": "barcode",
+          "type": "TEXT"
+        },
+        {
+          "name": "box_cell",
+          "type": "TEXT"
+        },
+        {
+          "name": "box_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "created_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "deleted_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "deleted_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "depart_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "depart_name",
+          "type": "TEXT"
+        },
+        {
+          "name": "emp_card",
+          "type": "TEXT"
+        },
+        {
+          "name": "is_ok",
+          "type": "INTEGER"
+        },
+        {
+          "name": "is_return",
+          "type": "INTEGER"
+        },
+        {
+          "name": "is_submit",
+          "type": "INTEGER"
+        },
+        {
+          "name": "is_timeout",
+          "type": "INTEGER"
+        },
+        {
+          "name": "org_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "patch_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "re_order_no",
+          "type": "TEXT"
+        },
+        {
+          "name": "request_qty",
+          "type": "INTEGER"
+        },
+        {
+          "name": "submit_result",
+          "type": "TEXT"
+        },
+        {
+          "name": "tool_class",
+          "type": "TEXT"
+        },
+        {
+          "name": "tool_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "tool_id",
+          "type": "TEXT"
+        },
+        {
+          "name": "tool_name",
+          "type": "TEXT"
+        },
+        {
+          "name": "tool_pn",
+          "type": "TEXT"
+        },
+        {
+          "name": "tool_sn",
+          "type": "TEXT"
+        },
+        {
+          "name": "tool_status",
+          "type": "TEXT"
+        },
+        {
+          "name": "tool_unuse_remark",
+          "type": "TEXT"
+        },
+        {
+          "name": "trans_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "trans_remark",
+          "type": "TEXT"
+        },
+        {
+          "name": "trans_time",
+          "type": "TEXT"
+        },
+        {
+          "name": "trans_type",
+          "type": "TEXT"
+        },
+        {
+          "name": "updated_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "updated_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "use_time",
+          "type": "TEXT"
+        },
+        {
+          "name": "user_id",
+          "type": "TEXT"
+        },
+        {
+          "name": "user_name",
+          "type": "TEXT"
+        },
+        {
+          "name": "work_order",
+          "type": "TEXT"
+        }
+      ],
+      "indexes": null,
+      "local_only": false,
+      "insert_only": false
+    },
+    {
+      "name": "delivery_inventory",
+      "columns": [
+        {
+          "name": "box_cell",
+          "type": "TEXT"
+        },
+        {
+          "name": "box_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "created_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "deleted_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "deleted_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "depart_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "max_capacity",
+          "type": "INTEGER"
+        },
+        {
+          "name": "org_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "re_order_no",
+          "type": "TEXT"
+        },
+        {
+          "name": "updated_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "updated_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "weight",
+          "type": "REAL"
+        },
+        {
+          "name": "work_order",
+          "type": "TEXT"
+        }
+      ],
+      "indexes": null,
+      "local_only": false,
+      "insert_only": false
+    },
+    {
+      "name": "delivery_op_log",
+      "columns": [
+        {
+          "name": "box_cell",
+          "type": "TEXT"
+        },
+        {
+          "name": "box_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "created_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "deleted_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "deleted_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "depart_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "depart_name",
+          "type": "TEXT"
+        },
+        {
+          "name": "emp_card",
+          "type": "TEXT"
+        },
+        {
+          "name": "mat_remark",
+          "type": "TEXT"
+        },
+        {
+          "name": "material_info",
+          "type": "TEXT"
+        },
+        {
+          "name": "op_time",
+          "type": "TEXT"
+        },
+        {
+          "name": "org_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "re_order_no",
+          "type": "TEXT"
+        },
+        {
+          "name": "remark",
+          "type": "TEXT"
+        },
+        {
+          "name": "status",
+          "type": "TEXT"
+        },
+        {
+          "name": "tool_remark",
+          "type": "TEXT"
+        },
+        {
+          "name": "trans_status",
+          "type": "TEXT"
+        },
+        {
+          "name": "trans_type",
+          "type": "TEXT"
+        },
+        {
+          "name": "updated_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "updated_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "user_id",
+          "type": "TEXT"
+        },
+        {
+          "name": "user_name",
+          "type": "TEXT"
+        },
+        {
+          "name": "work_order",
+          "type": "TEXT"
+        }
+      ],
+      "indexes": null,
+      "local_only": false,
+      "insert_only": false
+    },
+    {
+      "name": "delivery_re_order",
+      "columns": [
+        {
+          "name": "access_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "aircraft_registration",
+          "type": "TEXT"
+        },
+        {
+          "name": "amos_status",
+          "type": "TEXT"
+        },
+        {
+          "name": "box_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "created_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "deleted_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "deleted_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "m_owner",
+          "type": "TEXT"
+        },
+        {
+          "name": "mat_remark",
+          "type": "TEXT"
+        },
+        {
+          "name": "mr",
+          "type": "TEXT"
+        },
+        {
+          "name": "order_expiry_date",
+          "type": "TEXT"
+        },
+        {
+          "name": "org_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "pickslip",
+          "type": "TEXT"
+        },
+        {
+          "name": "pickslip_id",
+          "type": "TEXT"
+        },
+        {
+          "name": "project",
+          "type": "TEXT"
+        },
+        {
+          "name": "qr_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "re_order_no",
+          "type": "TEXT"
+        },
+        {
+          "name": "re_order_status",
+          "type": "TEXT"
+        },
+        {
+          "name": "remark",
+          "type": "TEXT"
+        },
+        {
+          "name": "req_time",
+          "type": "TEXT"
+        },
+        {
+          "name": "section",
+          "type": "TEXT"
+        },
+        {
+          "name": "tool_remark",
+          "type": "TEXT"
+        },
+        {
+          "name": "updated_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "updated_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "use_time",
+          "type": "TEXT"
+        },
+        {
+          "name": "user_emp_card",
+          "type": "TEXT"
+        },
+        {
+          "name": "user_id",
+          "type": "TEXT"
+        },
+        {
+          "name": "valid_until",
+          "type": "TEXT"
+        },
+        {
+          "name": "work_order",
+          "type": "TEXT"
+        }
+      ],
+      "indexes": null,
+      "local_only": false,
+      "insert_only": false
+    },
+    {
+      "name": "delivery_re_order_detail",
+      "columns": [
+        {
+          "name": "box_cell",
+          "type": "TEXT"
+        },
+        {
+          "name": "box_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "created_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "deleted_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "deleted_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "expiry_date",
+          "type": "TEXT"
+        },
+        {
+          "name": "grn_no",
+          "type": "TEXT"
+        },
+        {
+          "name": "image_url",
+          "type": "TEXT"
+        },
+        {
+          "name": "mat_barcode",
+          "type": "TEXT"
+        },
+        {
+          "name": "mat_batch_no",
+          "type": "TEXT"
+        },
+        {
+          "name": "mat_name",
+          "type": "TEXT"
+        },
+        {
+          "name": "mat_pn",
+          "type": "TEXT"
+        },
+        {
+          "name": "mat_remark",
+          "type": "TEXT"
+        },
+        {
+          "name": "mat_sn",
+          "type": "TEXT"
+        },
+        {
+          "name": "mat_status",
+          "type": "TEXT"
+        },
+        {
+          "name": "mat_type",
+          "type": "INTEGER"
+        },
+        {
+          "name": "org_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "quantity",
+          "type": "INTEGER"
+        },
+        {
+          "name": "rdn_no",
+          "type": "TEXT"
+        },
+        {
+          "name": "re_order_no",
+          "type": "TEXT"
+        },
+        {
+          "name": "remark",
+          "type": "TEXT"
+        },
+        {
+          "name": "status",
+          "type": "TEXT"
+        },
+        {
+          "name": "svg_url",
+          "type": "TEXT"
+        },
+        {
+          "name": "tool_remark",
+          "type": "TEXT"
+        },
+        {
+          "name": "updated_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "updated_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "valid_until",
+          "type": "TEXT"
+        },
+        {
+          "name": "work_order",
+          "type": "TEXT"
+        }
+      ],
+      "indexes": null,
+      "local_only": false,
+      "insert_only": false
+    },
+    {
+      "name": "delivery_transaction",
+      "columns": [
+        {
+          "name": "access_method",
+          "type": "TEXT"
+        },
+        {
+          "name": "actual_qty",
+          "type": "INTEGER"
+        },
+        {
+          "name": "assigned_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "assigned_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "assigned_to",
+          "type": "TEXT"
+        },
+        {
+          "name": "bin",
+          "type": "TEXT"
+        },
+        {
+          "name": "box_cell",
+          "type": "TEXT"
+        },
+        {
+          "name": "box_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "created_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "deleted_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "deleted_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "demander",
+          "type": "TEXT"
+        },
+        {
+          "name": "depart_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "depart_name",
+          "type": "TEXT"
+        },
+        {
+          "name": "emp_card",
+          "type": "TEXT"
+        },
+        {
+          "name": "expiry_date",
+          "type": "TEXT"
+        },
+        {
+          "name": "grn_no",
+          "type": "TEXT"
+        },
+        {
+          "name": "humidity",
+          "type": "TEXT"
+        },
+        {
+          "name": "info",
+          "type": "TEXT"
+        },
+        {
+          "name": "is_return",
+          "type": "INTEGER"
+        },
+        {
+          "name": "is_submit",
+          "type": "INTEGER"
+        },
+        {
+          "name": "issue",
+          "type": "TEXT"
+        },
+        {
+          "name": "m_from",
+          "type": "TEXT"
+        },
+        {
+          "name": "m_keyword",
+          "type": "TEXT"
+        },
+        {
+          "name": "m_owner",
+          "type": "TEXT"
+        },
+        {
+          "name": "mat_barcode",
+          "type": "TEXT"
+        },
+        {
+          "name": "mat_batch_no",
+          "type": "TEXT"
+        },
+        {
+          "name": "mat_name",
+          "type": "TEXT"
+        },
+        {
+          "name": "mat_pn",
+          "type": "TEXT"
+        },
+        {
+          "name": "mat_remark",
+          "type": "TEXT"
+        },
+        {
+          "name": "mat_sn",
+          "type": "TEXT"
+        },
+        {
+          "name": "mat_status",
+          "type": "TEXT"
+        },
+        {
+          "name": "mat_stock_from",
+          "type": "TEXT"
+        },
+        {
+          "name": "mat_stock_to",
+          "type": "TEXT"
+        },
+        {
+          "name": "mat_type",
+          "type": "INTEGER"
+        },
+        {
+          "name": "org_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "plan_qty",
+          "type": "INTEGER"
+        },
+        {
+          "name": "print_num",
+          "type": "INTEGER"
+        },
+        {
+          "name": "quantity",
+          "type": "INTEGER"
+        },
+        {
+          "name": "rdn_no",
+          "type": "TEXT"
+        },
+        {
+          "name": "re_order_no",
+          "type": "TEXT"
+        },
+        {
+          "name": "remark",
+          "type": "TEXT"
+        },
+        {
+          "name": "remove_qty",
+          "type": "INTEGER"
+        },
+        {
+          "name": "request_qty",
+          "type": "INTEGER"
+        },
+        {
+          "name": "reservation_qty",
+          "type": "INTEGER"
+        },
+        {
+          "name": "send_datetime",
+          "type": "TEXT"
+        },
+        {
+          "name": "space_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "status",
+          "type": "TEXT"
+        },
+        {
+          "name": "store",
+          "type": "TEXT"
+        },
+        {
+          "name": "submit_result",
+          "type": "TEXT"
+        },
+        {
+          "name": "system_qty",
+          "type": "INTEGER"
+        },
+        {
+          "name": "task_id",
+          "type": "TEXT"
+        },
+        {
+          "name": "task_no",
+          "type": "TEXT"
+        },
+        {
+          "name": "temperature",
+          "type": "TEXT"
+        },
+        {
+          "name": "tool_remark",
+          "type": "TEXT"
+        },
+        {
+          "name": "trans_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "trans_status",
+          "type": "TEXT"
+        },
+        {
+          "name": "trans_time",
+          "type": "TEXT"
+        },
+        {
+          "name": "trans_type",
+          "type": "TEXT"
+        },
+        {
+          "name": "updated_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "updated_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "use_time",
+          "type": "TEXT"
+        },
+        {
+          "name": "user_id",
+          "type": "TEXT"
+        },
+        {
+          "name": "user_name",
+          "type": "TEXT"
+        },
+        {
+          "name": "work_order",
+          "type": "TEXT"
+        },
+        {
+          "name": "work_package",
+          "type": "TEXT"
+        },
+        {
+          "name": "zone",
+          "type": "TEXT"
+        }
+      ],
+      "indexes": null,
+      "local_only": false,
+      "insert_only": false
+    },
+    {
+      "name": "d",
+      "columns": [
+        {
+          "name": "box_cell",
+          "type": "TEXT"
+        },
+        {
+          "name": "box_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "created_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "deleted_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "deleted_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "expiry_date",
+          "type": "TEXT"
+        },
+        {
+          "name": "grn_no",
+          "type": "TEXT"
+        },
+        {
+          "name": "image_url",
+          "type": "TEXT"
+        },
+        {
+          "name": "mat_barcode",
+          "type": "TEXT"
+        },
+        {
+          "name": "mat_batch_no",
+          "type": "TEXT"
+        },
+        {
+          "name": "mat_name",
+          "type": "TEXT"
+        },
+        {
+          "name": "mat_pn",
+          "type": "TEXT"
+        },
+        {
+          "name": "mat_remark",
+          "type": "TEXT"
+        },
+        {
+          "name": "mat_sn",
+          "type": "TEXT"
+        },
+        {
+          "name": "mat_status",
+          "type": "TEXT"
+        },
+        {
+          "name": "mat_type",
+          "type": "INTEGER"
+        },
+        {
+          "name": "org_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "quantity",
+          "type": "INTEGER"
+        },
+        {
+          "name": "rdn_no",
+          "type": "TEXT"
+        },
+        {
+          "name": "re_order_no",
+          "type": "TEXT"
+        },
+        {
+          "name": "remark",
+          "type": "TEXT"
+        },
+        {
+          "name": "status",
+          "type": "TEXT"
+        },
+        {
+          "name": "svg_url",
+          "type": "TEXT"
+        },
+        {
+          "name": "tool_remark",
+          "type": "TEXT"
+        },
+        {
+          "name": "updated_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "updated_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "valid_until",
+          "type": "TEXT"
+        },
+        {
+          "name": "work_order",
+          "type": "TEXT"
+        }
+      ],
+      "indexes": null,
+      "local_only": false,
+      "insert_only": false
+    },
+    {
+      "name": "h",
+      "columns": [
+        {
+          "name": "box_cell",
+          "type": "TEXT"
+        },
+        {
+          "name": "box_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "created_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "deleted_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "deleted_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "depart_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "op_depart_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "op_depart_name",
+          "type": "TEXT"
+        },
+        {
+          "name": "op_emp_card",
+          "type": "TEXT"
+        },
+        {
+          "name": "op_user_id",
+          "type": "TEXT"
+        },
+        {
+          "name": "op_user_name",
+          "type": "TEXT"
+        },
+        {
+          "name": "org_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "tool_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "tool_name",
+          "type": "TEXT"
+        },
+        {
+          "name": "tool_pn",
+          "type": "TEXT"
+        },
+        {
+          "name": "tool_remark",
+          "type": "TEXT"
+        },
+        {
+          "name": "tool_sn",
+          "type": "TEXT"
+        },
+        {
+          "name": "tool_status",
+          "type": "TEXT"
+        },
+        {
+          "name": "trans_remark",
+          "type": "TEXT"
+        },
+        {
+          "name": "trans_time",
+          "type": "TEXT"
+        },
+        {
+          "name": "trans_type",
+          "type": "TEXT"
+        },
+        {
+          "name": "updated_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "updated_by",
+          "type": "TEXT"
+        }
+      ],
+      "indexes": null,
+      "local_only": false,
+      "insert_only": false
+    },
+    {
+      "name": "i",
+      "columns": [
+        {
+          "name": "bin",
+          "type": "TEXT"
+        },
+        {
+          "name": "bind_id",
+          "type": "TEXT"
+        },
+        {
+          "name": "bind_type",
+          "type": "INTEGER"
+        },
+        {
+          "name": "box_cell",
+          "type": "TEXT"
+        },
+        {
+          "name": "box_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "created_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "deleted_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "deleted_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "demander",
+          "type": "TEXT"
+        },
+        {
+          "name": "depart_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "expiry_date",
+          "type": "TEXT"
+        },
+        {
+          "name": "grn_no",
+          "type": "TEXT"
+        },
+        {
+          "name": "hold_quantity",
+          "type": "INTEGER"
+        },
+        {
+          "name": "info",
+          "type": "TEXT"
+        },
+        {
+          "name": "issue",
+          "type": "TEXT"
+        },
+        {
+          "name": "m_from",
+          "type": "TEXT"
+        },
+        {
+          "name": "m_keyword",
+          "type": "TEXT"
+        },
+        {
+          "name": "m_owner",
+          "type": "TEXT"
+        },
+        {
+          "name": "mat_batch_no",
+          "type": "TEXT"
+        },
+        {
+          "name": "mat_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "mat_name",
+          "type": "TEXT"
+        },
+        {
+          "name": "mat_pn",
+          "type": "TEXT"
+        },
+        {
+          "name": "mat_remark",
+          "type": "TEXT"
+        },
+        {
+          "name": "mat_sn",
+          "type": "TEXT"
+        },
+        {
+          "name": "mat_status",
+          "type": "TEXT"
+        },
+        {
+          "name": "max_qty",
+          "type": "INTEGER"
+        },
+        {
+          "name": "mfr",
+          "type": "TEXT"
+        },
+        {
+          "name": "min_qty",
+          "type": "INTEGER"
+        },
+        {
+          "name": "org_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "quantity",
+          "type": "INTEGER"
+        },
+        {
+          "name": "rdn_no",
+          "type": "TEXT"
+        },
+        {
+          "name": "re_order_no",
+          "type": "TEXT"
+        },
+        {
+          "name": "rerol",
+          "type": "INTEGER"
+        },
+        {
+          "name": "send_datetime",
+          "type": "TEXT"
+        },
+        {
+          "name": "space_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "store",
+          "type": "TEXT"
+        },
+        {
+          "name": "task_id",
+          "type": "TEXT"
+        },
+        {
+          "name": "task_no",
+          "type": "TEXT"
+        },
+        {
+          "name": "updated_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "updated_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "work_package",
+          "type": "TEXT"
+        },
+        {
+          "name": "zone",
+          "type": "TEXT"
+        }
+      ],
+      "indexes": null,
+      "local_only": false,
+      "insert_only": false
+    },
+    {
+      "name": "l",
+      "columns": [
+        {
+          "name": "barcode",
+          "type": "TEXT"
+        },
+        {
+          "name": "box_cell",
+          "type": "TEXT"
+        },
+        {
+          "name": "box_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "created_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "deleted_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "deleted_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "depart_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "depart_name",
+          "type": "TEXT"
+        },
+        {
+          "name": "emp_card",
+          "type": "TEXT"
+        },
+        {
+          "name": "op_time",
+          "type": "TEXT"
+        },
+        {
+          "name": "open_door",
+          "type": "TEXT"
+        },
+        {
+          "name": "org_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "tool_pn",
+          "type": "TEXT"
+        },
+        {
+          "name": "tool_sn",
+          "type": "TEXT"
+        },
+        {
+          "name": "trans_type",
+          "type": "TEXT"
+        },
+        {
+          "name": "updated_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "updated_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "user_id",
+          "type": "TEXT"
+        },
+        {
+          "name": "user_name",
+          "type": "TEXT"
+        },
+        {
+          "name": "work_order",
+          "type": "TEXT"
+        }
+      ],
+      "indexes": null,
+      "local_only": false,
+      "insert_only": false
+    },
+    {
+      "name": "r",
+      "columns": [
+        {
+          "name": "access_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "aircraft_registration",
+          "type": "TEXT"
+        },
+        {
+          "name": "amos_status",
+          "type": "TEXT"
+        },
+        {
+          "name": "barcode",
+          "type": "TEXT"
+        },
+        {
+          "name": "box_cell",
+          "type": "TEXT"
+        },
+        {
+          "name": "box_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "created_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "deleted_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "deleted_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "expiry_date",
+          "type": "TEXT"
+        },
+        {
+          "name": "grn_no",
+          "type": "TEXT"
+        },
+        {
+          "name": "m_owner",
+          "type": "TEXT"
+        },
+        {
+          "name": "mat_batch_no",
+          "type": "TEXT"
+        },
+        {
+          "name": "mat_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "mat_name",
+          "type": "TEXT"
+        },
+        {
+          "name": "mat_pn",
+          "type": "TEXT"
+        },
+        {
+          "name": "mat_remark",
+          "type": "TEXT"
+        },
+        {
+          "name": "mr",
+          "type": "TEXT"
+        },
+        {
+          "name": "order_status",
+          "type": "TEXT"
+        },
+        {
+          "name": "org_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "pickslip",
+          "type": "TEXT"
+        },
+        {
+          "name": "pickslip_id",
+          "type": "TEXT"
+        },
+        {
+          "name": "project",
+          "type": "TEXT"
+        },
+        {
+          "name": "qr_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "quantity",
+          "type": "INTEGER"
+        },
+        {
+          "name": "rdn_no",
+          "type": "TEXT"
+        },
+        {
+          "name": "re_order_no",
+          "type": "TEXT"
+        },
+        {
+          "name": "req_mat_time",
+          "type": "TEXT"
+        },
+        {
+          "name": "section",
+          "type": "TEXT"
+        },
+        {
+          "name": "updated_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "updated_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "use_time",
+          "type": "TEXT"
+        },
+        {
+          "name": "user_emp_card",
+          "type": "TEXT"
+        },
+        {
+          "name": "user_id",
+          "type": "TEXT"
+        },
+        {
+          "name": "valid_until",
+          "type": "TEXT"
+        },
+        {
+          "name": "work_order",
+          "type": "TEXT"
+        }
+      ],
+      "indexes": null,
+      "local_only": false,
+      "insert_only": false
+    },
+    {
+      "name": "s",
+      "columns": [
+        {
+          "name": "amosid",
+          "type": "TEXT"
+        },
+        {
+          "name": "barcode",
+          "type": "TEXT"
+        },
+        {
+          "name": "box_cell",
+          "type": "TEXT"
+        },
+        {
+          "name": "box_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "calibration_date",
+          "type": "TEXT"
+        },
+        {
+          "name": "check_period",
+          "type": "INTEGER"
+        },
+        {
+          "name": "check_remark",
+          "type": "TEXT"
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "created_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "deleted_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "deleted_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "expiry_date",
+          "type": "TEXT"
+        },
+        {
+          "name": "is_active",
+          "type": "INTEGER"
+        },
+        {
+          "name": "kit_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "last_check_emp",
+          "type": "TEXT"
+        },
+        {
+          "name": "last_check_time",
+          "type": "TEXT"
+        },
+        {
+          "name": "org_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "overdue_days",
+          "type": "INTEGER"
+        },
+        {
+          "name": "tool_class",
+          "type": "TEXT"
+        },
+        {
+          "name": "tool_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "tool_dim",
+          "type": "TEXT"
+        },
+        {
+          "name": "tool_id",
+          "type": "TEXT"
+        },
+        {
+          "name": "tool_pn",
+          "type": "TEXT"
+        },
+        {
+          "name": "tool_sn",
+          "type": "TEXT"
+        },
+        {
+          "name": "tool_status",
+          "type": "TEXT"
+        },
+        {
+          "name": "tool_unuse_remark",
+          "type": "TEXT"
+        },
+        {
+          "name": "tool_use_status",
+          "type": "TEXT"
+        },
+        {
+          "name": "tool_weight",
+          "type": "REAL"
+        },
+        {
+          "name": "updated_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "updated_by",
+          "type": "TEXT"
+        }
+      ],
+      "indexes": null,
+      "local_only": false,
+      "insert_only": false
+    },
+    {
+      "name": "t",
+      "columns": [
+        {
+          "name": "access_method",
+          "type": "TEXT"
+        },
+        {
+          "name": "actual_qty",
+          "type": "INTEGER"
+        },
+        {
+          "name": "assigned_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "assigned_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "assigned_to",
+          "type": "TEXT"
+        },
+        {
+          "name": "barcode",
+          "type": "TEXT"
+        },
+        {
+          "name": "bin",
+          "type": "TEXT"
+        },
+        {
+          "name": "box_cell",
+          "type": "TEXT"
+        },
+        {
+          "name": "box_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "created_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "created_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "deleted_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "deleted_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "demander",
+          "type": "TEXT"
+        },
+        {
+          "name": "depart_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "depart_name",
+          "type": "TEXT"
+        },
+        {
+          "name": "emp_card",
+          "type": "TEXT"
+        },
+        {
+          "name": "expiry_date",
+          "type": "TEXT"
+        },
+        {
+          "name": "grn_no",
+          "type": "TEXT"
+        },
+        {
+          "name": "humidity",
+          "type": "TEXT"
+        },
+        {
+          "name": "info",
+          "type": "TEXT"
+        },
+        {
+          "name": "is_return",
+          "type": "INTEGER"
+        },
+        {
+          "name": "is_submit",
+          "type": "INTEGER"
+        },
+        {
+          "name": "issue",
+          "type": "TEXT"
+        },
+        {
+          "name": "m_from",
+          "type": "TEXT"
+        },
+        {
+          "name": "m_keyword",
+          "type": "TEXT"
+        },
+        {
+          "name": "m_owner",
+          "type": "TEXT"
+        },
+        {
+          "name": "mat_batch_no",
+          "type": "TEXT"
+        },
+        {
+          "name": "mat_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "mat_name",
+          "type": "TEXT"
+        },
+        {
+          "name": "mat_pn",
+          "type": "TEXT"
+        },
+        {
+          "name": "mat_sn",
+          "type": "TEXT"
+        },
+        {
+          "name": "mat_stock_from",
+          "type": "TEXT"
+        },
+        {
+          "name": "mat_stock_to",
+          "type": "TEXT"
+        },
+        {
+          "name": "org_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "plan_qty",
+          "type": "INTEGER"
+        },
+        {
+          "name": "print_num",
+          "type": "INTEGER"
+        },
+        {
+          "name": "rdn_no",
+          "type": "TEXT"
+        },
+        {
+          "name": "re_order_no",
+          "type": "TEXT"
+        },
+        {
+          "name": "remove_qty",
+          "type": "INTEGER"
+        },
+        {
+          "name": "request_qty",
+          "type": "INTEGER"
+        },
+        {
+          "name": "reservation_qty",
+          "type": "INTEGER"
+        },
+        {
+          "name": "send_datetime",
+          "type": "TEXT"
+        },
+        {
+          "name": "space_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "store",
+          "type": "TEXT"
+        },
+        {
+          "name": "submit_result",
+          "type": "TEXT"
+        },
+        {
+          "name": "system_qty",
+          "type": "INTEGER"
+        },
+        {
+          "name": "task_id",
+          "type": "TEXT"
+        },
+        {
+          "name": "task_no",
+          "type": "TEXT"
+        },
+        {
+          "name": "temperature",
+          "type": "TEXT"
+        },
+        {
+          "name": "trans_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "trans_remark",
+          "type": "TEXT"
+        },
+        {
+          "name": "trans_status",
+          "type": "TEXT"
+        },
+        {
+          "name": "trans_time",
+          "type": "TEXT"
+        },
+        {
+          "name": "trans_type",
+          "type": "TEXT"
+        },
+        {
+          "name": "updated_at",
+          "type": "TEXT"
+        },
+        {
+          "name": "updated_by",
+          "type": "TEXT"
+        },
+        {
+          "name": "use_time",
+          "type": "TEXT"
+        },
+        {
+          "name": "user_id",
+          "type": "TEXT"
+        },
+        {
+          "name": "user_name",
+          "type": "TEXT"
+        },
+        {
+          "name": "work_order",
+          "type": "TEXT"
+        },
+        {
+          "name": "work_package",
+          "type": "TEXT"
+        },
+        {
+          "name": "zone",
+          "type": "TEXT"
+        }
+      ],
+      "indexes": null,
+      "local_only": false,
+      "insert_only": false
+    },
+    {
+      "name": "role",
+      "columns": [
+        {
+          "name": "org_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "role_code",
+          "type": "TEXT"
+        },
+        {
+          "name": "role_name",
+          "type": "TEXT"
+        },
+        {
+          "name": "role_rights",
+          "type": "TEXT"
+        },
+        {
+          "name": "is_active",
+          "type": "TEXT"
+        },
+        {
+          "name": "is_delivery",
+          "type": "TEXT"
+        }
+      ],
+      "indexes": null,
+      "local_only": false,
+      "insert_only": false
+    }
+  ]
+}

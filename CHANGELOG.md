@@ -32,6 +32,9 @@
   `DisableNetworkMonitor`。
 - **完整示例**：`examples/todo`（默认离线 mock，内置假服务与假后端；可切到真实服务）。
 - **使用手册**：`docs/reference.md`（对齐官方 Flutter SDK 参考的中文 API 文档，含与官方差异清单）。
+- **客户端 schema 生成**：`cmd/genschema` 从 syncRules.yaml + PostgREST OpenAPI（缺表时用抓包推断）
+  生成 `schema_cutter.go`（`powersync.CutterSchema()`）与 `testdata/schema/cutter.json`；
+  实测全量 65 张表 / 1644 行，2 个 bucket，首次同步 ~2.4s。
 - **一键脚本**：`scripts/ps-write.ps1`（Windows）——`insert`/`update`/`delete`/`query`/`list`/`exec`
   一行命令完成“本地写 + 自动上传 + 前后端行数核对”，并自动修 GOROOT、控制台转 UTF-8。
 - **工具**：`cmd/pstable`（用 SDK 读/写路径：`-ls`/`-table`/`-q` 查询、`-exec` 写入删除、`-i` 交互、`-upload` 自动上传 + `-verify-table` 前后端行数核对）；`cmd/psq`（只读查询本地 SQLite；`-check` 完整性检查；`-snapshot` 用 `VACUUM INTO` 生成快照供图形工具打开）；`cmd/psdiff`（真机差分）、`cmd/psdemo`（冒烟）、`cmd/psupload`（上传回显闭环）、
@@ -54,6 +57,10 @@
 - BSON 与 NDJSON 逐行等价（约 -8% 体积）。
 
 ### 修复
+
+- 宽表（>63 列）的 INSTEAD OF 触发器生成：`jsonObjectExpr` 的分段阈值写错（按 50 列才分段，
+  而 SQLite 单函数上限是 127 个参数 = 63 对），`delivery_transaction`(68 列) 直接报
+  `too many arguments on function json_object`。已改为每 50 对分段 + `powersync_json_merge` 合并，并加回归测试。
 
 - `Close()` 显式 `PRAGMA wal_checkpoint(TRUNCATE)`：正常退出后 `.db` 自包含，不残留 `-wal`
   （复制或图形工具打开不会再看到半截状态 / `11 database disk image is malformed`）。
