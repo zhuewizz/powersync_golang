@@ -24,16 +24,28 @@
 
 ### Windows PowerShell：先修 GOROOT
 
-如果 `go` 报 `cannot find GOROOT directory: C:\Users\<你>\.g\go`（被 `g` 之类版本管理器改坏了）：
+如果 `go` 报 `cannot find GOROOT directory: C:\Users\<你>\.g\go`，**根因通常是 PowerShell profile**
+（`C:\Users\<你>\Documents\WindowsPowerShell\Microsoft.PowerShell_profile.ps1`）里有：
 
 ```powershell
-. .\scripts\go-env.ps1          # 当前会话生效（自动找 Go 安装目录）
-go version
+$env:GOROOT="$HOME\.g\go"          # g 管理的目录，实际并不存在
+$env:Path=-join("$HOME\.g\bin;", "$env:GOROOT\bin;", "$env:Path")
+```
 
-# 想永久修复（重开终端后生效）：
-[Environment]::SetEnvironmentVariable('GOROOT','D:\go','User')
-# 或者直接删掉这个坏变量，go 一般能自己找到：
-[Environment]::SetEnvironmentVariable('GOROOT',$null,'User')
+一次性修好（自动补回退逻辑，并备份 profile 为 `*.bak-时间戳`）：
+
+```powershell
+cd E:\powersync_golang
+. .\scripts\go-env.ps1 -FixProfile     # 也可以不加 -FixProfile，只影响当前会话
+go version                              # 应输出 D:\go 下的版本
+```
+
+或手动改 profile（把上面两行换成）：
+
+```powershell
+if (Test-Path "$HOME\.g\go\src\runtime") { $env:GOROOT = "$HOME\.g\go" }
+if (-not $env:GOROOT -or -not (Test-Path "$env:GOROOT\src\runtime")) { $env:GOROOT = 'D:\go' }
+$env:Path = "$env:GOROOT\bin;$env:Path"
 ```
 
 > PowerShell **不用** `\` 续行；换行要写在反引号 `` ` `` 后面，或者干脆写成一行。
@@ -162,7 +174,7 @@ go run ./cmd/pstable -db ./out/cutter.db -schema ./examples/todo/schema-cutter.j
 | `cmd/psq` | 直接查本地 SQLite（`-ls`/`-q`/`-check`/**`-snapshot`**，核对落库或给图形工具做快照） |
 | `cmd/pstable` | **用 SDK 读/写路径**操作本地库：`-ls`/`-table`/`-q` 查询、`-exec` 写入/删除、`-i` 交互、`-upload` 自动上传、`-sync -report` 同步并逐表打印行数+样例 |
 | `cmd/genschema` | 从 syncRules.yaml + PostgREST OpenAPI 生成客户端 schema（`-pkg main` 可生成到任意项目） |
-| `scripts/go-env.ps1` | PowerShell 里点号执行（`. .scriptsgo-env.ps1`）修 GOROOT/PATH |
+| `scripts/go-env.ps1` | 修 GOROOT/PATH：`. .scriptsgo-env.ps1`（当前会话）或 `-FixProfile`（永久改 profile） |
 | `scripts/ps-write.ps1` | Windows 一键写操作：`-Action insert/update/delete/query/list/exec` + 自动上传 + 前后端行数核对 |
 | `scripts/run-js-diff.sh` | Go vs 官方 `@powersync/node` 双实现差分（Node ≥ 22.15） |
 | `scripts/js-diff-container.sh` | 同上，WSL2/kiri 容器内跑（无需 Docker Desktop） |

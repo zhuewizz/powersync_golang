@@ -36,8 +36,9 @@
   生成 `examples/todo/schema_cutter.go`（示例包的 `cutterSchema()`）与 `examples/todo/schema-cutter.json`；
   根包保持项目无关（`-pkg main` 可生成到任意项目），示例新增 `-cutter` 开关直接用内置 65 表 schema；
   实测全量 65 张表 / 1644 行，2 个 bucket，首次同步 ~2.4s。
-- **环境脚本**：`scripts/go-env.ps1`（PowerShell 里 `. .scriptsgo-env.ps1` 自动修 GOROOT，
-  应对 `g` 把 GOROOT 改坏导致 `go: cannot find GOROOT directory`）。
+- **环境脚本**：`scripts/go-env.ps1`（`. .scriptsgo-env.ps1` 修当前会话；`-FixProfile` 备份并改写
+  PowerShell profile，永久修复 `go: cannot find GOROOT directory` —— 根因是 profile 把 GOROOT 指向
+  `$HOME.ggo` 而该目录不存在）。
 - **一键脚本**：`scripts/ps-write.ps1`（Windows）——`insert`/`update`/`delete`/`query`/`list`/`exec`
   一行命令完成“本地写 + 自动上传 + 前后端行数核对”，并自动修 GOROOT、控制台转 UTF-8。
 - **工具**：`cmd/pstable`（用 SDK 读/写路径：`-ls`/`-table`/`-q` 查询、`-exec` 写入删除、`-i` 交互、`-upload` 自动上传 + `-verify-table` 前后端行数核对）；`cmd/psq`（只读查询本地 SQLite；`-check` 完整性检查；`-snapshot` 用 `VACUUM INTO` 生成快照供图形工具打开）；`cmd/psdiff`（真机差分）、`cmd/psdemo`（冒烟）、`cmd/psupload`（上传回显闭环）、
