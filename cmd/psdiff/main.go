@@ -34,6 +34,7 @@ import (
 	"msmkSync/internal/bson"
 	"msmkSync/internal/core"
 	"msmkSync/internal/protocol"
+	"msmkSync/internal/psclient"
 )
 
 func main() {
@@ -859,31 +860,7 @@ func fetchToken(ctx context.Context, rpc, box, org string) (string, error) {
 	if rpc == "" || box == "" || org == "" {
 		return "", errors.New("需要 -token，或 -rpc/-box/-org")
 	}
-	body := fmt.Sprintf(`{"box_code":%q,"org_code":%q}`, box, org)
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, rpc, strings.NewReader(body))
-	if err != nil {
-		return "", err
-	}
-	req.Header.Set("Content-Type", "application/json")
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return "", err
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusOK {
-		msg, _ := io.ReadAll(io.LimitReader(resp.Body, 2<<10))
-		return "", fmt.Errorf("HTTP %d: %s", resp.StatusCode, strings.TrimSpace(string(msg)))
-	}
-	var out struct {
-		Token string `json:"token"`
-	}
-	if err := json.NewDecoder(resp.Body).Decode(&out); err != nil {
-		return "", err
-	}
-	if out.Token == "" {
-		return "", errors.New("RPC 未返回 token")
-	}
-	return out.Token, nil
+	return psclient.FetchToken(ctx, rpc, box, org)
 }
 
 func truncate(s string, n int) string {

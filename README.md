@@ -82,7 +82,7 @@ type Connector interface {
 ## 测试
 
 ```bash
-go test -race ./...     # 6 个包、70 个用例（根包 14 / core 35 / protocol 12 / bson 4 / …）
+go test -race ./...     # 8 个包、79 个用例，覆盖率 65%~86%
 ```
 
 - 协议解析用 `testdata/sync/*.ndjson|bson`（真实抓包，已脱敏裁剪）
@@ -99,6 +99,7 @@ internal/core       本地库：schema/视图/触发器/oplog/checksum/物化/�
 internal/sync       下载+上传循环
 internal/fixture    离线假服务（双实现差分用）
 internal/rowdiff    落库导出比对
+internal/psclient   工具共用的小 HTTP 客户端（RPC 取 token + PostgREST CRUD）
 cmd/…               工具；scripts/… 探针与 CI 辅助；testdata/… 抓包样本
 ```
 

@@ -81,6 +81,7 @@ go run ./cmd/psupload -endpoint $PS_URL -rest $REST_URL -rpc $RPC_URL -box D1-2 
   powersync_test.go            # 用 httptest 回放 golden 的公开 API 测试
   internal/
     protocol/      # 【已存在】线协议 DTO + NDJSON 解码 + 请求体，含 golden 测试
+    psclient/      # 工具共用的小 HTTP 客户端（RPC 取 token + PostgREST CRUD）
     core/          # 【已存在】schema → 真实表/索引/ps_crud 触发器；ps_oplog + checksum
                    #   校验；checkpoint 物化；上传队列与 bucket 游标
     db/            # 【待建】连接池封装、watch 变更通知、事务 API
@@ -474,6 +475,9 @@ db.WaitForFirstSync(ctx)        // 首次同步完成
   schema 迁移（JSON↔direct、加列、删表、重新 Open 自动迁移）、`include_metadata`、
   sync streams（订阅/取消/过期清理/状态回填/partial checkpoint）、文件锁、`powersync_crud`
   兼容层、`WriteTransaction` panic 后 tx_id 清理、schema 并发替换单测，含真实 golden 回放（35 个用例）；
+- `internal/sync` 直接单测（74% 覆盖）：流格式选择（NDJSON/BSON）、write-checkpoint 门控、
+  500 重试后成功、checksum 不一致重连、上传失败重试恢复、`Stop()` 不阻塞；
+- `internal/psclient` 单测（83% 覆盖）：token RPC 四条失败路径、REST Do/GetJSON/CountByID；
 - 根包另有 `BenchmarkWatchChangeDetection`（Watch 变更检测开销）。
 - 根包 `powersync`：用 `httptest` 回放 golden 的公开 API 测试（Connect、上传、CRUD、Watch 推送
   （本地写/事务/同步应用三种来源）、401 重取凭据、schema 往返、无 Connector 的本地库、文件锁、

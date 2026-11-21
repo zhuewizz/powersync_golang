@@ -28,6 +28,8 @@
 - **工具**：`cmd/psdiff`（真机差分）、`cmd/psdemo`（冒烟）、`cmd/psupload`（上传回显闭环）、
   `cmd/psfixture-server`（离线假服务）、`cmd/pscompare`（双实现落库比对）；
   `scripts/probe-*.sh`、`scripts/run-js-diff.sh`、`scripts/js-diff-container.sh`。
+- **工程**：`internal/sync` / `internal/psclient` 直接单测（覆盖率 74%/83%）、工具共用
+  `internal/psclient`（去掉三份重复的 token/REST 样板）、`BenchmarkWatchChangeDetection`。
 - **CI**：`go vet` / `gofmt` / `go test -race` / 无 cgo 构建 + Go vs 官方 JS SDK 差分 job。
 
 ### 服务端实测发现（已在 `AGENTS.md` 记录）

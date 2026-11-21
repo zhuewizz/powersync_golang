@@ -13,17 +13,15 @@ package main
 import (
 	"context"
 	"encoding/json"
-	"errors"
 	"flag"
 	"fmt"
-	"io"
-	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
 	"time"
 
 	powersync "msmkSync"
+	"msmkSync/internal/psclient"
 )
 
 func main() {
@@ -171,31 +169,11 @@ type demoConnector struct {
 func (c *demoConnector) FetchCredentials(ctx context.Context) (powersync.Credentials, error) {
 	tok := c.token
 	if tok == "" {
-		body := fmt.Sprintf(`{"box_code":%q,"org_code":%q}`, c.box, c.org)
-		req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.rpc, strings.NewReader(body))
+		fetched, err := psclient.FetchToken(ctx, c.rpc, c.box, c.org)
 		if err != nil {
 			return powersync.Credentials{}, err
 		}
-		req.Header.Set("Content-Type", "application/json")
-		resp, err := http.DefaultClient.Do(req)
-		if err != nil {
-			return powersync.Credentials{}, err
-		}
-		defer resp.Body.Close()
-		if resp.StatusCode != http.StatusOK {
-			msg, _ := io.ReadAll(io.LimitReader(resp.Body, 2<<10))
-			return powersync.Credentials{}, fmt.Errorf("fetch_credentials HTTP %d: %s", resp.StatusCode, msg)
-		}
-		var out struct {
-			Token string `json:"token"`
-		}
-		if err := json.NewDecoder(resp.Body).Decode(&out); err != nil {
-			return powersync.Credentials{}, err
-		}
-		if out.Token == "" {
-			return powersync.Credentials{}, errors.New("fetch_credentials 未返回 token")
-		}
-		tok = out.Token
+		tok = fetched
 		c.token = tok
 	}
 	return powersync.Credentials{Endpoint: c.endpoint, Token: tok}, nil

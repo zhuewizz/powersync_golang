@@ -17,7 +17,6 @@
 package main
 
 import (
-	"bytes"
 	"context"
 	"encoding/json"
 	"errors"
@@ -33,6 +32,7 @@ import (
 	"time"
 
 	powersync "msmkSync"
+	"msmkSync/internal/psclient"
 )
 
 func main() {
@@ -71,11 +71,12 @@ func main() {
 		_ = os.Remove(f)
 	}
 
+	restBaseURL := strings.TrimRight(*restBase, "/")
 	conn := &postgrestConnector{
-		psURL:   strings.TrimRight(*endpoint, "/"),
-		restURL: strings.TrimRight(*restBase, "/"),
-		rpcURL:  *rpc, box: *box, org: *org, token: *token,
+		psURL:  strings.TrimRight(*endpoint, "/"),
+		rpcURL: *rpc, box: *box, org: *org, token: *token,
 		table: *table,
+		rest:  &psclient.REST{Base: restBaseURL, Token: *token},
 	}
 	logger := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: logLevel(*verbose)}))
 	db, err := powersync.Open(context.Background(), powersync.Options{
@@ -185,34 +186,19 @@ func waitCursorAdvance(ctx context.Context, db *powersync.DB, prev string) error
 // ---------------------------------------------------------------- connector
 
 type postgrestConnector struct {
-	psURL, restURL, rpcURL, box, org, token, table, rowID string
-	uploads                                               int
+	psURL, rpcURL, box, org, token, table, rowID string
+	rest                                         *psclient.REST
+	uploads                                      int
 }
 
 func (c *postgrestConnector) FetchCredentials(ctx context.Context) (powersync.Credentials, error) {
 	if c.token == "" {
-		body := fmt.Sprintf(`{"box_code":%q,"org_code":%q}`, c.box, c.org)
-		req, err := http.NewRequestWithContext(ctx, http.MethodPost, c.rpcURL, strings.NewReader(body))
+		tok, err := psclient.FetchToken(ctx, c.rpcURL, c.box, c.org)
 		if err != nil {
 			return powersync.Credentials{}, err
 		}
-		req.Header.Set("Content-Type", "application/json")
-		resp, err := http.DefaultClient.Do(req)
-		if err != nil {
-			return powersync.Credentials{}, err
-		}
-		defer resp.Body.Close()
-		if resp.StatusCode != http.StatusOK {
-			msg, _ := io.ReadAll(io.LimitReader(resp.Body, 2<<10))
-			return powersync.Credentials{}, fmt.Errorf("fetch_credentials HTTP %d: %s", resp.StatusCode, msg)
-		}
-		var out struct {
-			Token string `json:"token"`
-		}
-		if err := json.NewDecoder(resp.Body).Decode(&out); err != nil {
-			return powersync.Credentials{}, err
-		}
-		c.token = out.Token
+		c.token = tok
+		c.rest.Token = tok
 	}
 	return powersync.Credentials{Endpoint: c.psURL, Token: c.token}, nil
 }
@@ -242,53 +228,22 @@ func (c *postgrestConnector) applyEntry(ctx context.Context, e powersync.CrudEnt
 		for k, v := range e.Data {
 			row[k] = v
 		}
-		return c.do(ctx, http.MethodPost, "/"+url.PathEscape(e.Table), row,
+		return c.rest.Do(ctx, http.MethodPost, "/"+url.PathEscape(e.Table), row,
 			"resolution=merge-duplicates,return=minimal")
 	case powersync.UpdateTypePatch:
 		if len(e.Data) == 0 {
 			return nil
 		}
-		return c.do(ctx, http.MethodPatch, "/"+url.PathEscape(e.Table)+"?id=eq."+url.QueryEscape(e.ID),
+		return c.rest.Do(ctx, http.MethodPatch, "/"+url.PathEscape(e.Table)+"?id=eq."+url.QueryEscape(e.ID),
 			e.Data, "return=minimal")
 	case powersync.UpdateTypeDelete:
-		return c.do(ctx, http.MethodDelete, "/"+url.PathEscape(e.Table)+"?id=eq."+url.QueryEscape(e.ID),
+		return c.rest.Do(ctx, http.MethodDelete, "/"+url.PathEscape(e.Table)+"?id=eq."+url.QueryEscape(e.ID),
 			nil, "return=minimal")
 	default:
 		return fmt.Errorf("未知 op %q", e.Op)
 	}
 }
 
-func (c *postgrestConnector) do(ctx context.Context, method, path string, body any, prefer string) error {
-	var rdr io.Reader
-	if body != nil {
-		b, err := json.Marshal(body)
-		if err != nil {
-			return err
-		}
-		rdr = bytes.NewReader(b)
-	}
-	req, err := http.NewRequestWithContext(ctx, method, c.restURL+path, rdr)
-	if err != nil {
-		return err
-	}
-	req.Header.Set("Authorization", "Bearer "+c.token)
-	req.Header.Set("Content-Type", "application/json")
-	if prefer != "" {
-		req.Header.Set("Prefer", prefer)
-	}
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return err
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode >= 300 {
-		msg, _ := io.ReadAll(io.LimitReader(resp.Body, 2<<10))
-		return fmt.Errorf("HTTP %d: %s", resp.StatusCode, strings.TrimSpace(string(msg)))
-	}
-	return nil
-}
-
-// fetchWriteCheckpoint 走 legacy 端点拿 write checkpoint（服务端会自增返回）。
 func (c *postgrestConnector) fetchWriteCheckpoint(ctx context.Context, db *powersync.DB) (string, error) {
 	clientID, err := db.ClientID(ctx)
 	if err != nil {
@@ -322,35 +277,17 @@ func (c *postgrestConnector) fetchWriteCheckpoint(ctx context.Context, db *power
 }
 
 func (c *postgrestConnector) rowCount(ctx context.Context) (int, error) {
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet,
-		c.restURL+"/"+url.PathEscape(c.table)+"?id=eq."+url.QueryEscape(c.rowID)+"&select=id", nil)
-	if err != nil {
-		return 0, err
-	}
-	req.Header.Set("Authorization", "Bearer "+c.token)
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return 0, err
-	}
-	defer resp.Body.Close()
-	var rows []map[string]any
-	if err := json.NewDecoder(resp.Body).Decode(&rows); err != nil {
-		return 0, err
-	}
-	return len(rows), nil
+	return c.rest.CountByID(ctx, c.table, c.rowID)
 }
 
 // cleanup 兜底删除测试行（进程异常退出也不会留下垃圾数据）。
 func (c *postgrestConnector) cleanup() {
-	if c.rowID == "" {
+	if c.rowID == "" || c.rest == nil {
 		return
 	}
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
-	_ = c.do(ctx, http.MethodDelete,
-		"/"+url.PathEscape(c.table)+"?id=eq."+url.QueryEscape(c.rowID), nil, "return=minimal")
-	_ = c.do(ctx, http.MethodDelete,
-		"/"+url.PathEscape(c.table)+"?id=eq."+url.QueryEscape(c.rowID), nil, "return=minimal")
+	_ = c.rest.Do(ctx, http.MethodDelete, "/"+url.PathEscape(c.table)+"?id=eq."+url.QueryEscape(c.rowID), nil, "return=minimal")
 }
 
 func logLevel(verbose bool) slog.Level {

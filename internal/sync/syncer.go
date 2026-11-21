@@ -338,17 +338,9 @@ func (s *Syncer) streamIteration(ctx context.Context) error {
 	})
 	defer s.set(func(st *Status) { st.Connected = false })
 
-	ct := resp.Header.Get("Content-Type")
-	var lines lineSource
-	switch {
-	case strings.Contains(ct, "bson"):
-		lines = &bsonSource{dec: bson.NewDecoder(resp.Body)}
-		s.log.Debug("同步流格式: BSON")
-	case strings.Contains(ct, "ndjson") || ct == "":
-		lines = &ndjsonSource{dec: protocol.NewDecoder(resp.Body, s.opts.MaxLineSize)}
-		s.log.Debug("同步流格式: NDJSON")
-	default:
-		return fmt.Errorf("不支持的流类型 %q（只支持 NDJSON / BSON）", ct)
+	lines, err := newLineSource(resp.Header.Get("Content-Type"), resp.Body, s.opts.MaxLineSize)
+	if err != nil {
+		return err
 	}
 	var targets []core.BucketTarget
 	// 同一连接内，服务端只在**流开始时**发一次 checkpoint 行；之后的新增批次只有
@@ -499,6 +491,18 @@ func (s *Syncer) streamIteration(ctx context.Context) error {
 // lineSource 抽象 NDJSON / BSON 两种流，下游只处理 protocol.Line。
 type lineSource interface {
 	Next() (protocol.Line, error)
+}
+
+// newLineSource 按响应 Content-Type 选择解码器（bson → BSON，其余 NDJSON）。
+func newLineSource(contentType string, body io.Reader, maxLineSize int) (lineSource, error) {
+	switch {
+	case strings.Contains(contentType, "bson"):
+		return &bsonSource{dec: bson.NewDecoder(body)}, nil
+	case strings.Contains(contentType, "ndjson") || contentType == "":
+		return &ndjsonSource{dec: protocol.NewDecoder(body, maxLineSize)}, nil
+	default:
+		return nil, fmt.Errorf("不支持的流类型 %q（只支持 NDJSON / BSON）", contentType)
+	}
 }
 
 type ndjsonSource struct{ dec *protocol.Decoder }
