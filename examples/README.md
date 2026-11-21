@@ -67,6 +67,28 @@ schema: 来自 ./out/schema.json（37 张表）
 > - 默认 `-upload mock`：`UploadData` 打印后直接出队，不写后端；`-write` 只是本地插入/更新/删除演示。
 > - 真实项目请参考 [`docs/reference.md`](../docs/reference.md) 第 4 节的 Connector 实现。
 
+### 方式二点五：验证"后台数据自动同步到本地"
+
+只要 `-mode real -rest ... -schema ...`，示例会在首次同步后自动做**逐行逐字段校验**
+（`-verify` 默认开启）：把本地表与后台 PostgREST 对比，证明数据确实同步下来了。
+
+```bash
+go run ./examples/todo -mode real   -endpoint http://120.24.7.22:8080 -rest http://120.24.7.22:8089/rest   -rpc http://120.24.7.22:8089/rest/rpc/fetch_credentials   -box D1-2 -org ORG001   -schema ./out/schema.json -tables cutter_info,sys_error_report
+```
+
+实测输出：
+
+```
+===== 校验：后台 REST → 本地（逐行比对）=====
+  表 cutter_info          OK  本地=60 后台=60 一致=60 本地多=0 后台多=0 字段不同=0 软删除=0
+  表 sys_error_report     OK  本地=1  后台=1  一致=1  本地多=0 后台多=0 字段不同=0 软删除=0
+  ✅ 后台数据已完整同步到本地（逐行逐字段一致）
+```
+
+比对规则与 `cmd/psdiff` 一致：时间戳空格/T、数值字符串 vs 数字、jsonb 文本 vs 对象都会归一化；
+`deleted_at` 非空的软删除行后台视图不展示，按"预期差异"单独计数。
+加 `-verify=false` 可关闭。
+
 ### 方式三：连真实服务 + 真正上传 + 离线优先演示
 
 ```bash
@@ -124,6 +146,7 @@ go run ./examples/todo -mode real -upload real -write   -endpoint http://120.24.
 | `-tables` | 空（schema 全部） | 只统计/打印这些表（逗号分隔） |
 | `-write` | `false` | real 模式下也做写入/上传演示（mock 默认就做） |
 | `-cleanup` | `false` | 演示结束删除探针行（默认**保留**在后台） |
+| `-verify` | `true` | real 模式下把本地表与后台 REST 逐行比对（需 `-rest`） |
 | `-upload` | `mock` | real 模式的上传方式：`mock`（打印后出队）/ `real`（真正写 PostgREST） |
 | `-rest` | 环境变量 `REST_URL` | `upload=real` 时的 PostgREST base，如 `http://host:8089/rest` |
 | `-limit` | `3` | 每张表打印多少行样例 |

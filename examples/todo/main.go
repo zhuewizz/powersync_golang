@@ -42,6 +42,7 @@ import (
 	powersync "msmkSync"
 	"msmkSync/internal/fixture"
 	"msmkSync/internal/psclient"
+	"msmkSync/internal/rowdiff"
 )
 
 //go:embed fixture.ndjson
@@ -64,6 +65,7 @@ func main() {
 		limit    = flag.Int("limit", 3, "每张表打印多少行样例")
 		verbose  = flag.Bool("v", false, "打印库内部 debug 日志（同步行/checkpoint/物化行数）")
 		cleanup  = flag.Bool("cleanup", false, "演示结束后删除探针行（默认**保留**在后台，方便查看）")
+		verify   = flag.Bool("verify", true, "real 模式下把本地表与后台 REST 逐行比对（需 -rest）")
 	)
 	flag.Parse()
 
@@ -214,6 +216,15 @@ func main() {
 
 	for _, name := range wanted {
 		printTable(ctx, db, name, *limit)
+	}
+
+	// ---- 4.5 校验：后台 REST → 本地（证明自动同步一致）----
+	if *mode == "real" && *verify && *restBase != "" {
+		if tok, err := psclient.FetchToken(ctx, *rpc, *box, *org); err == nil {
+			verifyAgainstBackend(ctx, db, *restBase, tok, wanted, *limit)
+		} else {
+			fmt.Printf("\n（跳过校验：取 token 失败 %v）\n", err)
+		}
 	}
 
 	// ---- 5. 写演示 ----
@@ -663,4 +674,101 @@ func fmtTime(t time.Time) string {
 func fail(what string, err error) {
 	fmt.Fprintf(os.Stderr, "%s: %v\n", what, err)
 	os.Exit(1)
+}
+
+// verifyAgainstBackend 把本地表与后台 PostgREST 逐行逐字段比对，证明"后台数据已自动同步到本地"。
+//
+// 规则与 cmd/psdiff 一致：时间戳/数值字符串/jsonb 文本等序列化差异会归一化；
+// 软删除的行（deleted_at 非空）后台视图不展示，按"预期差异"单独计数。
+func verifyAgainstBackend(ctx context.Context, db *powersync.DB, base, token string, tables []string, limit int) {
+	rest := &psclient.REST{Base: strings.TrimRight(base, "/"), Token: token}
+	fmt.Println("\n===== 校验：后台 REST → 本地（逐行比对）=====")
+	allOK := true
+
+	for _, table := range tables {
+		localRows, err := db.GetAll(ctx, `SELECT * FROM `+quoteIdent(table))
+		if err != nil {
+			fmt.Printf("  表 %-20s 本地查询失败（不在 schema？）: %v\n", table, err)
+			allOK = false
+			continue
+		}
+
+		var rawRemote []map[string]json.RawMessage
+		if err := rest.GetJSON(ctx, tablePath(table)+"?select=*&limit=20000", &rawRemote); err != nil {
+			fmt.Printf("  表 %-20s 后台查询失败: %v\n", table, err)
+			allOK = false
+			continue
+		}
+
+		remote := make([]rowdiff.Row, 0, len(rawRemote))
+		remoteIDs := make(map[string]struct{}, len(rawRemote))
+		for _, r := range rawRemote {
+			id := rawID(r["id"])
+			remoteIDs[id] = struct{}{}
+			remote = append(remote, rowdiff.Row{Table: table, Row: r})
+		}
+
+		local := make([]rowdiff.Row, 0, len(localRows))
+		softDeleted := 0
+		for _, r := range localRows {
+			m := make(map[string]json.RawMessage, len(r))
+			for k, v := range r {
+				b, err := json.Marshal(v)
+				if err != nil {
+					continue
+				}
+				m[k] = b
+			}
+			id := rawID(m["id"])
+			if _, ok := remoteIDs[id]; !ok && isSoftDeletedRow(m) {
+				softDeleted++
+				continue // 后台视图中看不到的软删除行：预期差异
+			}
+			local = append(local, rowdiff.Row{Table: table, Row: m})
+		}
+
+		res := rowdiff.Compare(local, remote, limit)
+		same, onlyLocal, onlyRemote, fieldDiff := res.Totals()
+		status := "OK"
+		if !res.OK() {
+			status = "DIFF"
+			allOK = false
+		}
+		fmt.Printf("  表 %-20s %s  本地=%d 后台=%d 一致=%d 本地多=%d 后台多=%d 字段不同=%d 软删除=%d\n",
+			table, status, len(localRows), len(rawRemote), same, onlyLocal, onlyRemote, fieldDiff, softDeleted)
+		for _, d := range res.Diffs {
+			fmt.Printf("      %s/%s: %s\n", d.Table, d.ID, d.Detail)
+		}
+	}
+
+	if allOK {
+		fmt.Println("  ✅ 后台数据已完整同步到本地（逐行逐字段一致）")
+	} else {
+		fmt.Println("  ❌ 存在差异（见上）——常见原因：sync rules 还没覆盖该表/该行、或服务端复制延迟")
+	}
+}
+
+// rawID 取 JSON 字符串值（去掉引号）。
+func rawID(raw json.RawMessage) string {
+	var s string
+	if err := json.Unmarshal(raw, &s); err == nil {
+		return s
+	}
+	return strings.Trim(string(raw), `"`)
+}
+
+// isSoftDeletedRow 报告该行是否软删除（deleted_at 非空 / is_deleted 为真）。
+func isSoftDeletedRow(row map[string]json.RawMessage) bool {
+	for _, k := range []string{"deleted_at", "is_deleted", "is_del"} {
+		raw, ok := row[k]
+		if !ok {
+			continue
+		}
+		switch canon := rowdiff.Canon(raw); canon {
+		case "<nil>", "n:0", "s:", "s:0", "s:false":
+		default:
+			return true
+		}
+	}
+	return false
 }
