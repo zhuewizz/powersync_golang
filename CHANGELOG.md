@@ -71,6 +71,9 @@
 
 ### 修复
 
+- `examples/demo`：全局 timeout 之前包住了整个交互过程，看几个表后会报 `context deadline exceeded`。
+  现在超时只作用于「打开+首次同步」，交互查询每次单独 30s；锁冲突时给出明确提示。
+
 - 宽表（>63 列）的 INSTEAD OF 触发器生成：`jsonObjectExpr` 的分段阈值写错（按 50 列才分段，
   而 SQLite 单函数上限是 127 个参数 = 63 对），`delivery_transaction`(68 列) 直接报
   `too many arguments on function json_object`。已改为每 50 对分段 + `powersync_json_merge` 合并，并加回归测试。

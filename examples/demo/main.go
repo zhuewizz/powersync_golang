@@ -45,8 +45,11 @@ func main() {
 	)
 	flag.Parse()
 
-	ctx, cancel := context.WithTimeout(context.Background(), *timeout)
-	defer cancel()
+	// 全局超时只用于“打开+首次同步”；交互阶段（等用户输入）不能用带 deadline 的 ctx，
+	// 否则看几个表之后就会报 context deadline exceeded。
+	initCtx, cancelInit := context.WithTimeout(context.Background(), *timeout)
+	defer cancelInit()
+	ctx := initCtx
 
 	// ---------------------------------------------------------------- 1. 打开 + 连接
 	fmt.Println("===== 1/3 验证环境 =====")
@@ -59,6 +62,10 @@ func main() {
 		Connector: conn,
 	})
 	if err != nil {
+		if strings.Contains(err.Error(), "locked") {
+			fmt.Fprintf(os.Stderr, "打开数据库失败：%v\n  可能是上一次 examples/demo 还在运行（任务管理器里结束 demo.exe），或换个库：-db out/demo2.db\n", err)
+			os.Exit(1)
+		}
 		fail("打开数据库", err)
 	}
 	defer db.Close(context.Background())
@@ -67,12 +74,12 @@ func main() {
 	fmt.Printf("  schema: %d 张表（来自 syncRules.yaml）\n", len(cutterschema.Schema().Tables()))
 
 	start := time.Now()
-	if err := db.Connect(ctx); err != nil {
+	if err := db.Connect(initCtx); err != nil {
 		fail("Connect", err)
 	}
 	defer db.Disconnect()
 	fmt.Println("  已连接，等待首次同步…")
-	if err := db.WaitForFirstSync(ctx); err != nil {
+	if err := db.WaitForFirstSync(initCtx); err != nil {
 		fail("等待首次同步", err)
 	}
 	st := db.CurrentStatus()
@@ -83,6 +90,9 @@ func main() {
 	} else {
 		fmt.Println("  ✅ 没有被跳过的行（schema 覆盖了服务端下发的所有表）")
 	}
+
+	// 交互阶段改用无 deadline 的 ctx（同步后台继续跑，查询按需每次 30s）
+	ctx = context.Background()
 
 	// ---------------------------------------------------------------- 2. 表清单
 	tables, err := listTables(ctx, db, *all)
@@ -205,8 +215,10 @@ func showTable(ctx context.Context, db *powersync.DB, t tableInfo, limit int, co
 	if limit > 0 {
 		sql += fmt.Sprintf(` LIMIT %d`, limit)
 	}
+	qctx, cancel := context.WithTimeout(ctx, 30*time.Second)
+	defer cancel()
 	start := time.Now()
-	rows, err := db.GetAll(ctx, sql)
+	rows, err := db.GetAll(qctx, sql)
 	if err != nil {
 		fmt.Printf("\n  ❌ 查询 %s 失败：%v\n", t.Name, err)
 		return
