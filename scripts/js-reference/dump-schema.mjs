@@ -16,13 +16,14 @@ const APP_SCHEMA = process.env.APP_SCHEMA ?? 'E:/cutter_client/src/library/power
 
 fs.mkdirSync(OUT, { recursive: true });
 
-// 复用 AppSchema.ts，只把 @powersync/web 换成 @powersync/node（类型定义同源）。
-// 生成文件必须放在含 node_modules 的目录下，否则解析不到 @powersync/node。
+// 复用 AppSchema.ts，只把 @powersync/web 换成 @powersync/common：
+// 这里只需要 Schema/Table/column 这些纯 TS 类型，用 common 能避开 @powersync/node
+// 的原生依赖（better-sqlite3），因此 Windows 上也能直接跑。
 const gen = path.join(here, 'out', 'AppSchema.gen.ts');
 fs.mkdirSync(path.dirname(gen), { recursive: true });
 fs.writeFileSync(
   gen,
-  fs.readFileSync(APP_SCHEMA, 'utf8').replace(/from\s+['"]@powersync\/web['"]/g, `from '@powersync/node'`),
+  fs.readFileSync(APP_SCHEMA, 'utf8').replace(/from\s+['"]@powersync\/web['"]/g, `from '@powersync/common'`),
 );
 const { AppSchema } = await import(pathToFileURL(gen).href);
 const json = typeof AppSchema.toJSON === 'function' ? AppSchema.toJSON() : AppSchema;
