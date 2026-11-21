@@ -337,9 +337,9 @@ X-User-Agent: powersync-go/<version>
 - 实测部署中的规则与仓库里的 `syncRules.yaml` **可能不一致**：服务端会下发 `object_type: "role"`
   （本地 yaml 里没有）。排查手法：同步后看 `SkippedTables()` 列表，再决定加进 schema。
 
-> **“schema” 歧义提醒**：本节的 `object_type` 是**裸表名**（`cutter_info`），**不带** PG schema。
-> PG 的 `org`/`cutters`/`mats`/`tools`/`delivery` 只是服务端命名空间，只出现在 `syncRules.yaml` 的 SQL 里；
-> 客户端 schema（`Table{Name, Columns}`）是另一回事，二者不要混。
+> **表名提醒**：本节的 `object_type` 是**裸表名**（`cutter_info`），不带 PG schema；
+> PG 的 schema 分组与 PostgREST 的 `schema:api` 是服务端/网关的事，客户端不参与；
+> 客户端 schema（`Table{Name, Columns}`）只是本地表/列声明。
 
 ### 6.4 其他端点
 

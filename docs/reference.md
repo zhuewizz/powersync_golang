@@ -512,23 +512,14 @@ go run ./cmd/psq -db ./out/verify.db -q "select name, last_applied_op, op_checks
 脚本会自动修一下常见的 `GOROOT` 损坏（如被 `g` 改到 `C:\Users\...\.g\go`），
 并把控制台设为 UTF-8，避免中文乱码。
 
-### “schema” 这个词的两个含义（很容易混）
+### 只关心客户端 schema（PG schema / schema:api 不归这里管）
 
-| 含义 | 在哪里 | 举例 | 客户端是否关心 |
-| --- | --- | --- | --- |
-| **PG schema**（命名空间） | 服务端 Postgres | `org.box`、`cutters.cutter_info`、`mats.material_info` | ❌ 完全不关心 |
-| **PowerSync 客户端 schema** | 客户端代码 | `Table{Name:"cutter_info", Columns:[...]}` | ✅ 必须声明 |
+服务端怎么把 `org`/`cutters`/`mats` 这些 PG schema 聚到 PostgREST 的 `schema:api` 下，
+是**后端与网关的事**，客户端不参与、也不需要知道：
 
-关键事实（已对真实服务实测）：
-
-- 同步流里的 `object_type` 是**裸表名**（`cutter_info`，不带 `cutters.`），所以客户端**没有 PG schema 概念**，
-  本地也只有 `ps_data__cutter_info` + 视图 `cutter_info`；
-- `syncRules.yaml` 只活在**服务端**（PowerSync 服务的配置）；本仓库只在**构建期**读它做表名发现，
-  **运行时不依赖它**；
-- PostgREST 也是扁平的（OpenAPI 的 `definitions` 以裸表名作 key），所以列信息能直接取。
-
-⚠️ 如果不同 PG schema 里有**同名表**（如 `org.box` 与 `cutters.box`），客户端会拼成一张表；
-`cmd/genschema` 会检测并告警（当前 57 张表无重名）。
+- 同步流里的 `object_type` 是**裸表名**（`cutter_info`），不是 `cutters.cutter_info`；
+- 客户端 schema 就是“本地有哪些表、每张表哪些列”（`Table{Name, Columns}`），无命名空间概念；
+- `syncRules.yaml` 只在服务端；本仓库只在**构建期**读它发现表名，**运行时不依赖**。
 
 ### schema 是怎么来的（示例：examples/todo/schema_cutter.go）
 
