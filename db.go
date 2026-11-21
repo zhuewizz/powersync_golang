@@ -34,6 +34,8 @@ type Options struct {
 	ClientID string
 	// NoFileLock 为 true 时不做跨进程文件锁（默认禁止同一 DB 被两个实例同时打开）。
 	NoFileLock bool
+	// LockTimeout 在锁被占用时重试等待（0 = 立即报 ErrDatabaseLocked）。
+	LockTimeout time.Duration
 	// DisableBSON 为 true 时只请求 NDJSON；默认请求 BSON 同步流
 	// （体积约小 8%，服务端不支持时自动回落，落库结果与 NDJSON 逐行等价）。
 	DisableBSON bool
@@ -89,11 +91,12 @@ func Open(ctx context.Context, opts Options) (*DB, error) {
 		return nil, err
 	}
 	store, err := core.Open(ctx, core.Options{
-		Path:       opts.Filename,
-		Schema:     cs,
-		ClientID:   opts.ClientID,
-		NoFileLock: opts.NoFileLock,
-		Debugf:     opts.Debugf,
+		Path:        opts.Filename,
+		Schema:      cs,
+		ClientID:    opts.ClientID,
+		NoFileLock:  opts.NoFileLock,
+		LockTimeout: opts.LockTimeout,
+		Debugf:      opts.Debugf,
 	})
 	if err != nil {
 		return nil, err

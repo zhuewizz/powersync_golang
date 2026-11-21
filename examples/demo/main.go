@@ -56,16 +56,31 @@ func main() {
 	conn := restconn.New(restconn.Config{
 		Endpoint: *endpoint, RPC: *rpc, Box: *box, Org: *org, RESTBase: *rest,
 	})
-	db, err := powersync.Open(ctx, powersync.Options{
+	openOpts := powersync.Options{
 		Filename:  *dbPath,
 		Schema:    cutterschema.Schema(),
 		Connector: conn,
-	})
-	if err != nil {
-		if strings.Contains(err.Error(), "locked") {
-			fmt.Fprintf(os.Stderr, "打开数据库失败：%v\n  可能是上一次 examples/demo 还在运行（任务管理器里结束 demo.exe），或换个库：-db out/demo2.db\n", err)
-			os.Exit(1)
+		// 锁被占用时先等 3 秒（上个实例可能正在退出/checkpoint）
+		LockTimeout: 3 * time.Second,
+	}
+	db, err := powersync.Open(ctx, openOpts)
+	if err != nil && strings.Contains(err.Error(), "locked") {
+		// 还有实例在同步：降级为「只读浏览」。WAL 允许多读者，所以多个进程可以同时看库；
+		// 此时不连接同步，看到的是对方已同步下来的数据（可能不是最新）。
+		fmt.Printf("  ⚠️ 库被另一个实例占用（%v）\n", err)
+		fmt.Println("     降级为只读浏览（不连接同步，数据可能不是最新）")
+		openOpts.NoFileLock = true
+		openOpts.Connector = nil
+		if db, err = powersync.Open(ctx, openOpts); err != nil {
+			fail("以只读模式打开数据库", err)
 		}
+		defer db.Close(context.Background())
+		fmt.Printf("  本地库: %s（只读浏览）\n", *dbPath)
+		fmt.Printf("  schema: %d 张表（来自 syncRules.yaml）\n", len(cutterschema.Schema().Tables()))
+		browse(context.Background(), db, *all, *limit, *cols, *once)
+		return
+	}
+	if err != nil {
 		fail("打开数据库", err)
 	}
 	defer db.Close(context.Background())
@@ -92,19 +107,22 @@ func main() {
 	}
 
 	// 交互阶段改用无 deadline 的 ctx（同步后台继续跑，查询按需每次 30s）
-	ctx = context.Background()
+	browse(context.Background(), db, *all, *limit, *cols, *once)
+}
 
+// browse 是「表清单 + 交互选择」的主循环（正常模式与只读降级模式共用）。
+func browse(ctx context.Context, db *powersync.DB, includeEmpty bool, limit int, cols string, once bool) {
 	// ---------------------------------------------------------------- 2. 表清单
-	tables, err := listTables(ctx, db, *all)
+	tables, err := listTables(ctx, db, includeEmpty)
 	if err != nil {
 		fail("统计表", err)
 	}
-	printTableMenu(tables, *all)
+	printTableMenu(tables, includeEmpty)
 	if len(tables) == 0 {
 		fmt.Println("\n没有可展示的表，退出。")
 		return
 	}
-	if *once {
+	if once {
 		return
 	}
 
@@ -122,14 +140,9 @@ func main() {
 		case "q", "quit", "exit":
 			fmt.Println("再见。")
 			return
-		case "":
-			if tables, err = listTables(ctx, db, *all); err == nil {
-				printTableMenu(tables, *all)
-			}
-			continue
-		case "r", "refresh":
-			if tables, err = listTables(ctx, db, *all); err == nil {
-				printTableMenu(tables, *all)
+		case "", "r", "refresh":
+			if tables, err = listTables(ctx, db, includeEmpty); err == nil {
+				printTableMenu(tables, includeEmpty)
 			}
 			continue
 		}
@@ -139,7 +152,7 @@ func main() {
 			fmt.Printf("  ⚠️ 无效编号：%q（应该 1..%d，或 q 退出）\n", choice, len(tables))
 			continue
 		}
-		showTable(ctx, db, tables[n-1], *limit, *cols)
+		showTable(ctx, db, tables[n-1], limit, cols)
 	}
 }
 

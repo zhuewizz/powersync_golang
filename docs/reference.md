@@ -158,7 +158,27 @@ type Options struct {
 - **Schema 变更会自动迁移**：`Open` 时若 `ps_kv.schema_json` 与传入 schema 不同，会经
   `ps_untyped` 暂存 → 重建 → 回填（加列/切 direct/删表都覆盖，删掉的列会丢数据）。
 - **同一个 DB 文件只能被一个实例打开**（跨进程文件锁），第二个会返回 `ErrDatabaseLocked`。
-  测试/特殊场景可用 `NoFileLock: true` 关掉。
+  原因见下面的“为什么要加锁”；测试/工具类场景可用 `NoFileLock: true` 关掉。
+
+### 为什么要加文件锁，多实例怎么办
+
+库里有**同步引擎自己的状态**：`ps_oplog`（待物化的 op）、`ps_buckets.last_op`/checksums（游标）、
+`ps_crud`（待上传队列）、`ps_tx`。两个进程同时写这套状态会出现“同一批 op 被应用两次”、
+“同一条本地写被上传两次”、checksum 错乱——SQLite 只能保证页级一致性，拦不住这种**逻辑**错乱。
+所以默认用一个跨进程排它锁（`<db>.lock`，Windows `LockFileEx` / Unix `flock`）把库独占给
+一个实例；这也与官方 SDK（单实例 / 单 DB）的假设一致。
+
+四个可选的替代方案（按推荐顺序）：
+
+| 需求 | 做法 |
+| --- | --- |
+| 只是另一个工具想**看**数据 | `NoFileLock: true`（只读、不 `Connect`）。WAL 允许多个读者；`cmd/psq`、`cmd/pstable` 的读模式就是这么做的 |
+| 上个实例刚退出，想等一下 | `Options.LockTimeout`（如 `3*time.Second`，每 100ms 重试） |
+| 程序重启 / 双开自己 | 用不同 DB 文件（`-db out/demo2.db`）；每个文件会被当作一个独立客户端，各自同步 |
+| 确实要并发写 | 不要两个进程写同一个库；在**同一个**进程里用一张 `*DB` 并发读写（SDK 内部已串行化） |
+
+`examples/demo` 把前两条都做了：先等 3 秒，仍被占用则自动**降级为只读浏览**（不连同步），
+所以你可以一边跑 `examples/todo` 同步、一边用 `examples/demo` 看数据。
 
 ---
 

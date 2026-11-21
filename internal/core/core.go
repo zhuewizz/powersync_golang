@@ -82,6 +82,28 @@ type Options struct {
 	// NoFileLock 为 true 时不加跨进程文件锁（默认加锁：同一 DB 被两个实例打开会报
 	// ErrDatabaseLocked，避免两个同步引擎同时写坏数据）。
 	NoFileLock bool
+	// LockTimeout 用于在锁被占用时重试等待（0 = 立即失败；推荐 1~5s 以等待上一个实例退出）。
+	LockTimeout time.Duration
+}
+
+// acquireFileLockWait 尝试拿跨进程锁；被占用时在 timeout 内重试
+// （上一个实例正在退出/正在 checkpoint 时很常见）。
+func acquireFileLockWait(ctx context.Context, path string, timeout time.Duration) (*fileLock, error) {
+	deadline := time.Now().Add(timeout)
+	for {
+		lock, err := acquireFileLock(path)
+		if err == nil {
+			return lock, nil
+		}
+		if !errors.Is(err, errLocked) || timeout <= 0 || time.Now().After(deadline) {
+			return nil, err
+		}
+		select {
+		case <-ctx.Done():
+			return nil, ctx.Err()
+		case <-time.After(100 * time.Millisecond):
+		}
+	}
 }
 
 // DB 是本地库句柄。所有写操作串行化在单个连接上（modernc 下 WAL/内存库都需要）。
@@ -126,7 +148,7 @@ func Open(ctx context.Context, opts Options) (*DB, error) {
 	db := &DB{sql: sqlDB, opts: opts, version: newVersionSignal()}
 	db.setSchema(opts.Schema)
 	if !opts.NoFileLock && opts.Path != ":memory:" {
-		lock, err := acquireFileLock(opts.Path)
+		lock, err := acquireFileLockWait(ctx, opts.Path, opts.LockTimeout)
 		if err != nil {
 			sqlDB.Close()
 			return nil, err

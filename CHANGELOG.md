@@ -27,6 +27,8 @@
   `AdditionalHeaders`、`powersync_crud.options` bit0 = `ignore_empty_update`、`GetCrudBatch/GetNextCrudTransaction`、
   `SubscribeStream`（`WithTTL`/`WithPriority`）、`CurrentStatus`/`WaitForFirstSync`、
   `UpdateSchema`、`LoadSchemaJSON`。
+- **多实例友好**：`Options.LockTimeout`（锁被占用时重试等待）；只读场景可 `NoFileLock`
+  与运行中的实例共享同一个库（WAL 多读者）；`examples/demo` 锁冲突时自动降级为只读浏览。
 - **网络状态监控**：`CurrentNetworkStatus` / `WatchNetworkStatus`（TCP 拨号探测 + 变化推送，
   同步失败/成功时立即重测）、`Options.NetworkTarget`/`NetworkCheckInterval`/`NetworkCheckTimeout`/
   `DisableNetworkMonitor`。
