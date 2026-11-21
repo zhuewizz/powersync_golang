@@ -33,7 +33,8 @@
 - **完整示例**：`examples/todo`（默认离线 mock，内置假服务与假后端；可切到真实服务）。
 - **使用手册**：`docs/reference.md`（对齐官方 Flutter SDK 参考的中文 API 文档，含与官方差异清单）。
 - **客户端 schema 生成**：`cmd/genschema` 从 syncRules.yaml + PostgREST OpenAPI（缺表时用抓包推断）
-  生成 `schema_cutter.go`（`powersync.CutterSchema()`）与 `testdata/schema/cutter.json`；
+  生成 `examples/todo/schema_cutter.go`（示例包的 `cutterSchema()`）与 `examples/todo/schema-cutter.json`；
+  根包保持项目无关（`-pkg main` 可生成到任意项目），示例新增 `-cutter` 开关直接用内置 65 表 schema；
   实测全量 65 张表 / 1644 行，2 个 bucket，首次同步 ~2.4s。
 - **一键脚本**：`scripts/ps-write.ps1`（Windows）——`insert`/`update`/`delete`/`query`/`list`/`exec`
   一行命令完成“本地写 + 自动上传 + 前后端行数核对”，并自动修 GOROOT、控制台转 UTF-8。

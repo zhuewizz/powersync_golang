@@ -55,7 +55,8 @@ func main() {
 		rpc      = flag.String("rpc", os.Getenv("RPC_URL"), "real 模式：fetch_credentials RPC")
 		box      = flag.String("box", os.Getenv("BOX_CODE"), "real 模式：box_code")
 		org      = flag.String("org", os.Getenv("ORG_CODE"), "real 模式：org_code")
-		schemaF  = flag.String("schema", "", "schema JSON（官方 Schema.toJSON 形状）；real 模式必填")
+		schemaF  = flag.String("schema", "", "schema JSON（官方 Schema.toJSON 形状）；real 模式必填（或 -cutter）")
+		cutterF  = flag.Bool("cutter", false, "用内置的 cutter schema（65 张表，来自 syncRules.yaml，见 schema_cutter.go）")
 		tablesF  = flag.String("tables", "", "只统计/打印这些表（逗号分隔），空=全部")
 		dbPath   = flag.String("db", filepath.Join("out", "example.db"), "本地数据库文件")
 		timeout  = flag.Duration("timeout", 120*time.Second, "整体超时")
@@ -82,8 +83,8 @@ func main() {
 		_ = os.Remove(f)
 	}
 
-	// ---- 0. schema：优先 -schema（真实库），否则用内置示例 schema ----
-	schema, tableNames, err := loadSchema(*schemaF)
+	// ---- 0. schema：-cutter > -schema（真实库）> 内置示例 schema ----
+	schema, tableNames, err := selectSchema(*cutterF, *schemaF)
 	if err != nil {
 		fail("加载 schema", err)
 	}
@@ -109,10 +110,10 @@ func main() {
 			fail("real 模式参数不完整",
 				errors.New("需要 -endpoint/-rpc/-box/-org（或环境变量 PS_URL/RPC_URL/BOX_CODE/ORG_CODE）"))
 		}
-		if *schemaF == "" {
-			fail("real 模式需要 -schema", errors.New(
-				"PowerSync 要求客户端声明 schema；请用 -schema ./out/schema.json"+
-					"（由 node scripts/js-reference/dump-schema.mjs 从 AppSchema.ts 导出）"))
+		if *schemaF == "" && !*cutterF {
+			fail("real 模式需要 -schema 或 -cutter", errors.New(
+				"PowerSync 要求客户端声明 schema；用 -cutter（本项目 65 张表）"+
+					"或 -schema ./examples/todo/schema-cutter.json（/ out/schema.json）"))
 		}
 		ep := strings.TrimRight(*endpoint, "/")
 		switch *upload {
@@ -253,6 +254,29 @@ func main() {
 }
 
 // ---------------------------------------------------------------- schema
+
+// selectSchema 按优先级选 schema：-cutter（内置 65 表）> -schema 文件 > 内置 todos 示例。
+func selectSchema(useCutter bool, path string) (*powersync.Schema, []string, error) {
+	if useCutter && path != "" {
+		return nil, nil, errors.New("-cutter 与 -schema 只能二选一")
+	}
+	if useCutter {
+		sch := cutterSchema()
+		tables := tableNamesOf(sch)
+		fmt.Printf("schema: 内置 cutter（%d 张表，来自 syncRules.yaml；见 schema_cutter.go）\n", len(tables))
+		return sch, tables, nil
+	}
+	return loadSchema(path)
+}
+
+func tableNamesOf(sch *powersync.Schema) []string {
+	ts := sch.Tables()
+	out := make([]string, 0, len(ts))
+	for _, t := range ts {
+		out = append(out, t.Name)
+	}
+	return out
+}
 
 func loadSchema(path string) (*powersync.Schema, []string, error) {
 	if path != "" {

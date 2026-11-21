@@ -82,18 +82,22 @@ PowerSync 要求客户端声明 schema（本地有哪些表、每张表哪些列
 
 1. 表清单 → PowerSync 同步规则（`syncRules.yaml`）里的 `FROM "schema"."table"`；
 2. 列定义 → PostgREST 的 OpenAPI（`GET <rest>/` 的 `definitions`）；
-3. 生成 → `schema_cutter.go`（Go 里 `powersync.CutterSchema()`，一行一张表，可手改）
-   + `testdata/schema/cutter.json`（官方 `Schema.toJSON()` 形状，给 `-schema` 用）。
+3. 生成 → `examples/todo/schema_cutter.go`（示例包的 `cutterSchema()`，一行一张表，可手改）
+   + `examples/todo/schema-cutter.json`（官方 `Schema.toJSON()` 形状，给 `-schema` 用）。
+
+> SDK 根包保持**项目无关**：只有通用 API，不含任何业务 schema；业务 schema 属于使用方
+> （示例里放在 `examples/todo/`）。换项目时用 `cmd/genschema -pkg main -out-go <你的项目>/schema.go`。
 
 ```bash
 # 重新生成（服务端表结构变了就跑一次）
 go run ./cmd/genschema \
   -rules E:/cutter/syncRules.yaml \
   -rpc http://120.24.7.22:8089/rest/rpc/fetch_credentials -box D1-2 -org ORG001 \
-  -out-go ./schema_cutter.go -out-json ./testdata/schema/cutter.json
+  -pkg main -out-go ./examples/todo/schema_cutter.go \
+  -out-json ./examples/todo/schema-cutter.json
 
 # 全量同步 + 逐表打印“行数 + 样例”
-go run ./cmd/pstable -db ./out/cutter.db -schema ./testdata/schema/cutter.json \
+go run ./cmd/pstable -db ./out/cutter.db -schema ./examples/todo/schema-cutter.json \
   -sync -report -limit 1 \
   -endpoint http://120.24.7.22:8080 -rest http://120.24.7.22:8089/rest \
   -rpc http://120.24.7.22:8089/rest/rpc/fetch_credentials -box D1-2 -org ORG001
@@ -120,7 +124,7 @@ go run ./cmd/pstable -db ./out/cutter.db -schema ./testdata/schema/cutter.json \
 | `cmd/pscompare` | 比对两份 `rows.jsonl`（双实现差分门禁） |
 | `cmd/psq` | 直接查本地 SQLite（`-ls`/`-q`/`-check`/**`-snapshot`**，核对落库或给图形工具做快照） |
 | `cmd/pstable` | **用 SDK 读/写路径**操作本地库：`-ls`/`-table`/`-q` 查询、`-exec` 写入/删除、`-i` 交互、`-upload` 自动上传、`-sync -report` 同步并逐表打印行数+样例 |
-| `cmd/genschema` | 从 syncRules.yaml + PostgREST OpenAPI 生成客户端 schema（生成 `schema_cutter.go` 与 `testdata/schema/cutter.json`） |
+| `cmd/genschema` | 从 syncRules.yaml + PostgREST OpenAPI 生成客户端 schema（`-pkg main` 可生成到任意项目） |
 | `scripts/ps-write.ps1` | Windows 一键写操作：`-Action insert/update/delete/query/list/exec` + 自动上传 + 前后端行数核对 |
 | `scripts/run-js-diff.sh` | Go vs 官方 `@powersync/node` 双实现差分（Node ≥ 22.15） |
 | `scripts/js-diff-container.sh` | 同上，WSL2/kiri 容器内跑（无需 Docker Desktop） |

@@ -35,6 +35,28 @@ go run ./examples/todo
 
 ### 方式二：连真实服务（看真实表）
 
+最简单：加 `-cutter` 用内置的 65 张表 schema（来自 `syncRules.yaml`，见 `schema_cutter.go`）：
+
+```bash
+go run ./examples/todo -mode real -cutter \
+  -endpoint http://120.24.7.22:8080 \
+  -rest http://120.24.7.22:8089/rest \
+  -rpc http://120.24.7.22:8089/rest/rpc/fetch_credentials \
+  -box D1-2 -org ORG001 \
+  -tables cutter_info,sys_error_report,org
+```
+
+输出：
+
+```
+schema: 内置 cutter（65 张表，来自 syncRules.yaml；见 schema_cutter.go）
+===== 校验：后台 REST → 本地（逐行比对）=====
+  表 cutter_info          OK  本地=60 后台=60 一致=60
+  表 sys_error_report     OK  本地=2  后台=2  一致=2
+```
+
+也可以自己导出 schema（旧路子，只含 AppSchema.ts 里的 37 张表）：
+
 ```bash
 # 先导出真实 schema（复用 e:/cutter_client 的 AppSchema.ts）
 node scripts/js-reference/dump-schema.mjs        # 生成 out/schema.json

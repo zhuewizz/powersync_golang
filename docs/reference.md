@@ -512,7 +512,7 @@ go run ./cmd/psq -db ./out/verify.db -q "select name, last_applied_op, op_checks
 脚本会自动修一下常见的 `GOROOT` 损坏（如被 `g` 改到 `C:\Users\...\.g\go`），
 并把控制台设为 UTF-8，避免中文乱码。
 
-### schema 是怎么来的（schema_cutter.go）
+### schema 是怎么来的（示例：examples/todo/schema_cutter.go）
 
 PowerSync 的硬性要求：**客户端必须声明 schema**，没声明的表不会同步（哪怕服务端会下发）。
 本仓库的 schema 由 `cmd/genschema` 生成：
@@ -525,14 +525,18 @@ PowerSync 的硬性要求：**客户端必须声明 schema**，没声明的表�
 
 生成两个产物：
 
-- `schema_cutter.go`：`powersync.CutterSchema()`，一行一张表（`{Name: "cutter_info", Columns: cols("mat_code:TEXT", ...)}`），可直接手改；
-- `testdata/schema/cutter.json`：官方 `Schema.toJSON()` 形状，给 `-schema` 参数、其它语言、或 CI 使用。
+- `examples/todo/schema_cutter.go`：示例包里的 `cutterSchema()`，一行一张表
+  （`{Name: "cutter_info", Columns: cols("mat_code:TEXT", ...)}`），可直接手改；
+- `examples/todo/schema-cutter.json`：官方 `Schema.toJSON()` 形状，给 `-schema` 参数、其它语言、或 CI 使用。
+
+> 根包 `msmkSync` 只放通用 API，**不含任何业务 schema**；换项目时用 `-pkg <包名>` 生成到自己的项目目录。
 
 ```bash
 go run ./cmd/genschema -rules E:/cutter/syncRules.yaml \
   -rpc http://host:8089/rest/rpc/fetch_credentials -box D1-2 -org ORG001 \
   -extra role -stream ./out/stream-raw.ndjson \
-  -out-go ./schema_cutter.go -out-json ./testdata/schema/cutter.json
+  -pkg main -out-go ./examples/todo/schema_cutter.go \
+  -out-json ./examples/todo/schema-cutter.json
 ```
 
 在代码里直接用：
@@ -540,7 +544,7 @@ go run ./cmd/genschema -rules E:/cutter/syncRules.yaml \
 ```go
 db, err := powersync.Open(ctx, powersync.Options{
     Filename: "app.db",
-    Schema:   powersync.CutterSchema(),
+    Schema:   cutterSchema(),   // 你自己的项目：genschema 生成的那个函数
     Connector: myConnector,
 })
 ```
@@ -557,7 +561,7 @@ db, err := powersync.Open(ctx, powersync.Options{
 #### 全量同步 + 逐表核对
 
 ```bash
-go run ./cmd/pstable -db ./out/cutter.db -schema ./testdata/schema/cutter.json \
+go run ./cmd/pstable -db ./out/cutter.db -schema ./examples/todo/schema-cutter.json \
   -sync -report -limit 1 \
   -endpoint http://host:8080 -rest http://host:8089/rest \
   -rpc http://host:8089/rest/rpc/fetch_credentials -box D1-2 -org ORG001
