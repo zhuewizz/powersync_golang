@@ -175,6 +175,7 @@ go run ./cmd/pstable -db ./out/cutter.db -schema ./examples/todo/schema-cutter.j
 | `cmd/pstable` | **用 SDK 读/写路径**操作本地库：`-ls`/`-table`/`-q` 查询、`-exec` 写入/删除、`-i` 交互、`-upload` 自动上传、`-sync -report` 同步并逐表打印行数+样例 |
 | `cmd/genschema` | 从 syncRules.yaml + PostgREST OpenAPI 生成客户端 schema（`-pkg main` 可生成到任意项目） |
 | `scripts/go-env.ps1` | 修 GOROOT/PATH：`. .scriptsgo-env.ps1`（当前会话）或 `-FixProfile`（永久改 profile） |
+| `scripts/verify-sync.ps1` | **一条命令验证双向同步**：下载+逐表校验 → 新增/修改/删除各回写后端并断言（`-KeepRow` 保留探针行） |
 | `scripts/uninstall-g.ps1` | 卸载 g（Go 版本管理器）：清 PATH/profile、删 `E:gvm` 与 `%USERPROFILE%.g`（`-WhatIf` 可预览） |
 | `scripts/ps-write.ps1` | Windows 一键写操作：`-Action insert/update/delete/query/list/exec` + 自动上传 + 前后端行数核对 |
 | `scripts/run-js-diff.sh` | Go vs 官方 `@powersync/node` 双实现差分（Node ≥ 22.15） |

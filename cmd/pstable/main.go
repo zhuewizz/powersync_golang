@@ -31,6 +31,7 @@ import (
 	powersync "msmkSync"
 	"msmkSync/internal/psclient"
 	"msmkSync/internal/restconn"
+	"msmkSync/internal/rowdiff"
 )
 
 func main() {
@@ -47,15 +48,16 @@ func main() {
 		full    = flag.Bool("full", false, "不截断长字段")
 		dryRun  = flag.Bool("dry-run", false, "只打印将要执行的写 SQL，不真正执行")
 
-		upload   = flag.Bool("upload", false, "写入后连接服务并把上传队列同步到后端（需要 -endpoint/-rpc/-box/-org/-rest）")
-		endpoint = flag.String("endpoint", os.Getenv("PS_URL"), "PowerSync 服务地址")
-		rpc      = flag.String("rpc", os.Getenv("RPC_URL"), "fetch_credentials RPC")
-		box      = flag.String("box", os.Getenv("BOX_CODE"), "box_code")
-		org      = flag.String("org", os.Getenv("ORG_CODE"), "org_code")
-		restBase = flag.String("rest", os.Getenv("REST_URL"), "PostgREST base，如 http://host:8089/rest")
-		verifyT  = flag.String("verify-table", "", "上传后核对这些表（逗号分隔）本地与后端行数")
-		syncDown = flag.Bool("sync", false, "连接服务并等待首次同步（下载到本地；需要 -endpoint/-rpc/-box/-org）")
-		report   = flag.Bool("report", false, "逐表打印行数 + 样例数据（配合 -sync 看同步结果）")
+		upload    = flag.Bool("upload", false, "写入后连接服务并把上传队列同步到后端（需要 -endpoint/-rpc/-box/-org/-rest）")
+		endpoint  = flag.String("endpoint", os.Getenv("PS_URL"), "PowerSync 服务地址")
+		rpc       = flag.String("rpc", os.Getenv("RPC_URL"), "fetch_credentials RPC")
+		box       = flag.String("box", os.Getenv("BOX_CODE"), "box_code")
+		org       = flag.String("org", os.Getenv("ORG_CODE"), "org_code")
+		restBase  = flag.String("rest", os.Getenv("REST_URL"), "PostgREST base，如 http://host:8089/rest")
+		verifyT   = flag.String("verify-table", "", "上传后核对这些表（逗号分隔）本地与后端行数")
+		syncDown  = flag.Bool("sync", false, "连接服务并等待首次同步（下载到本地；需要 -endpoint/-rpc/-box/-org）")
+		report    = flag.Bool("report", false, "逐表打印行数 + 样例数据（配合 -sync 看同步结果）")
+		verifyAll = flag.Bool("verify-all", false, "逐表比对本地与后端行数（需要 -sync 或 -upload 拿 token）")
 	)
 	flag.Parse()
 
@@ -149,6 +151,17 @@ func main() {
 			fmt.Fprintf(os.Stderr, "⚠️ 有 %d 行因表不在 schema 中被跳过：%s\n",
 				n, strings.Join(db.SkippedTables(), ", "))
 		}
+	}
+
+	if *verifyAll {
+		if conn == nil {
+			fatalf("-verify-all 需要 -sync（或 -upload）以便连接后端核对")
+		}
+		if err := conn.EnsureToken(ctx); err != nil {
+			fatalf("取 token: %v", err)
+		}
+		verifyAllTables(ctx, db, conn.REST(), sch.Tables())
+		return
 	}
 
 	if *report {
@@ -686,4 +699,85 @@ func quote(name string) string { return `"` + strings.ReplaceAll(name, `"`, `""`
 func fatalf(format string, args ...any) {
 	fmt.Fprintf(os.Stderr, "pstable: "+format+"\n", args...)
 	os.Exit(1)
+}
+
+// verifyAllTables 校验下载侧：本地每一行都必须能在后端找到且字段一致。
+//
+// 为什么不直接比行数：同步规则本身会过滤（org_data 只放本 org、box_data 只放本柜），
+// 后端行数通常**多于**本地，那是正常的。所以这里做“本地 ⊆ 后端”的子集校验：
+//   - 本地缺/字段不同  → ❌ 真问题
+//   - 只在后端存在      → ℹ️ 被 sync rules 过滤（正常）
+//   - REST 不暴露该表   → ⚠️ 无法核对（如短别名 i/t、role）
+func verifyAllTables(ctx context.Context, db *powersync.DB, rest *psclient.REST, tables []powersync.Table) {
+	fmt.Printf("\n%-28s %8s %8s %10s %s\n%s\n", "表", "本地", "后端", "本地缺/差异", "后端多（规则过滤）", strings.Repeat("-", 78))
+	var okN, filteredN, skipN, badN int
+	for _, t := range tables {
+		localSQL := `SELECT * FROM ` + quote(t.Name)
+		if hasColumn(t, "deleted_at") {
+			localSQL += ` WHERE deleted_at IS NULL`
+		}
+		localRows, err := db.GetAll(ctx, localSQL)
+		if err != nil {
+			fmt.Printf("%-28s %8s %8s %10s  ⚠️ 本地查询失败: %v\n", t.Name, "-", "-", "-", err)
+			skipN++
+			continue
+		}
+		local := make([]rowdiff.Row, 0, len(localRows))
+		for _, r := range localRows {
+			m := make(map[string]json.RawMessage, len(r))
+			for k, v := range r {
+				if b, err := json.Marshal(v); err == nil {
+					m[k] = b
+				}
+			}
+			local = append(local, rowdiff.Row{Table: t.Name, Row: m})
+		}
+
+		var remoteRaw []map[string]json.RawMessage
+		if err := rest.GetJSON(ctx, "/"+url.PathEscape(t.Name)+"?select=*&limit=200000", &remoteRaw); err != nil {
+			fmt.Printf("%-28s %8d %8s %10s  ⚠️ 后端不暴露/REST 不可达\n", t.Name, len(localRows), "-", "-")
+			skipN++
+			continue
+		}
+		remote := make([]rowdiff.Row, 0, len(remoteRaw))
+		for _, r := range remoteRaw {
+			remote = append(remote, rowdiff.Row{Table: t.Name, Row: r})
+		}
+
+		res := rowdiff.Compare(local, remote, 3)
+		_, onlyLocal, onlyRemote, fieldDiff := res.Totals()
+		switch {
+		case onlyLocal > 0 || fieldDiff > 0:
+			fmt.Printf("%-28s %8d %8d %10s  ❌ 本地缺 %d，字段不同 %d\n",
+				t.Name, len(localRows), len(remoteRaw), "有问题", onlyLocal, fieldDiff)
+			badN++
+			for _, d := range res.Diffs {
+				fmt.Printf("    %s/%s: %s\n", d.Table, d.ID, d.Detail)
+			}
+		case onlyRemote > 0:
+			fmt.Printf("%-28s %8d %8d %10s  ℹ️ 后端多 %d（sync rules 过滤，正常）\n",
+				t.Name, len(localRows), len(remoteRaw), "0/0", onlyRemote)
+			filteredN++
+		default:
+			fmt.Printf("%-28s %8d %8d %10s  ✅\n", t.Name, len(localRows), len(remoteRaw), "0/0")
+			okN++
+		}
+	}
+	fmt.Println(strings.Repeat("-", 78))
+	fmt.Printf("共 %d 张表：✅ 完全一致 %d，ℹ️ 后端更多（规则过滤）%d，⚠️ 无法核对 %d，❌ 有问题 %d\n",
+		len(tables), okN, filteredN, skipN, badN)
+	if badN == 0 {
+		fmt.Println("✅ 下载侧校验通过：本地每一行都能在后端找到，且字段一致")
+	} else {
+		fmt.Println("❌ 有表不一致：本地存在后端没有的行，或字段不同（检查 sync rules / 值归一化）")
+	}
+}
+
+func hasColumn(t powersync.Table, name string) bool {
+	for _, c := range t.Columns {
+		if c.Name == name {
+			return true
+		}
+	}
+	return false
 }

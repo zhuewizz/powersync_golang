@@ -36,6 +36,9 @@
   生成 `examples/todo/schema_cutter.go`（示例包的 `cutterSchema()`）与 `examples/todo/schema-cutter.json`；
   根包保持项目无关（`-pkg main` 可生成到任意项目），示例新增 `-cutter` 开关直接用内置 65 表 schema；
   实测全量 65 张表 / 1644 行，2 个 bucket，首次同步 ~2.4s。
+- **双向同步校验**：`scripts/verify-sync.ps1` 一条命令跑完「下载+逐表校验 → 新增 → 修改 → 删除」，
+  每步用 REST 断言后端状态（写后本地会被服务端回显覆盖，脚本会轮询等待最终一致）；
+  配套 `cmd/pstable -verify-all`（本地 ⊆ 后端 的子集校验，区分“规则过滤”与“真问题”）。
 - **卸载脚本**：`scripts/uninstall-g.ps1`（清 Machine/User PATH 中的 `E:gvm`、改写 profile、
   删除 `E:gvm` 与 `%USERPROFILE%.g`；支持 `-WhatIf` 预览，Machine PATH 需管理员）。
 - **环境脚本**：`scripts/go-env.ps1`（`. .scriptsgo-env.ps1` 修当前会话；`-FixProfile` 备份并改写
