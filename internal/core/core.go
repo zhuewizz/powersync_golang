@@ -77,6 +77,8 @@ type Options struct {
 	Schema *Schema
 	// ClientID 为空时自动生成 UUIDv4 存入 ps_kv。
 	ClientID string
+	// Debugf 接管 core 内部调试日志（nil=丢弃）。仅用于排查，例如"物化时删了哪一行"。
+	Debugf func(format string, args ...any)
 	// NoFileLock 为 true 时不加跨进程文件锁（默认加锁：同一 DB 被两个实例打开会报
 	// ErrDatabaseLocked，避免两个同步引擎同时写坏数据）。
 	NoFileLock bool

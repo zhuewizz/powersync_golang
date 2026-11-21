@@ -59,6 +59,8 @@ type Store interface {
 	UpdateStreamSyncState(ctx context.Context, states []protocol.StreamState, syncedAt time.Time) error
 	// PurgeExpiredStreams 删除已过期的非 active 订阅。
 	PurgeExpiredStreams(ctx context.Context, now time.Time) (int64, error)
+	// ResetBucket 清空某 bucket 的 oplog/游标（服务端用 checkpoint_diff 移除 bucket 时调用）。
+	ResetBucket(ctx context.Context, bucket string) error
 }
 
 // Status 是同步状态的快照。
@@ -380,6 +382,7 @@ func (s *Syncer) streamIteration(ctx context.Context) error {
 	haveCheckpoint := false
 	seenBuckets := map[string]struct{}{}
 	var checkpointStreams []protocol.StreamState
+	var diffTargets map[string]core.BucketTarget
 	for {
 		line, err := lines.Next()
 		if errors.Is(err, io.EOF) {
@@ -420,14 +423,40 @@ func (s *Syncer) streamIteration(ctx context.Context) error {
 		case *protocol.DataLine:
 			seenBuckets[l.Bucket] = struct{}{}
 			if len(l.Ops) > 0 {
+				sample := make([]string, 0, 4)
+				for i := range l.Ops {
+					if i >= 4 {
+						break
+					}
+					o := &l.Ops[i]
+					sample = append(sample, o.OpID.String()+":"+string(o.Op)+":"+o.RowID())
+				}
 				s.log.Debug("data 行", "bucket", l.Bucket, "after", l.After.String(),
 					"has_more", l.HasMore, "ops", len(l.Ops),
+					"sample", strings.Join(sample, " "),
 					"last_op", l.Ops[len(l.Ops)-1].OpID.String(),
 					"last_type", string(l.Ops[len(l.Ops)-1].Op))
 			}
 			if err := s.opts.Store.StageOps(ctx, l.Bucket, l.Ops); err != nil {
 				return fmt.Errorf("写入 oplog（%s）: %w", l.Bucket, err)
 			}
+		case *protocol.CheckpointDiffLine:
+			// 实测：增量 checkpoint 用 checkpoint_diff 代替 checkpoint 行。
+			// 它只给"变化的 bucket"的新 checksum/count，以及被移除的 bucket。
+			diffTargets = make(map[string]core.BucketTarget, len(l.UpdatedBuckets))
+			for _, b := range l.UpdatedBuckets {
+				diffTargets[b.Bucket] = core.BucketTarget{
+					Name: b.Bucket, Checksum: b.Checksum32(), Count: b.Count, Priority: b.Priority,
+				}
+			}
+			for _, name := range l.RemovedBuckets {
+				s.log.Warn("服务端移除了 bucket，清空本地 oplog/游标（已落库的行不会自动删除）", "bucket", name)
+				if err := s.opts.Store.ResetBucket(ctx, name); err != nil {
+					s.log.Warn("ResetBucket 失败", "bucket", name, "err", err)
+				}
+			}
+			s.log.Debug("checkpoint_diff", "last_op_id", l.LastOpID.String(),
+				"updated", len(l.UpdatedBuckets), "removed", len(l.RemovedBuckets))
 		case *protocol.CheckpointCompleteLine:
 			if l.CheckpointRequestID != nil {
 				stale, err := s.staleCheckpoint(ctx, *l.CheckpointRequestID)
@@ -445,12 +474,25 @@ func (s *Syncer) streamIteration(ctx context.Context) error {
 				}
 			}
 			if !haveCheckpoint || len(targets) == 0 {
-				targets = make([]core.BucketTarget, 0, len(seenBuckets))
-				for name := range seenBuckets {
-					targets = append(targets, core.BucketTarget{Name: name})
+				if len(diffTargets) > 0 {
+					// 用 checkpoint_diff 给出的真实 checksum/count（可以校验这些 bucket）。
+					targets = targets[:0]
+					for _, t := range diffTargets {
+						targets = append(targets, t)
+					}
+					for name := range seenBuckets {
+						if _, ok := diffTargets[name]; !ok {
+							targets = append(targets, core.BucketTarget{Name: name})
+						}
+					}
+				} else {
+					targets = targets[:0]
+					for name := range seenBuckets {
+						targets = append(targets, core.BucketTarget{Name: name})
+					}
 				}
 			}
-			validate := haveCheckpoint
+			validate := haveCheckpoint || len(diffTargets) > 0
 			for _, t := range targets {
 				if local, err := s.opts.Store.BucketChecksum(ctx, t.Name); err == nil {
 					s.log.Debug("checkpoint 结束", "bucket", t.Name, "expected", t.Checksum,
@@ -514,7 +556,8 @@ func (s *Syncer) streamIteration(ctx context.Context) error {
 				}()
 			}
 		default:
-			s.log.Debug("unknown sync line", "kind", line.Kind())
+			s.log.Debug("未处理的行", "kind", line.Kind(),
+				"raw", truncateJSON(line.Raw(), 800))
 		}
 	}
 }
@@ -633,6 +676,14 @@ func (s *Syncer) uploadLoop(ctx context.Context) {
 		delay = s.opts.RetryDelay
 		s.set(func(st *Status) { st.UploadErr = "" })
 	}
+}
+
+// truncateJSON 截断原始行用于日志（避免刷屏）。
+func truncateJSON(raw []byte, n int) string {
+	if len(raw) <= n {
+		return string(raw)
+	}
+	return string(raw[:n]) + "…"
 }
 
 // broadcast 是"关闭即广播"的 channel 容器（状态/版本变化通知都用它）。

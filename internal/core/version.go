@@ -98,3 +98,10 @@ func bumpVersionTx(ctx context.Context, tx *sql.Tx, tables []string) error {
 	}
 	return nil
 }
+
+// debugf 输出 core 内部调试日志（默认丢弃，`Options.Debugf` 可接管）。
+func (db *DB) debugf(format string, args ...any) {
+	if db.opts.Debugf != nil {
+		db.opts.Debugf(format, args...)
+	}
+}

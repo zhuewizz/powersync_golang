@@ -48,6 +48,8 @@ type Options struct {
 	NetworkCheckInterval time.Duration
 	NetworkCheckTimeout  time.Duration
 	// DisableNetworkMonitor 为 true 时不启动网络监视器。
+	// Debugf 接管底层调试日志（默认 nil=丢弃）；例如打印"物化时删除了哪一行"。
+	Debugf                func(format string, args ...any)
 	DisableNetworkMonitor bool
 }
 
@@ -91,6 +93,7 @@ func Open(ctx context.Context, opts Options) (*DB, error) {
 		Schema:     cs,
 		ClientID:   opts.ClientID,
 		NoFileLock: opts.NoFileLock,
+		Debugf:     opts.Debugf,
 	})
 	if err != nil {
 		return nil, err

@@ -28,6 +28,7 @@ type fakeStore struct {
 	checkpoints  atomic.Int64
 	streamStates atomic.Int64
 	purged       atomic.Int64
+	resets       atomic.Int64
 	applyErr     error
 }
 
@@ -62,6 +63,11 @@ func (s *fakeStore) ClearTargetCheckpoint(ctx context.Context) error {
 }
 
 func (s *fakeStore) BucketChecksum(ctx context.Context, bucket string) (uint32, error) { return 0, nil }
+
+func (s *fakeStore) ResetBucket(ctx context.Context, bucket string) error {
+	s.resets.Add(1)
+	return nil
+}
 
 func (s *fakeStore) ActiveStreams(ctx context.Context) ([]core.StreamSubscription, error) {
 	return nil, nil
@@ -364,4 +370,61 @@ func bsonInt32(name string, v int32) bsonElem {
 	b := make([]byte, 4)
 	binary.LittleEndian.PutUint32(b, uint32(v))
 	return bsonElem{0x10, name, b}
+}
+
+// TestCheckpointDiffProvidesTargets 验证：checkpoint_diff 代替 checkpoint 行时，
+// 用它给出的 checksum/count 作为目标（并开启校验），removed_buckets 会 ResetBucket。
+func TestCheckpointDiffProvidesTargets(t *testing.T) {
+	const body = `{"checkpoint_diff":{"last_op_id":"7","removed_buckets":["gone"],"updated_buckets":[{"bucket":"b1","checksum":100,"count":1,"priority":3,"subscriptions":[{"default":1}]}]}}` + "\n" +
+		`{"data":{"bucket":"b1","after":"7","has_more":false,"data":[{"op_id":"7","op":"PUT","object_type":"todos","object_id":"a","checksum":100,"subkey":"s/a","data":"{\"id\":\"a\"}"}]}}` + "\n" +
+		`{"checkpoint_complete":{"last_op_id":"7"}}` + "\n"
+
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/x-ndjson")
+		_, _ = io.WriteString(w, body)
+		if f, ok := w.(http.Flusher); ok {
+			f.Flush()
+		}
+		<-r.Context().Done()
+	}))
+	defer srv.Close()
+
+	store := &recordingStore{fakeStore: newFakeStore()}
+	s := newSyncer(t, store, &fakeCreds{endpoint: srv.URL}, &fakeUploader{})
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	s.Start(ctx)
+
+	select {
+	case <-s.FirstSync():
+	case <-time.After(5 * time.Second):
+		t.Fatal("未完成首次同步")
+	}
+	s.Stop()
+
+	if got := store.fakeStore.resets.Load(); got != 1 {
+		t.Errorf("removed_buckets 应 ResetBucket 一次，实际 %d", got)
+	}
+	if len(store.lastTargets) != 1 || store.lastTargets[0].Name != "b1" {
+		t.Fatalf("targets = %+v", store.lastTargets)
+	}
+	if store.lastTargets[0].Checksum != 100 || store.lastTargets[0].Count != 1 {
+		t.Errorf("应使用 checkpoint_diff 的 checksum/count: %+v", store.lastTargets[0])
+	}
+	if !store.lastOpts.Validate {
+		t.Error("有 checkpoint_diff 时应开启 checksum 校验")
+	}
+}
+
+// recordingStore 记录 ApplyCheckpoint 的入参。
+type recordingStore struct {
+	*fakeStore
+	lastTargets []core.BucketTarget
+	lastOpts    core.ApplyOptions
+}
+
+func (r *recordingStore) ApplyCheckpoint(ctx context.Context, lastOp protocol.OpID, targets []core.BucketTarget, opts core.ApplyOptions) ([]core.ChecksumMismatch, error) {
+	r.lastTargets = append([]core.BucketTarget(nil), targets...)
+	r.lastOpts = opts
+	return r.fakeStore.ApplyCheckpoint(ctx, lastOp, targets, opts)
 }

@@ -364,6 +364,11 @@ func (db *DB) ApplyCheckpoint(ctx context.Context, lastOp protocol.OpID, targets
 	tables := make([]string, 0, len(touchedTables))
 	for name := range touchedTables {
 		tables = append(tables, name)
+		if db.opts.Debugf != nil {
+			var n int
+			_ = tx.QueryRowContext(ctx, fmt.Sprintf(`SELECT count(*) FROM %s`, quoteIdent(db.StorageName(name)))).Scan(&n)
+			db.debugf("apply 后 %s 行数=%d", name, n)
+		}
 	}
 	if err := bumpVersionTx(ctx, tx, tables); err != nil {
 		return nil, err
@@ -421,6 +426,7 @@ SELECT u.row_type, u.row_id,
 		touched[p.table] = struct{}{}
 		if !p.data.Valid {
 			// 没有最新的 PUT（被 REMOVE 掉了）→ 从用户表删除。
+			db.debugf("materialize: DELETE %s/%s（oplog 中无最新 PUT）", p.table, p.id)
 			if _, err := tx.ExecContext(ctx,
 				fmt.Sprintf(`DELETE FROM %s WHERE %s = ?`, quoteIdent(db.StorageName(p.table)), quoteIdent(PrimaryKeyColumn)),
 				p.id); err != nil {

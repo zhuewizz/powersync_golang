@@ -405,3 +405,24 @@ func TestGoldenPutThenRemove(t *testing.T) {
 		t.Errorf("del.OpID = %d", del.OpID)
 	}
 }
+
+// TestGoldenCheckpointDiff 用真实抓包验证 checkpoint_diff 解析（实测：增量 checkpoint 用它代替 checkpoint 行）。
+func TestGoldenCheckpointDiff(t *testing.T) {
+	lines := decodeFile(t, "checkpoint-diff.ndjson")
+	assertKinds(t, lines, protocol.KindCheckpointDiff, protocol.KindData, protocol.KindCheckpointComplete)
+
+	diff := lines[0].(*protocol.CheckpointDiffLine)
+	if diff.LastOpID != 24457 {
+		t.Errorf("last_op_id = %d", diff.LastOpID)
+	}
+	if len(diff.RemovedBuckets) != 0 {
+		t.Errorf("removed_buckets = %v", diff.RemovedBuckets)
+	}
+	if len(diff.UpdatedBuckets) != 1 {
+		t.Fatalf("updated_buckets = %d", len(diff.UpdatedBuckets))
+	}
+	b := diff.UpdatedBuckets[0]
+	if b.Bucket != `50#box_data["D1-2","ORG001"]` || b.Checksum32() != 2134983222 || b.Count != 980 || b.Priority != 3 {
+		t.Errorf("updated bucket = %+v", b)
+	}
+}

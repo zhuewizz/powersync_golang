@@ -290,6 +290,8 @@ func (db *DB) WatchTables(ctx context.Context, tables []string, query string, ar
 				return true
 			}
 			hash := hashRows(rows)
+			db.logger.Debug("watch emit", "query", query, "rows", len(rows),
+				"first", fmt.Sprint(rows), "changed", first || hash != last)
 			if !first && hash == last {
 				return true
 			}

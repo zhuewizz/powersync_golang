@@ -62,10 +62,15 @@ func main() {
 		upload   = flag.String("upload", "mock", "real 模式的上传方式：mock（打印后出队）或 real（真正写 PostgREST）")
 		restBase = flag.String("rest", os.Getenv("REST_URL"), "upload=real 时的 PostgREST base，如 http://host:8089/rest")
 		limit    = flag.Int("limit", 3, "每张表打印多少行样例")
+		verbose  = flag.Bool("v", false, "打印库内部的 debug 日志（同步行/checkpoint 细节）")
 	)
 	flag.Parse()
 
-	logger := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: slog.LevelWarn}))
+	lvl := slog.LevelWarn
+	if *verbose {
+		lvl = slog.LevelDebug
+	}
+	logger := slog.New(slog.NewTextHandler(os.Stderr, &slog.HandlerOptions{Level: lvl}))
 	ctx, cancel := context.WithTimeout(context.Background(), *timeout)
 	defer cancel()
 
@@ -149,6 +154,11 @@ func main() {
 		NetworkTarget:        netTarget,
 		NetworkCheckInterval: 2 * time.Second,
 		NetworkCheckTimeout:  time.Second,
+		Debugf: func(format string, args ...any) {
+			if *verbose {
+				logger.Debug("core: " + fmt.Sprintf(format, args...))
+			}
+		},
 	})
 	if err != nil {
 		fail("打开数据库", err)

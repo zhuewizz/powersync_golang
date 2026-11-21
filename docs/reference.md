@@ -450,6 +450,7 @@ db, _ := powersync.Open(ctx, powersync.Options{
 | --- | --- |
 | `Execute` 返回 0 行 | JSON 表是视图，SQLite 对视图写恒报 0（写入其实成功了，查一下数据确认） |
 | 服务端返回 400 `must have required property 'subscriptions'` 或 `'override_priority'` | 自建服务对 `streams` 校验较严；本库已按实测补齐，若自己发请求需带上这两个属性 |
+| 日志出现 `未处理的行 kind=checkpoint_diff` | 旧版本会忽略 diff 行；现版本已处理（updated→目标并校验，removed→ResetBucket） |
 | 日志出现 `checksum mismatch, restarting iteration` | 本地数据与服务端漂移（或人为改动）→ SDK 自动重置该 bucket 从 `after=0` 重下；偶发一次属正常 |
 | 服务端下发但表不在 schema | 会被跳过物化（`db.SkippedUnknownOps()`、`db.SkippedTables()` 可查，不报错）。**不会自动回填**，需把表加进 schema 后重建本地库（`DisconnectAndClear` 或删 .db）。实测：用 AppSchema 的 37 张表时，服务端仍会下发 `i` / `t` / `material_category` / `material_info`（sync rules 比 AppSchema 宽）→ 252 行被跳过 |
 | 同步一直不完成 | 检查 token 有效期/权限、服务端是否支持该 endpoint（`/sync/stream`）、网络代理 |

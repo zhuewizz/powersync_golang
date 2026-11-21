@@ -355,7 +355,11 @@ X-User-Agent: powersync-go/<version>
 
 **未实测**（实现前必须再抓包，不要凭文档假定字段）：
 
-- `checkpoint_diff` / `removed_buckets`：插入和删除各测过一次，**服务端均未下发**（即使增量只有 1 条 op 也只发完整 `checkpoint`）。解析层保留支持，但不要把它当作必经路径。
+- ~~`checkpoint_diff`~~：**已实测**（2026-11，真实服务在上传后推送增量时下发）。形状：
+  `{"checkpoint_diff":{"last_op_id":"24457","removed_buckets":[],"updated_buckets":[{"bucket":"50#box_data[\"D1-2\",\"ORG001\"]","checksum":2134983222,"count":980,"priority":3,"subscriptions":[{"default":1}]}]}}`。
+  它**代替 checkpoint 行**出现，只给变化 bucket 的新 checksum/count。客户端处理：用 `updated_buckets` 作为
+  应用目标（并据此校验 checksum），`removed_buckets` → `ResetBucket`（**已落库的行不会自动删除**，
+  需要后续按 bucket 归属清理）。样本见 `testdata/sync/checkpoint-diff.ndjson`。
 - `partial_checkpoint_complete`（按 priority 部分完成）。
 - `checkpoint.write_checkpoint`（新式模式下缺省，疑似只在 legacy 模式出现）。
 - `op= "MOVE"`（subkey 变更）。
