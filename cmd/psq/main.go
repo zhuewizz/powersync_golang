@@ -27,30 +27,75 @@ func main() {
 		query  = flag.String("q", "", "要执行的 SQL（select）")
 		ls     = flag.Bool("ls", false, "列出库里的表/视图（用户对象 + ps_* 内部对象）")
 		asJSON = flag.Bool("json", false, "以 JSON 输出（每行一条）")
+		snap   = flag.String("snapshot", "", "生成一致快照文件（VACUUM INTO），供图形工具打开")
+		check  = flag.Bool("check", false, "执行 PRAGMA integrity_check")
 	)
 	flag.Parse()
 	if *dbPath == "" {
 		fatalf("需要 -db")
 	}
-	if !*ls && *query == "" {
-		fatalf("需要 -q 或 -ls")
+	if *snap == "" && !*ls && !*check && *query == "" {
+		fatalf("需要 -q / -ls / -check / -snapshot")
 	}
 	if _, err := os.Stat(*dbPath); err != nil {
 		fatalf("打开 %s: %v", *dbPath, err)
 	}
 
-	dsn := "file:" + url.PathEscape(*dbPath) + "?mode=ro"
+	// VACUUM INTO 需要写入新文件，因此快照模式不能用只读连接。
+	mode := "ro"
+	if *snap != "" {
+		mode = "rw"
+	}
+	dsn := "file:" + url.PathEscape(*dbPath) + "?mode=" + mode
 	db, err := sql.Open("sqlite", dsn)
 	if err != nil {
 		fatalf("打开数据库: %v", err)
 	}
 	defer db.Close()
 
-	if *ls {
+	switch {
+	case *snap != "":
+		makeSnapshot(db, *snap)
+	case *check:
+		checkIntegrity(db)
+	case *ls:
 		listObjects(db)
-		return
+	default:
+		runQuery(db, *query, *asJSON)
 	}
-	runQuery(db, *query, *asJSON)
+}
+
+// makeSnapshot 用 VACUUM INTO 生成单文件快照：没有 -wal/-shm、不会锁原库，
+// 可以直接用 DB Browser / SQLiteStudio 打开（避免 "database disk image is malformed"）。
+func makeSnapshot(db *sql.DB, out string) {
+	if _, err := os.Stat(out); err == nil {
+		fatalf("%s 已存在，先删掉或换个名字", out)
+	}
+	if _, err := db.Exec(`VACUUM INTO ?`, out); err != nil {
+		fatalf("VACUUM INTO %s: %v（若报只读/占用，先关闭正在使用该库的程序）", out, err)
+	}
+	info, err := os.Stat(out)
+	if err != nil {
+		fatalf("校验快照: %v", err)
+	}
+	fmt.Printf("已生成快照: %s（%.1f MB，单文件、无 WAL）\n", out, float64(info.Size())/(1<<20))
+	fmt.Println("  用 DB Browser for SQLite / SQLiteStudio 直接打开它即可（不会锁原库）")
+}
+
+// checkIntegrity 执行完整性检查（排查 SQLITE_CORRUPT=11 这类错误）。
+func checkIntegrity(db *sql.DB) {
+	rows, err := db.Query(`PRAGMA integrity_check`)
+	if err != nil {
+		fatalf("integrity_check: %v", err)
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var line string
+		if err := rows.Scan(&line); err != nil {
+			fatalf("scan: %v", err)
+		}
+		fmt.Println("integrity_check:", line)
+	}
 }
 
 func listObjects(db *sql.DB) {

@@ -241,6 +241,11 @@ func firstLine(s string) string {
 
 // Close 关闭底层连接并释放文件锁。
 func (db *DB) Close() error {
+	// 关闭前把 WAL 完全合并回主库并截断：这样 .db 文件自包含，
+	// 复制/用图形工具单独打开都不会只看到半截数据（也不要复制 -shm）。
+	if db.opts.Path != ":memory:" {
+		_, _ = db.sql.Exec(`PRAGMA wal_checkpoint(TRUNCATE)`)
+	}
 	err := db.sql.Close()
 	if db.lock != nil {
 		db.lock.release()

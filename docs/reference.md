@@ -475,10 +475,30 @@ go run ./examples/todo -mode real -rest http://host:8089/rest ... -verify
 go run ./cmd/psq -db ./out/verify.db -q "select name, last_applied_op, op_checksum from ps_buckets"
 ```
 
+### 用图形工具打开本地库（DB Browser / SQLiteStudio）
+
+本地库是 **WAL** 模式，直接拿图形工具打开"正在被程序使用"的库文件，
+容易看到 `11 - database disk image is malformed` 之类的报错（数据其实没坏）。
+安全做法是先生成一份**单文件快照**再打开：
+
+```bash
+go run ./cmd/psq -db ./out/verify.db -snapshot ./out/verify-snapshot.db
+# 然后用 DB Browser for SQLite / SQLiteStudio 打开 ./out/verify-snapshot.db
+```
+
+快照是 `VACUUM INTO` 的结果：`journal_mode=delete`、没有 `-wal`/`-shm`、不会锁原库。
+
+注意：
+
+- **不要复制 `-shm`**（它是进程间共享内存索引，复制过去必然不一致）；
+  复制库时只带 `.db`（干净关闭后 WAL 已被 checkpoint 合并，`.db` 自包含）。
+- 如果确认库本身有问题，用 `go run ./cmd/psq -db <file> -check` 跑 `PRAGMA integrity_check`。
+
 ### 自检工具
 
 | 命令 | 用途 |
 | --- | --- |
+| `go run ./cmd/psq -db <db> -ls|-q|-check|-snapshot` | 只读查库/完整性检查/生成快照 |
 | `go run ./cmd/psdemo -endpoint ... -rpc ... -schema ...` | 公开 API 冒烟（只读） |
 | `go run ./cmd/psupload ...` | 上传回显闭环（写一行→上传→回显→删除） |
 | `go run ./cmd/psdiff ... -rest ...` | 与后端 PostgREST 逐行比对 |
