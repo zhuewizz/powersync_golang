@@ -86,6 +86,7 @@ go run ./examples/todo            # 离线完整示例（内置假服务，几�
 | `cmd/pscompare` | 比对两份 `rows.jsonl`（双实现差分门禁） |
 | `cmd/psq` | 直接查本地 SQLite（`-ls`/`-q`/`-check`/**`-snapshot`**，核对落库或给图形工具做快照） |
 | `cmd/pstable` | **用 SDK 读/写路径**操作本地库：`-ls`/`-table`/`-q` 查询、`-exec` 写入/删除、`-i` 交互、`-upload` 自动上传 |
+| `scripts/ps-write.ps1` | Windows 一键写操作：`-Action insert/update/delete/query/list/exec` + 自动上传 + 前后端行数核对 |
 | `scripts/run-js-diff.sh` | Go vs 官方 `@powersync/node` 双实现差分（Node ≥ 22.15） |
 | `scripts/js-diff-container.sh` | 同上，WSL2/kiri 容器内跑（无需 Docker Desktop） |
 | `scripts/probe-*.sh` | 对真实服务验证增量/checksum/BSON 等场景 |

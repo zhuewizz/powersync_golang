@@ -126,7 +126,7 @@ func main() {
 	case *list:
 		listTables(ctx, db, sch.Tables())
 	case *repl:
-		runREPL(ctx, db, *format, *full, *limit, *upload)
+		runREPL(ctx, db, *format, *full, *limit, *upload, *dryRun)
 	case *execSQL != "":
 		runScript(ctx, db, *execSQL, *format, *full, *limit, *dryRun, *upload)
 	case *table != "":
@@ -215,7 +215,7 @@ func runScript(ctx context.Context, db *powersync.DB, script, format string, ful
 }
 
 // runREPL 交互式：读一行/多条 SQL 并执行；.q 退出、.tables 列表、.schema <表> 看列。
-func runREPL(ctx context.Context, db *powersync.DB, format string, full bool, limit int, uploading bool) {
+func runREPL(ctx context.Context, db *powersync.DB, format string, full bool, limit int, uploading, dryRun bool) {
 	fmt.Fprintln(os.Stderr, "\n交互模式：输入 SQL 以 ; 结尾执行；.tables 列表；.q 退出")
 	scanner := bufio.NewScanner(os.Stdin)
 	scanner.Buffer(make([]byte, 0, 64<<10), 4<<20)
@@ -228,9 +228,15 @@ func runREPL(ctx context.Context, db *powersync.DB, format string, full bool, li
 		}
 		if !scanner.Scan() {
 			fmt.Fprintln(os.Stderr)
+			// 管道/文件里最后一条语句可能没写分号：EOF 时把残留内容执行掉。
+			if rest := strings.TrimSpace(buf.String()); rest != "" {
+				for _, stmt := range splitStatements(rest) {
+					runStatement(ctx, db, stmt, format, full, limit, dryRun, uploading)
+				}
+			}
 			return
 		}
-		line := scanner.Text()
+		line := strings.TrimPrefix(scanner.Text(), "\ufeff") // 去掉管道/文件开头的 UTF-8 BOM
 		trimmed := strings.TrimSpace(line)
 		if buf.Len() == 0 {
 			switch strings.ToLower(trimmed) {
@@ -251,7 +257,7 @@ func runREPL(ctx context.Context, db *powersync.DB, format string, full bool, li
 			continue
 		}
 		for _, stmt := range splitStatements(buf.String()) {
-			runStatement(ctx, db, stmt, format, full, limit, false, uploading)
+			runStatement(ctx, db, stmt, format, full, limit, dryRun, uploading)
 		}
 		buf.Reset()
 	}

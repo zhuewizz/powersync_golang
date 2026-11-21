@@ -32,6 +32,8 @@
   `DisableNetworkMonitor`。
 - **完整示例**：`examples/todo`（默认离线 mock，内置假服务与假后端；可切到真实服务）。
 - **使用手册**：`docs/reference.md`（对齐官方 Flutter SDK 参考的中文 API 文档，含与官方差异清单）。
+- **一键脚本**：`scripts/ps-write.ps1`（Windows）——`insert`/`update`/`delete`/`query`/`list`/`exec`
+  一行命令完成“本地写 + 自动上传 + 前后端行数核对”，并自动修 GOROOT、控制台转 UTF-8。
 - **工具**：`cmd/pstable`（用 SDK 读/写路径：`-ls`/`-table`/`-q` 查询、`-exec` 写入删除、`-i` 交互、`-upload` 自动上传 + `-verify-table` 前后端行数核对）；`cmd/psq`（只读查询本地 SQLite；`-check` 完整性检查；`-snapshot` 用 `VACUUM INTO` 生成快照供图形工具打开）；`cmd/psdiff`（真机差分）、`cmd/psdemo`（冒烟）、`cmd/psupload`（上传回显闭环）、
   `cmd/psfixture-server`（离线假服务）、`cmd/pscompare`（双实现落库比对）；
   `scripts/probe-*.sh`、`scripts/run-js-diff.sh`、`scripts/js-diff-container.sh`。

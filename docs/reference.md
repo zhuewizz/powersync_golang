@@ -475,6 +475,43 @@ go run ./examples/todo -mode real -rest http://host:8089/rest ... -verify
 go run ./cmd/psq -db ./out/verify.db -q "select name, last_applied_op, op_checksum from ps_buckets"
 ```
 
+### 一键写操作（Windows：scripts/ps-write.ps1）
+
+在 PowerShell 里（**不需要图形工具，也不需要手写 GO 命令**）：
+
+```powershell
+# 1) 插入（id 自动生成 UUIDv4；自动上传并核对前后端行数）
+.\scripts\ps-write.ps1 -Action insert -Table sys_error_report -Values @{
+    org_code='ORG001'; box_code='D1-2'; box_cell='A1'; box_type='1'
+    user_id='u1'; user_name='ps-write'; error_date='2026-01-01 00:00:00'
+    error_desc='一键脚本插入'; trans_type='PROBE'; op_status='PROBE'
+}
+
+# 2) 改（-Values 也可以传字符串："error_desc=改过了"）
+.\scripts\ps-write.ps1 -Action update -Table sys_error_report -Id <uuid> -Values @{ error_desc='改过了' }
+
+# 3) 删
+.\scripts\ps-write.ps1 -Action delete -Table sys_error_report -Id <uuid>
+
+# 4) 查 / 列表
+.\scripts\ps-write.ps1 -Action query -Sql "select count(*) as n from cutter_info"
+.\scripts\ps-write.ps1 -Action list
+
+# 5) 任意 SQL（分号分隔多条），带 WHERE 的批量改删
+.\scripts\ps-write.ps1 -Action exec -Sql "update sys_error_report set op_status='DONE' where box_code='D1-2'"
+
+# 6) 只写本地、暂不上传（断网场景）；或只看 SQL 不执行
+.\scripts\ps-write.ps1 -Action insert -Table sys_error_report -Values @{...} -NoUpload
+.\scripts\ps-write.ps1 -Action insert -Table sys_error_report -Values @{...} -DryRun
+```
+
+脚本做的事：本地 SQLite 立即写入（离线可用）→ 写入进 `ps_crud` 上传队列 →
+`-upload` 自动同步到 PostgREST → 退出前 `-verify-table` 打印“本地=N 后端=M ✅/⚠️”。
+
+可用环境变量覆盖默认值：`PS_DB`、`PS_URL`、`REST_URL`、`RPC_URL`、`BOX_CODE`、`ORG_CODE`。
+脚本会自动修一下常见的 `GOROOT` 损坏（如被 `g` 改到 `C:\Users\...\.g\go`），
+并把控制台设为 UTF-8，避免中文乱码。
+
 ### 用 SDK 读写本地库（cmd/pstable）
 
 `cmd/pstable` 走的就是 `powersync.Open` + `db.GetAll`/`db.Execute`（与 Flutter/JS 的
