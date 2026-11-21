@@ -61,9 +61,37 @@ schema: 来自 ./out/schema.json（37 张表）
 （real 模式默认只读；要演示写入/上传请加 -write）
 ```
 
-> - `real` 模式的 `UploadData` 是**空实现**（打印后直接出队），不会写你的后端；
->   加 `-write` 会做“插入 → 更新 → 删除”的本地演示，同样不写后端。
+> - 默认 `-upload mock`：`UploadData` 打印后直接出队，不写后端；`-write` 只是本地插入/更新/删除演示。
 > - 真实项目请参考 [`docs/reference.md`](../docs/reference.md) 第 4 节的 Connector 实现。
+
+### 方式三：连真实服务并**真正上传**
+
+```bash
+go run ./examples/todo -mode real -upload real -write   -endpoint http://120.24.7.22:8080 -rest http://120.24.7.22:8089/rest   -rpc http://120.24.7.22:8089/rest/rpc/fetch_credentials   -box D1-2 -org ORG001   -schema ./out/schema.json -tables sys_error_report
+```
+
+实测输出：
+
+```
+上传: real（会真正写 PostgREST；演示行结束会删除）
+— 真实上传演示（表 sys_error_report，id=fc8b09f6-…）—
+  [上传-real] PUT    sys_error_report/fc8b09f6-…
+  [后端] 插入后该行存在: true
+  [上传-real] PATCH  sys_error_report/fc8b09f6-…
+  [上传-real] DELETE sys_error_report/fc8b09f6-…
+  [后端] 删除后该行存在: false
+最终状态: connected=true cursor=24432 buckets=2
+✅ 示例跑完
+```
+
+行为说明：
+
+- `PUT` → PostgREST upsert（`resolution=merge-duplicates`）、`PATCH` → update、`DELETE` → delete；
+  每批上传成功后取 legacy `write-checkpoint2.json` 再 `Complete`（让服务端回显本地写，cursor 会前进）。
+- 探针行 id 用 **UUIDv4**（真实后端主键多为 `uuid` 列；用普通字符串会 400）。
+- HTTP **4xx**（如约束冲突）视为不可重试：打印后丢弃该批，避免堵住队列；5xx/网络错误仍会退避重试。
+- 演示行（只碰自己生成的 id）在结束时删除；异常退出时还有一次兜底删除。
+- 只支持在 `sys_error_report` 上演示真实上传（其它表缺列/约束不确定）；选错会提示并改为只读。
 
 ### 参数
 
@@ -74,6 +102,8 @@ schema: 来自 ./out/schema.json（37 张表）
 | `-schema` | 空（内置示例 schema） | 真实 schema JSON（官方 `Schema.toJSON()` 形状） |
 | `-tables` | 空（schema 全部） | 只统计/打印这些表（逗号分隔） |
 | `-write` | `false` | real 模式下也做写入/上传演示（mock 默认就做） |
+| `-upload` | `mock` | real 模式的上传方式：`mock`（打印后出队）/ `real`（真正写 PostgREST） |
+| `-rest` | 环境变量 `REST_URL` | `upload=real` 时的 PostgREST base，如 `http://host:8089/rest` |
 | `-limit` | `3` | 每张表打印多少行样例 |
 | `-timeout` | `90s` | 整体超时 |
 | `-endpoint` `-rpc` `-box` `-org` | 环境变量 `PS_URL` `RPC_URL` `BOX_CODE` `ORG_CODE` | real 模式参数 |

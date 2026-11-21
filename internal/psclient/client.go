@@ -77,6 +77,20 @@ func (r *REST) client() *http.Client {
 
 func (r *REST) base() string { return strings.TrimRight(r.Base, "/") }
 
+// HTTPError 是 PostgREST 返回的非 2xx 错误，带状态码，便于调用方区分"可重试/不可重试"。
+type HTTPError struct {
+	Status       int
+	Method, Path string
+	Body         string
+}
+
+func (e *HTTPError) Error() string {
+	return fmt.Sprintf("psclient: %s %s -> HTTP %d: %s", e.Method, e.Path, e.Status, e.Body)
+}
+
+// Fatal 报告该错误是否属于"重试也没用"的客户端错误（4xx）。
+func (e *HTTPError) Fatal() bool { return e.Status >= 400 && e.Status < 500 }
+
 // Do 发一个 JSON 请求；prefer 非空时作为 Prefer 头（如 "return=minimal"）。
 func (r *REST) Do(ctx context.Context, method, path string, body any, prefer string) error {
 	var reader io.Reader
@@ -103,7 +117,8 @@ func (r *REST) Do(ctx context.Context, method, path string, body any, prefer str
 	defer resp.Body.Close()
 	if resp.StatusCode >= 300 {
 		msg, _ := io.ReadAll(io.LimitReader(resp.Body, 2<<10))
-		return fmt.Errorf("psclient: %s %s -> HTTP %d: %s", method, path, resp.StatusCode, strings.TrimSpace(string(msg)))
+		return &HTTPError{Status: resp.StatusCode, Method: method, Path: path,
+			Body: strings.TrimSpace(string(msg))}
 	}
 	return nil
 }
@@ -123,7 +138,8 @@ func (r *REST) GetJSON(ctx context.Context, path string, out any) error {
 	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
 		msg, _ := io.ReadAll(io.LimitReader(resp.Body, 2<<10))
-		return fmt.Errorf("psclient: GET %s -> HTTP %d: %s", path, resp.StatusCode, strings.TrimSpace(string(msg)))
+		return &HTTPError{Status: resp.StatusCode, Method: http.MethodGet, Path: path,
+			Body: strings.TrimSpace(string(msg))}
 	}
 	dec := json.NewDecoder(resp.Body)
 	dec.UseNumber()
