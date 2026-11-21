@@ -627,3 +627,26 @@ func TestClearAll(t *testing.T) {
 		t.Errorf("WithClearLocalTables 后 notes 应为空，得到 %d (%v)", n, err)
 	}
 }
+
+// TestSkippedUnknownCounts 验证"表不在 schema"时跳过物化并计数（不报错）。
+// 注意：计数的是**被跳过物化的行**（PUT），REMOVE 本来就不会产生行，不计入。
+func TestSkippedUnknownCounts(t *testing.T) {
+	db := openTestDB(t, true)
+	ctx := context.Background()
+	before := db.SkippedUnknown()
+	if err := db.ApplyOps(ctx, "b", []protocol.Op{
+		{OpID: 1, Op: protocol.OpPut, ObjectType: "ghost", ObjectID: "x",
+			Data: json.RawMessage(`{"id":"x","a":1}`)},
+		{OpID: 2, Op: protocol.OpPut, ObjectType: "ghost2", ObjectID: "y",
+			Data: json.RawMessage(`{"id":"y"}`)},
+	}, 2); err != nil {
+		t.Fatalf("ApplyOps: %v", err)
+	}
+	if got := db.SkippedUnknown() - before; got != 2 {
+		t.Errorf("SkippedUnknown 增量 = %d, want 2", got)
+	}
+	// oplog 仍然记录（checksum 不受影响）
+	if rows, _, err := db.OplogStats(ctx, "b"); err != nil || rows == 0 {
+		t.Errorf("oplog 应仍记录，rows=%d err=%v", rows, err)
+	}
+}

@@ -300,6 +300,7 @@ type SyncStatus struct {
 }
 
 st := db.CurrentStatus()
+skipped := db.SkippedUnknownOps()   // >0 表示有表因不在 schema 被跳过（排查用）
 ch, err := db.WatchStatus(ctx)            // 状态变化流（初值 + 每次变化）
 err = db.WaitForStatus(ctx, func(st powersync.SyncStatus) bool { return st.Connected })
 err = db.WaitForFirstSync(ctx)            // 首次同步完成（等价于等一次 checkpoint 应用成功）
@@ -448,7 +449,7 @@ db, _ := powersync.Open(ctx, powersync.Options{
 | `Execute` 返回 0 行 | JSON 表是视图，SQLite 对视图写恒报 0（写入其实成功了，查一下数据确认） |
 | 服务端返回 400 `must have required property 'subscriptions'` 或 `'override_priority'` | 自建服务对 `streams` 校验较严；本库已按实测补齐，若自己发请求需带上这两个属性 |
 | 日志出现 `checksum mismatch, restarting iteration` | 本地数据与服务端漂移（或人为改动）→ SDK 自动重置该 bucket 从 `after=0` 重下；偶发一次属正常 |
-| 服务端下发但表不在 schema | 会被跳过（计入 `SkippedUnknown`，不报错）；补 schema 即可 |
+| 服务端下发但表不在 schema | 会被跳过物化（`db.SkippedUnknownOps()` 会 >0，不报错）；**不会自动回填**，需带正确 schema 重建（`DisconnectAndClear` 或删库后重连）。真实服务一定要用 `-schema ./out/schema.json` |
 | 同步一直不完成 | 检查 token 有效期/权限、服务端是否支持该 endpoint（`/sync/stream`）、网络代理 |
 | 上传一直重试 | `UploadData` 返回了错误；打印 `CurrentStatus().UploadError` 看具体原因 |
 

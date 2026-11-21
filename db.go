@@ -334,6 +334,17 @@ func (db *DB) WaitForFirstSync(ctx context.Context) error {
 	}
 }
 
+// SkippedUnknownOps 返回因"表不在 schema"而被跳过物化的行数。
+//
+// 典型原因：连真实服务时忘了用 -schema 传入真实 schema（只建了示例表），
+// 或 sync rules 里有 schema 未声明的表（如测试表）。跳过不影响同步/校验，但这些表本地没有数据。
+func (db *DB) SkippedUnknownOps() int64 {
+	if db.store == nil {
+		return 0
+	}
+	return db.store.SkippedUnknown()
+}
+
 // TriggerUpload 请求尽快跑一次上传（本地写后 SDK 会自动触发，通常无需手动调用）。
 func (db *DB) TriggerUpload() { db.syncer.TriggerUpload() }
 

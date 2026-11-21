@@ -61,6 +61,8 @@ schema: 来自 ./out/schema.json（37 张表）
 （real 模式默认只读；要演示写入/上传请加 -write）
 ```
 
+> - **schema 决定本地有哪些表**：不带 `-schema` 时只有内置示例表 `todos`，
+>   真实服务的其它表会被跳过（示例会打印"有 N 行因为表不在 schema 中被跳过"）。
 > - 默认 `-upload mock`：`UploadData` 打印后直接出队，不写后端；`-write` 只是本地插入/更新/删除演示。
 > - 真实项目请参考 [`docs/reference.md`](../docs/reference.md) 第 4 节的 Connector 实现。
 

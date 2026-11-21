@@ -189,6 +189,13 @@ func main() {
 	}
 	time.Sleep(100 * time.Millisecond) // 等监听 goroutine 打印
 
+	if skipped := db.SkippedUnknownOps(); skipped > 0 {
+		fmt.Println()
+		fmt.Printf("⚠️ 有 %d 行因为表不在 schema 中被跳过（本地看不到这些表的数据）", skipped)
+		fmt.Println()
+		fmt.Println("   真实表需要 -schema ./out/schema.json（由 scripts/js-reference/dump-schema.mjs 从 AppSchema.ts 导出）")
+	}
+
 	for _, name := range wanted {
 		printTable(ctx, db, name, *limit)
 	}
