@@ -143,6 +143,11 @@ type Options struct {
     DisableBSON bool // true = 只用 NDJSON（默认请求 BSON，服务端不支持会回落）
     DisableDefaultStreams bool // true = 不请求默认流（只有显式订阅的流）
     AdditionalHeaders map[string]string // 附加到同步请求的头
+
+    NetworkTarget         string        // 网络探测目标（host:port 或 URL），空=用同步地址
+    NetworkCheckInterval  time.Duration // 探测间隔，默认 5s
+    NetworkCheckTimeout   time.Duration // 单次拨号超时，默认 2s
+    DisableNetworkMonitor bool          // true = 不启动网络监视器
 }
 ```
 
@@ -309,6 +314,28 @@ err = db.WaitForFirstSync(ctx)            // 首次同步完成（等价于等�
 
 ---
 
+## 7.5 网络状态监控
+
+同步状态回答“同步是否正常”，网络状态回答“**链路通不通**”（例如拔网线、Wi-Fi 掉线）。
+
+```go
+net := db.CurrentNetworkStatus()
+// NetworkStatus{Online, CheckedAt, Latency, Target, Err}
+
+ch, err := db.WatchNetworkStatus(ctx)   // 初值 + 可达性变化时推送
+for n := range ch {
+    log.Printf("online=%v target=%s latency=%s err=%s", n.Online, n.Target, n.Latency, n.Err)
+}
+```
+
+- 探测方式：对目标地址做 **TCP 拨号**（默认每 5s，超时 2s），只看链路，不判断服务端健康。
+- 同步循环在“连上/连不上”时会立刻触发一次重测，所以断网/恢复通常亚秒级反映。
+- 目标地址：`Options.NetworkTarget`（host:port 或 URL）；不填则用同步服务地址（连过一次之后才有）。
+- 关闭：`Options.DisableNetworkMonitor = true`；调参：`NetworkCheckInterval` / `NetworkCheckTimeout`。
+- 401/400 这类“网络通但服务端拒绝”**不会**被当成离线。
+
+---
+
 ## 8. Sync Streams（流订阅）
 
 ```go
@@ -450,6 +477,7 @@ db, _ := powersync.Open(ctx, powersync.Options{
 | `execute()` / `writeTransaction()` | `Execute` / `ExecuteBatch` / `WriteTransaction` |
 | 等待最新服务器数据 | `WaitForFirstSync` / `WaitForStatus` |
 | 配置日志 / 自定义 HTTP | `Logger` / `HTTPClient` / `AdditionalHeaders` |
+| 网络状态 | `CurrentNetworkStatus` / `WatchNetworkStatus`（官方 Flutter 参考没有对应 API） |
 | `disconnectAndClear()` | `DisconnectAndClear`（`WithClearLocalTables`） |
 | `getUploadQueueStats()` | `UploadQueue`（只有条数，无按表统计） |
 | Schema 升级 | `UpdateSchema` + 自动迁移 |

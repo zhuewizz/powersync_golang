@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"msmkSync/internal/core"
+	"msmkSync/internal/netmon"
 	syncpkg "msmkSync/internal/sync"
 )
 
@@ -40,6 +41,14 @@ type Options struct {
 	DisableDefaultStreams bool
 	// AdditionalHeaders 附加到同步请求（例如自建网关需要的自定义鉴权头）。
 	AdditionalHeaders map[string]string
+
+	// NetworkTarget 是网络探测目标（host:port 或 URL）。为空时用同步用的服务端地址。
+	NetworkTarget string
+	// NetworkCheckInterval / NetworkCheckTimeout 是探测间隔与单次超时（默认 5s / 2s）。
+	NetworkCheckInterval time.Duration
+	NetworkCheckTimeout  time.Duration
+	// DisableNetworkMonitor 为 true 时不启动网络监视器。
+	DisableNetworkMonitor bool
 }
 
 // DB 是一个 PowerSync 本地库 + 同步连接。
@@ -50,6 +59,8 @@ type DB struct {
 	logger        *slog.Logger
 	schema        *Schema
 	watchInterval time.Duration
+	netmon        *netmon.Monitor
+	netTarget     string
 
 	mu     sync.Mutex
 	closed bool
@@ -104,12 +115,23 @@ func Open(ctx context.Context, opts Options) (*DB, error) {
 		DisableBSON:           opts.DisableBSON,
 		DisableDefaultStreams: opts.DisableDefaultStreams,
 		AdditionalHeaders:     opts.AdditionalHeaders,
+		OnNetworkResult:       func(ok bool) { db.networkSignal() },
 	})
 	if err != nil {
 		store.Close()
 		return nil, err
 	}
 	db.syncer = syncer
+
+	if !opts.DisableNetworkMonitor {
+		db.netTarget = opts.NetworkTarget
+		db.netmon = netmon.New(netmon.Options{
+			Target:   db.networkProbeTarget,
+			Interval: opts.NetworkCheckInterval,
+			Timeout:  opts.NetworkCheckTimeout,
+			OnChange: func(netmon.State) { db.store.NotifyDataChange() },
+		})
+	}
 	return db, nil
 }
 
@@ -124,7 +146,11 @@ func (db *DB) Connect(ctx context.Context) error {
 	if db.conn == nil {
 		return ErrNotConnected
 	}
-	db.syncer.Start(context.WithoutCancel(ctx))
+	runCtx := context.WithoutCancel(ctx)
+	db.syncer.Start(runCtx)
+	if db.netmon != nil {
+		db.netmon.Start(runCtx)
+	}
 	db.syncer.TriggerUpload()
 	return nil
 }
@@ -134,6 +160,101 @@ func (db *DB) Disconnect() {
 	if db.syncer != nil {
 		db.syncer.Stop()
 	}
+	if db.netmon != nil {
+		db.netmon.Stop()
+	}
+}
+
+// networkProbeTarget 返回网络探测目标：优先 Options.NetworkTarget，否则用同步服务地址。
+func (db *DB) networkProbeTarget() string {
+	if db.netTarget != "" {
+		return db.netTarget
+	}
+	if db.syncer != nil {
+		return db.syncer.Endpoint()
+	}
+	return ""
+}
+
+// networkSignal 让网络监视器立刻重测（同步连上/连不上时调用）。
+func (db *DB) networkSignal() {
+	if db.netmon != nil {
+		db.netmon.Signal()
+	}
+}
+
+// NetworkStatus 是网络可达性快照（与同步状态无关：只表示能不能连到服务端）。
+type NetworkStatus struct {
+	// Online 表示最近一次探测能否建立 TCP 连接。
+	Online bool
+	// CheckedAt 是最近一次探测时间。
+	CheckedAt time.Time
+	// Latency 是拨号耗时（离线时为 0）。
+	Latency time.Duration
+	// Target 是实际探测的地址。
+	Target string
+	// Err 是失败原因（在线时为空）。
+	Err string
+}
+
+// CurrentNetworkStatus 返回网络状态快照。
+func (db *DB) CurrentNetworkStatus() NetworkStatus {
+	if db.netmon == nil {
+		return NetworkStatus{}
+	}
+	st := db.netmon.State()
+	return NetworkStatus{
+		Online: st.Online, CheckedAt: st.CheckedAt, Latency: st.Latency,
+		Target: st.Target, Err: st.Err,
+	}
+}
+
+// WatchNetworkStatus 返回网络状态变化流（初值 + 每次可达性变化时推送）。
+//
+// 网络监视器在 Connect 时启动；未 Connect 时只有初值。
+func (db *DB) WatchNetworkStatus(ctx context.Context) (<-chan NetworkStatus, error) {
+	if err := db.check(); err != nil {
+		return nil, err
+	}
+	ch := make(chan NetworkStatus, 1)
+	go func() {
+		defer close(ch)
+		var last NetworkStatus
+		first := true
+		emit := func() bool {
+			cur := db.CurrentNetworkStatus()
+			if !first && cur.Online == last.Online && cur.Target == last.Target {
+				return true
+			}
+			first = false
+			last = cur
+			select {
+			case ch <- cur:
+				return true
+			case <-ctx.Done():
+				return false
+			}
+		}
+		if !emit() {
+			return
+		}
+		for {
+			var signal <-chan struct{}
+			if db.netmon != nil {
+				signal = db.netmon.Changes()
+			}
+			select {
+			case <-ctx.Done():
+				return
+			case <-signal:
+			case <-time.After(5 * time.Second): // 兜底
+			}
+			if !emit() {
+				return
+			}
+		}
+	}()
+	return ch, nil
 }
 
 // Close 停止同步并关闭数据库。

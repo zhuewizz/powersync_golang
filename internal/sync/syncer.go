@@ -16,6 +16,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"time"
 
 	"msmkSync/internal/bson"
@@ -96,6 +97,9 @@ type Options struct {
 	DisableDefaultStreams bool
 	// AdditionalHeaders 附加到同步请求上（如自定义网关的鉴权头）。
 	AdditionalHeaders map[string]string
+	// OnNetworkResult 在同步连接成功/失败时回调（true=连上，false=连不上）。
+	// 注意：401/400 这类"网络通但业务拒绝"不算失败，不会触发 false。
+	OnNetworkResult func(ok bool)
 }
 
 // Syncer 驱动下载与上传两个循环，可重复 Start/Stop。
@@ -106,6 +110,7 @@ type Syncer struct {
 	first     chan struct{}
 	firstOne  sync.Once
 	statusSig broadcast
+	endpoint  atomic.Value // string：最近一次使用的服务端地址
 
 	mu     sync.Mutex
 	status Status
@@ -202,6 +207,14 @@ func (s *Syncer) TriggerUpload() {
 // FirstSync 返回一个在首次 checkpoint 应用成功后关闭的 channel。
 func (s *Syncer) FirstSync() <-chan struct{} { return s.first }
 
+// Endpoint 返回最近一次使用的服务端地址（还没连过时为空）。
+func (s *Syncer) Endpoint() string {
+	if v, ok := s.endpoint.Load().(string); ok {
+		return v
+	}
+	return ""
+}
+
 // Status 返回当前同步状态快照。
 func (s *Syncer) Status() Status {
 	s.mu.Lock()
@@ -256,6 +269,7 @@ func (s *Syncer) streamIteration(ctx context.Context) error {
 	if endpoint == "" {
 		return errors.New("凭据缺少 endpoint")
 	}
+	s.endpoint.Store(endpoint)
 
 	buckets, err := s.opts.Store.Buckets(ctx)
 	if err != nil {
@@ -320,6 +334,9 @@ func (s *Syncer) streamIteration(ctx context.Context) error {
 
 	resp, err := s.opts.HTTPClient.Do(req)
 	if err != nil {
+		if s.opts.OnNetworkResult != nil {
+			s.opts.OnNetworkResult(false)
+		}
 		return fmt.Errorf("连接同步流: %w", err)
 	}
 	defer resp.Body.Close()
@@ -342,6 +359,9 @@ func (s *Syncer) streamIteration(ctx context.Context) error {
 		return fmt.Errorf("同步流 HTTP %d: %s", resp.StatusCode, strings.TrimSpace(string(msg)))
 	}
 
+	if s.opts.OnNetworkResult != nil {
+		s.opts.OnNetworkResult(true)
+	}
 	s.set(func(st *Status) {
 		st.Connecting = false
 		st.Connected = true

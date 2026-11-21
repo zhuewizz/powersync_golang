@@ -17,7 +17,7 @@
 | --- | --- |
 | 协议 | `POST /sync/stream`（**NDJSON 与 BSON**，默认 BSON）、`checkpoint`/`data`/`checkpoint_complete`/`partial_checkpoint_complete`/`token_expires_in`、`/sync/checkpoint-request`、legacy `write-checkpoint2.json` |
 | 本地库 | 与 `powersync-sqlite-core` 同构：`ps_data__*` + 同名视图 + INSTEAD OF 触发器、`ps_oplog`、`ps_buckets` checksum、`ps_crud`（`powersync_crud` 兼容层）、`ps_kv`、`ps_tx`、`ps_untyped`（schema 迁移）、`ps_stream_subscriptions`、`include_metadata` |
-| 同步 | 下载 + 上传双循环、断点续传（`last_op`）、checksum 校验与漂移恢复、上传回显门控、指数退避、token 预取、sync streams（订阅/TTL/优先级）、多进程文件锁 |
+| 同步 | 下载 + 上传双循环、断点续传（`last_op`）、checksum 校验与漂移恢复、上传回显门控、指数退避、token 预取、sync streams（订阅/TTL/优先级）、多进程文件锁、**网络状态实时监控**（TCP 探测 + 事件推送） |
 | 公开 API | `Open`/`Connect`/`Close`、`Execute`/`GetAll`/`GetOptional`/`WriteTransaction`、`Watch` / `WatchTables`（**推送** + 表级版本 + 64 位哈希去重、0 分配）、`GetCrudBatch`/`GetNextCrudTransaction`、`SubscribeStream`、`CurrentStatus`/`WaitForFirstSync` |
 
 ## 快速开始
@@ -67,6 +67,14 @@ type Connector interface {
 也可以用 `powersync.LoadSchemaJSON()` 直接读取官方 SDK 的 `Schema.toJSON()`（见
 `scripts/js-reference/dump-schema.mjs`）。
 
+## 示例
+
+```bash
+go run ./examples/todo            # 离线完整示例（内置假服务，几秒内跑完）
+```
+
+详见 [`examples/README.md`](./examples/README.md)。
+
 ## 工具与脚本
 
 | 命令 | 用途 |
@@ -101,7 +109,7 @@ internal/sync       下载+上传循环
 internal/fixture    离线假服务（双实现差分用）
 internal/rowdiff    落库导出比对
 internal/psclient   工具共用的小 HTTP 客户端（RPC 取 token + PostgREST CRUD）
-cmd/…               工具；scripts/… 探针与 CI 辅助；testdata/… 抓包样本
+cmd/…               工具；examples/… 可运行示例；scripts/… 探针与 CI 辅助；testdata/… 抓包样本
 ```
 
 ## 已知限制

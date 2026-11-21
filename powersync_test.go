@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -923,5 +924,58 @@ func TestGetExecuteBatchAndStatus(t *testing.T) {
 	}
 	if rows, _ := db.GetAll(ctx, `SELECT * FROM notes`); len(rows) != 0 {
 		t.Errorf("WithClearLocalTables 后 notes 应为空: %v", rows)
+	}
+}
+
+// TestNetworkStatusMonitor 验证网络状态监控：连上监听者 → Online，关掉 → Offline。
+func TestNetworkStatusMonitor(t *testing.T) {
+	ln, err := net.Listen("tcp", "127.0.0.1:0")
+	if err != nil {
+		t.Fatalf("Listen: %v", err)
+	}
+	target := ln.Addr().String()
+
+	// 同步服务单独起一个（只回 503），避免和网络探测的裸监听混在一起
+	syncSrv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusServiceUnavailable)
+	}))
+	defer syncSrv.Close()
+
+	path := tempDBPath(t)
+	db, err := powersync.Open(context.Background(), powersync.Options{
+		Filename:             path,
+		Schema:               powersync.NewSchema(powersync.Table{Name: "todos", Columns: []powersync.Column{{Name: "title", Type: powersync.TextColumn}}}),
+		Connector:            &fakeConnector{endpoint: syncSrv.URL},
+		NetworkTarget:        target,
+		NetworkCheckInterval: 50 * time.Millisecond,
+		NetworkCheckTimeout:  500 * time.Millisecond,
+	})
+	if err != nil {
+		t.Fatalf("Open: %v", err)
+	}
+	cleanupDBPath(t, db, path)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	ch, err := db.WatchNetworkStatus(ctx)
+	if err != nil {
+		t.Fatalf("WatchNetworkStatus: %v", err)
+	}
+	if first := <-ch; first.Online {
+		t.Errorf("初始状态不应 online: %+v", first)
+	}
+
+	// 监视器随 Connect 启动；用假 conn（endpoint 指向上面那个监听者）
+	if err := db.Connect(ctx); err != nil {
+		t.Fatalf("Connect: %v", err)
+	}
+	waitFor(t, ctx, 5*time.Second, func() bool { return db.CurrentNetworkStatus().Online })
+
+	// 关掉监听者 → Offline
+	_ = ln.Close()
+	waitFor(t, ctx, 5*time.Second, func() bool { return !db.CurrentNetworkStatus().Online })
+	st := db.CurrentNetworkStatus()
+	if st.Err == "" {
+		t.Errorf("离线时应有 Err: %+v", st)
 	}
 }

@@ -82,6 +82,7 @@ go run ./cmd/psupload -endpoint $PS_URL -rest $REST_URL -rpc $RPC_URL -box D1-2 
   internal/
     protocol/      # 【已存在】线协议 DTO + NDJSON 解码 + 请求体，含 golden 测试
     psclient/      # 工具共用的小 HTTP 客户端（RPC 取 token + PostgREST CRUD）
+    netmon/        # 网络可达性探测（TCP 拨号 + 变化推送）
     core/          # 【已存在】schema → 真实表/索引/ps_crud 触发器；ps_oplog + checksum
                    #   校验；checkpoint 物化；上传队列与 bucket 游标
     db/            # 【待建】连接池封装、watch 变更通知、事务 API
@@ -94,6 +95,7 @@ go run ./cmd/psupload -endpoint $PS_URL -rest $REST_URL -rpc $RPC_URL -box D1-2 
     auth/          # token 获取、缓存、过期刷新、abort signal
     sqlite/        # modernc.org/sqlite 封装、注册 SQL 函数
     log/           # slog 封装
+  examples/todo/   # 【已存在】完整可运行示例（mock 内置假服务 / real 连真服务）
   cmd/psdiff/      # 【已存在】开发用差分测试工具（同步 + 落库 + 与 PostgREST 比对）
   cmd/psdemo/      # 【已存在】公开 API 冒烟：连接真实服务并打印状态/表行数
   cmd/psupload/    # 【已存在】上传回显闭环：本地写 → PostgREST 上传 → 服务端回显 → 校验
@@ -169,6 +171,10 @@ go run ./cmd/psupload -endpoint $PS_URL -rest $REST_URL -rpc $RPC_URL -box D1-2 
   （`options` 列不解释位标志，等价于官方默认 `ignore_empty_update=false`。）
 - **多进程互斥**：`<db>.lock` 上的排它锁（Unix flock / Windows LockFileEx），同一 DB 被第二个实例打开
   返回 `ErrDatabaseLocked`（`Options.NoFileLock` 可关；`:memory:` 自动跳过）。
+- **网络状态监控**：`internal/netmon` 每 5s 对服务端做一次 TCP 拨号（超时 2s），
+  同步连接成功/失败时立即重测；`DB.CurrentNetworkStatus()` / `DB.WatchNetworkStatus(ctx)`；
+  401/400 不算离线（只判断链路）。可用 `Options.NetworkTarget`/`NetworkCheckInterval`/
+  `NetworkCheckTimeout`/`DisableNetworkMonitor` 调整。
 - **Change 通知（Watch 真推送）**：用户表触发器与同步物化都会把 `ps_internal_version` +1；
   `DB.Watch` 等 `VersionSignal()` 被关闭就重查，兜底轮询（`WatchInterval`）默认 2s 只用于漏通知。
   本地写/同步应用 → 推送延迟实测 ~毫秒级（测试里把兜底设为 10s 仍能立即收到）。
@@ -481,7 +487,9 @@ db.WaitForFirstSync(ctx)        // 首次同步完成
   schema 迁移（JSON↔direct、加列、删表、重新 Open 自动迁移）、`include_metadata`、
   sync streams（订阅/取消/过期清理/状态回填/partial checkpoint）、文件锁、`powersync_crud`
   兼容层（含 `options` bit0 = ignore_empty_update）、`WriteTransaction` panic 后 tx_id 清理、
-  schema 并发替换、按表版本号单测，含真实 golden 回放（37 个用例）；
+  schema 并发替换、按表版本号单测，含真实 golden 回放（38 个用例）；
+- `internal/netmon` 4 个用例（在线/离线切换、变化广播、目标未知、地址归一化）；
+- `examples/todo`：可直接 `go run` 的完整示例（默认离线 mock；不参与单测，`go build ./...` 兜底）；
 - `internal/sync` 直接单测（74% 覆盖）：流格式选择（NDJSON/BSON）、write-checkpoint 门控、
   500 重试后成功、checksum 不一致重连、上传失败重试恢复、`Stop()` 不阻塞；
 - `internal/psclient` 单测（83% 覆盖）：token RPC 四条失败路径、REST Do/GetJSON/CountByID；

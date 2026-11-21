@@ -33,6 +33,11 @@ func Load(path string) (*Server, error) {
 	if err != nil {
 		return nil, err
 	}
+	return FromBytes(raw)
+}
+
+// FromBytes 解析内存里的 NDJSON fixture（示例程序用 go:embed 时用它）。
+func FromBytes(raw []byte) (*Server, error) {
 	s := &Server{maxOp: map[string]int64{}}
 	for _, line := range strings.Split(strings.TrimSpace(string(raw)), "\n") {
 		line = strings.TrimSpace(line)
@@ -61,7 +66,7 @@ func Load(path string) (*Server, error) {
 		}
 	}
 	if s.Checkpoint == "" || s.Complete == "" || len(s.Data) == 0 {
-		return nil, fmt.Errorf("fixture: %s 不完整（需要 checkpoint + data + checkpoint_complete）", path)
+		return nil, fmt.Errorf("fixture: 不完整（需要 checkpoint + data + checkpoint_complete）")
 	}
 	return s, nil
 }
