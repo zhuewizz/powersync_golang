@@ -50,23 +50,25 @@ var fixtureData []byte
 
 func main() {
 	var (
-		mode     = flag.String("mode", "mock", "mock（内置假服务）或 real（连真实服务）")
-		endpoint = flag.String("endpoint", os.Getenv("PS_URL"), "real 模式：PowerSync 服务地址")
-		rpc      = flag.String("rpc", os.Getenv("RPC_URL"), "real 模式：fetch_credentials RPC")
-		box      = flag.String("box", os.Getenv("BOX_CODE"), "real 模式：box_code")
-		org      = flag.String("org", os.Getenv("ORG_CODE"), "real 模式：org_code")
-		schemaF  = flag.String("schema", "", "schema JSON（官方 Schema.toJSON 形状）；real 模式必填（或 -cutter）")
-		cutterF  = flag.Bool("cutter", false, "用内置的 cutter schema（65 张表，来自 syncRules.yaml，见 schema_cutter.go）")
+		// 默认就把本机真实环境写死：`go run ./examples/todo` 直接跑完整演示
+		mode     = flag.String("mode", "real", "mock（内置假服务）或 real（连真实服务）")
+		endpoint = flag.String("endpoint", envOr("PS_URL", "http://120.24.7.22:8080"), "real 模式：PowerSync 服务地址")
+		rpc      = flag.String("rpc", envOr("RPC_URL", "http://120.24.7.22:8089/rest/rpc/fetch_credentials"), "real 模式：fetch_credentials RPC")
+		box      = flag.String("box", envOr("BOX_CODE", "D1-2"), "real 模式：box_code")
+		org      = flag.String("org", envOr("ORG_CODE", "ORG001"), "real 模式：org_code")
+		schemaF  = flag.String("schema", "", "schema JSON（官方 Schema.toJSON 形状）；默认用内置 -cutter")
+		cutterF  = flag.Bool("cutter", true, "用内置的 cutter schema（65 张表，来自 syncRules.yaml，见 schema_cutter.go）")
 		tablesF  = flag.String("tables", "", "只统计/打印这些表（逗号分隔），空=全部")
-		dbPath   = flag.String("db", filepath.Join("out", "example.db"), "本地数据库文件")
-		timeout  = flag.Duration("timeout", 120*time.Second, "整体超时")
-		write    = flag.Bool("write", false, "real 模式下也做写入演示（默认只读）")
-		upload   = flag.String("upload", "mock", "real 模式的上传方式：mock（打印后出队）或 real（真正写 PostgREST）")
-		restBase = flag.String("rest", os.Getenv("REST_URL"), "upload=real 时的 PostgREST base，如 http://host:8089/rest")
-		limit    = flag.Int("limit", 3, "每张表打印多少行样例")
+		detailF  = flag.String("detail", "cutter_info,sys_error_report", "表多时只对这些表打样例（逗号分隔）")
+		dbPath   = flag.String("db", filepath.Join("out", "example.db"), "本地数据库文件（启动时先删掉，保证干净）")
+		timeout  = flag.Duration("timeout", 180*time.Second, "整体超时")
+		write    = flag.Bool("write", true, "real 模式下做写入演示（含断网离线优先环节）")
+		upload   = flag.String("upload", "real", "real 模式的上传方式：mock（打印后出队）或 real（真正写 PostgREST）")
+		restBase = flag.String("rest", envOr("REST_URL", "http://120.24.7.22:8089/rest"), "PostgREST base，如 http://host:8089/rest")
+		limit    = flag.Int("limit", 2, "每张表打印多少行样例")
 		verbose  = flag.Bool("v", false, "打印库内部 debug 日志（同步行/checkpoint/物化行数）")
 		cleanup  = flag.Bool("cleanup", false, "演示结束后删除探针行（默认**保留**在后台，方便查看）")
-		verify   = flag.Bool("verify", true, "real 模式下把本地表与后台 REST 逐行比对（需 -rest）")
+		verify   = flag.Bool("verify", false, "额外逐行比对本地与后台 REST（表多时会很长）")
 	)
 	flag.Parse()
 
@@ -84,7 +86,15 @@ func main() {
 	}
 
 	// ---- 0. schema：-cutter > -schema（真实库）> 内置示例 schema ----
-	schema, tableNames, err := selectSchema(*cutterF, *schemaF)
+	// mock 模式默认用内置 todos schema（fixture 里只有 todos）；显式 -cutter 则照用 cutter schema。
+	explicitCutter := false
+	flag.Visit(func(f *flag.Flag) {
+		if f.Name == "cutter" {
+			explicitCutter = true
+		}
+	})
+	useCutter := *cutterF && (*mode != "mock" || explicitCutter)
+	schema, tableNames, err := selectSchema(useCutter, *schemaF)
 	if err != nil {
 		fail("加载 schema", err)
 	}
@@ -214,11 +224,22 @@ func main() {
 		fmt.Println("   这些表不在客户端 schema 里，PowerSync 不会同步它们（要么加进 AppSchema.ts，要么从 sync rules 移除）")
 	}
 
-	for _, name := range wanted {
-		printTable(ctx, db, name, *limit)
+	// ---- 4. 展示同步结果：表多时先打行数总表，再对关键表打样例 ----
+	detail := splitCSV(*detailF)
+	if len(wanted) > 8 {
+		summaryCounts(ctx, db, wanted)
+		for _, name := range detail {
+			if hasTable(wanted, name) {
+				printTable(ctx, db, name, *limit)
+			}
+		}
+	} else {
+		for _, name := range wanted {
+			printTable(ctx, db, name, *limit)
+		}
 	}
 
-	// ---- 4.5 校验：后台 REST → 本地（证明自动同步一致）----
+	// ---- 4.5 可选：逐行比对后台 REST（表多时很冗长，默认关）----
 	if *mode == "real" && *verify && *restBase != "" {
 		if tok, err := psclient.FetchToken(ctx, *rpc, *box, *org); err == nil {
 			verifyAgainstBackend(ctx, db, *restBase, tok, wanted, *limit)
@@ -235,7 +256,7 @@ func main() {
 		case *mode == "real" && *upload == "real" && writeTable != "sys_error_report":
 			fmt.Printf("\n⚠️ upload=real 的写入演示仅支持 sys_error_report（当前是 %s），改为只读\n", writeTable)
 		case *mode == "real" && *upload == "real":
-			runOfflineFirstDemo(ctx, db, conn, writeTable, wanted, *box, *org, *cleanup, *limit)
+			runOfflineFirstDemo(ctx, db, conn, writeTable, detail, *box, *org, *cleanup, *limit)
 		default:
 			runWriteDemo(ctx, db, writeTable, *mode)
 		}
@@ -692,4 +713,49 @@ func isSoftDeletedRow(row map[string]json.RawMessage) bool {
 		}
 	}
 	return false
+}
+
+// summaryCounts 打印每张表的行数（表多时替代逐表打样例）。
+func summaryCounts(ctx context.Context, db *powersync.DB, tables []string) {
+	fmt.Printf("\n— 同步结果：每张表行数 —\n%-30s %8s\n%s\n", "表", "行数", strings.Repeat("-", 40))
+	var total int64
+	var empty int
+	for _, name := range tables {
+		rows, err := db.GetAll(ctx, `SELECT count(*) AS n FROM `+quoteIdent(name))
+		var n int64
+		if err == nil && len(rows) == 1 {
+			switch v := rows[0]["n"].(type) {
+			case int64:
+				n = v
+			case float64:
+				n = int64(v)
+			}
+		}
+		if n == 0 {
+			empty++
+		}
+		total += n
+		fmt.Printf("%-30s %8d\n", name, n)
+	}
+	fmt.Println(strings.Repeat("-", 40))
+	fmt.Printf("%-30s %8d  （%d 张表，空表 %d 张）\n", "合计", total, len(tables), empty)
+}
+
+// splitCSV 拆逗号分隔列表（去空白、忽略空项）。
+func splitCSV(s string) []string {
+	out := make([]string, 0, 4)
+	for _, p := range strings.Split(s, ",") {
+		if p = strings.TrimSpace(p); p != "" {
+			out = append(out, p)
+		}
+	}
+	return out
+}
+
+// envOr 环境变量优先，否则用默认值（默认值写死了本机测试环境，直接 go run 即可）。
+func envOr(key, def string) string {
+	if v := os.Getenv(key); v != "" {
+		return v
+	}
+	return def
 }

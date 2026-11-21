@@ -30,7 +30,9 @@
 - **网络状态监控**：`CurrentNetworkStatus` / `WatchNetworkStatus`（TCP 拨号探测 + 变化推送，
   同步失败/成功时立即重测）、`Options.NetworkTarget`/`NetworkCheckInterval`/`NetworkCheckTimeout`/
   `DisableNetworkMonitor`。
-- **完整示例**：`examples/todo`（默认离线 mock，内置假服务与假后端；可切到真实服务）。
+- **完整示例**：`examples/todo` —— **参数写死，`go run ./examples/todo` 直接跑真实环境**：
+  全量同步 65 张表 → 每表行数总表 + 关键表样例 → 离线优先演示（断网读/断网写/恢复上传）→ 后台校验；
+  启动时先删旧库，可用 `-cleanup`/`-mode mock`/`-box` 等覆盖。
 - **使用手册**：`docs/reference.md`（对齐官方 Flutter SDK 参考的中文 API 文档，含与官方差异清单）。
 - **客户端 schema 生成**：`cmd/genschema` 从 syncRules.yaml + PostgREST OpenAPI（缺表时用抓包推断）
   生成 `examples/todo/schema_cutter.go`（示例包的 `cutterSchema()`）与 `examples/todo/schema-cutter.json`；

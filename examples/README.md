@@ -1,39 +1,44 @@
-# 示例
+# 示例：examples/todo
 
-## todo（完整流程）
+## 直接运行（参数已写死，无需 -schema/-endpoint）
 
-一个可以直接 `go run` 的完整示例，演示：
-
-1. 定义 schema（同步表 `todos` + 仅本地表 `local_notes`）
-2. 打开数据库（文件锁、schema 自动落地）
-3. 连接 PowerSync 服务并等待首次同步
-4. 三个实时监听：同步状态、网络状态、查询结果（推送，不是轮询）
-5. 本地写（单条 / 批量 / 删除 / 事务）→ 自动进入上传队列 → 上传出队
-6. 打印最终数据与状态
-
-### 方式一：离线跑（推荐先跑这个）
-
-内置一个假的 PowerSync 服务（回放 `fixture.ndjson`）+ 假后端，**不连任何真实服务**：
-
-```bash
+```powershell
+cd E:\powersync_golang
+. .\scripts\go-env.ps1          # 只在 go 报 GOROOT 错时需要
 go run ./examples/todo
 ```
 
-预期输出（节选）：
+默认行为（全部写死在 `main.go` 的 flag 默认值里）：
 
+| 参数 | 默认值 |
+| --- | --- |
+| `-mode` | `real`（连 http://120.24.7.22:8080） |
+| `-cutter` | `true`（内置 65 张表 schema） |
+| `-rest` / `-rpc` | http://120.24.7.22:8089/rest / …/rpc/fetch_credentials |
+| `-box` / `-org` | D1-2 / ORG001 |
+| `-db` | `out/example.db`（**每次启动先删掉**，保证全量重同步） |
+| `-write` / `-upload` | `true` / `real`（真写 PostgREST；探针行默认保留） |
+| `-detail` | `cutter_info,sys_error_report`（表多时只对这些表打样例） |
+
+跑完会依次输出：
+
+1. 连接 → 首次同步（cursor / buckets / 耗时）
+2. **每张表行数总表**（65 张表 + 合计 + 空表数）
+3. 关键表样例数据（`-detail` 指定的表）
+4. 离线优先演示：断开 → 断网读本地 → 断网写（入队）→ 恢复 → 自动上传 → 后台校验
+5. 探针行**保留**在后台（`-cleanup` 才删）
+
+## 常用覆盖
+
+```powershell
+go run ./examples/todo -cleanup                     # 演示完删掉探针行
+go run ./examples/todo -tables cutter_info -limit 5 # 只看一张表、多打几行
+go run ./examples/todo -mode mock                   # 完全离线（内置假服务 + todos schema）
+go run ./examples/todo -verify                      # 额外逐行比对后台 REST（表多时很冗长）
+go run ./examples/todo -db .\out\mine.db -box D1-1   # 换库/换柜
 ```
-模式: mock（内置假服务 http://127.0.0.1:xxxxx）
-  [网络] online=true target=127.0.0.1:xxxxx latency=1ms err=
-  [状态] connected=true uploading=false cursor=101 lastSynced=18:21:01
-  [查询] todos 行数 = 2
-  [上传] PUT    todos/local-1 data=map[done:0 title:本地新建的任务]
-  ...
-✅ 示例跑完（数据库在 out/example.db）
-```
 
-数据库写在 `out/example.db`，可以重复跑（每次会先删掉）。
-
-### 方式二：连真实服务（看真实表）
+## 方式二：手动指定参数（原始用法，留作参考）
 
 最简单：加 `-cutter` 用内置的 65 张表 schema（来自 `syncRules.yaml`，见 `schema_cutter.go`）：
 

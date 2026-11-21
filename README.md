@@ -50,19 +50,22 @@ $env:Path = "$env:GOROOT\bin;$env:Path"
 
 > PowerShell **不用** `\` 续行；换行要写在反引号 `` ` `` 后面，或者干脆写成一行。
 
-跑真实服务（一行版，可直接复制）：
+直接跑（参数已写死在示例里，无需任何 flag）：
 
 ```powershell
-. .\scripts\go-env.ps1
-go run ./examples/todo -mode real -cutter -endpoint http://120.24.7.22:8080 -rest http://120.24.7.22:8089/rest -rpc http://120.24.7.22:8089/rest/rpc/fetch_credentials -box D1-2 -org ORG001 -tables cutter_info,sys_error_report
+. .\scripts\go-env.ps1          # 只在 go 报 GOROOT 错时需要
+go run ./examples/todo
 ```
 
+它会：连接真实服务 → 全量同步 65 张表 → 打印每张表行数（和关键表样例）→
+演示“断网读本地 + 断网写 + 恢复后自动上传” → 后台校验。
+
+需要换环境时再传 flag（环境变量优先：`PS_URL`/`REST_URL`/`RPC_URL`/`BOX_CODE`/`ORG_CODE`）：
+
 ```powershell
-# 多行版：反引号续行（注意反引号后面不能有空格）
-go run ./examples/todo -mode real -cutter `
-  -endpoint http://120.24.7.22:8080 -rest http://120.24.7.22:8089/rest `
-  -rpc http://120.24.7.22:8089/rest/rpc/fetch_credentials -box D1-2 -org ORG001 `
-  -tables cutter_info,sys_error_report
+go run ./examples/todo -cleanup                      # 演示完删搬针行
+go run ./examples/todo -box D1-1 -db .\out\d11.db    # 换柜/换库
+go run ./examples/todo -mode mock                     # 完全离线（内置假服务，todos schema）
 ```
 
 ### 在自己的代码里
