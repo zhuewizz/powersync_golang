@@ -475,6 +475,39 @@ go run ./examples/todo -mode real -rest http://host:8089/rest ... -verify
 go run ./cmd/psq -db ./out/verify.db -q "select name, last_applied_op, op_checksum from ps_buckets"
 ```
 
+### 用 SDK 读写本地库（cmd/pstable）
+
+`cmd/pstable` 走的就是 `powersync.Open` + `db.GetAll`/`db.Execute`（与 Flutter/JS 的
+`getAll()`/`execute()` 同一条路径），所以它跑通就代表 SDK 能读、能写、能删：
+
+```bash
+PS="-upload -endpoint http://host:8080 -rest http://host:8089/rest \
+     -rpc http://host:8089/rest/rpc/fetch_credentials -box D1-2 -org ORG001"
+
+# 读
+go run ./cmd/pstable -db ./out/verify.db -ls
+go run ./cmd/pstable -db ./out/verify.db -table cutter_info -limit 5
+go run ./cmd/pstable -db ./out/verify.db -q "select mat_code, mat_name from cutter_info limit 10"
+
+# 写 / 改 / 删（本地立即生效，同时进上传队列；带 -upload 就自动同步到后端）
+go run ./cmd/pstable -db ./out/verify.db $PS -verify-table sys_error_report \
+  -exec "insert into sys_error_report(id, org_code, box_code, error_desc, error_date, box_type)
+          values('...uuid...','ORG001','D1-2','note','2026-01-01 00:00:00','1')"
+go run ./cmd/pstable -db ./out/verify.db $PS -exec "update sys_error_report set error_desc='改过了' where id='...'"
+go run ./cmd/pstable -db ./out/verify.db $PS -exec "delete from sys_error_report where id='...'"
+
+# 交互式（多行 SQL、.tables、.schema <表>、.q 退出）
+go run ./cmd/pstable -db ./out/verify.db -i $PS
+```
+
+要点：
+
+- 同步表是「视图 + INSTEAD OF 触发器」，写进去立刻可查，同时写 `ps_crud` 上传队列；
+  `db.UploadQueue()` 能看到待同步条数，`-upload` 会在退出前等队列清空并核对前后端行数。
+- 不传 `-schema` 时从库内 `ps_kv.schema_json` 自动读取（老库自描述）。
+- 只读场景会自动 `NoFileLock`（可与运行中的 App 并存）；一旦要写就必须正常加锁。
+- **401/403 现在不会丢数据**：重置 token 后重试；只有真正的 4xx（id 非 uuid、NOT NULL、唯一约束）才跳过并 WARN。
+
 ### 用图形工具打开本地库（DB Browser / SQLiteStudio）
 
 本地库是 **WAL** 模式，直接拿图形工具打开"正在被程序使用"的库文件，
@@ -499,6 +532,7 @@ go run ./cmd/psq -db ./out/verify.db -snapshot ./out/verify-snapshot.db
 | 命令 | 用途 |
 | --- | --- |
 | `go run ./cmd/psq -db <db> -ls|-q|-check|-snapshot` | 只读查库/完整性检查/生成快照 |
+| `go run ./cmd/pstable -db <db> -ls|-table|-q|-exec|-i [-upload ...]` | 用 SDK 读/写/删 + 自动上传 |
 | `go run ./cmd/psdemo -endpoint ... -rpc ... -schema ...` | 公开 API 冒烟（只读） |
 | `go run ./cmd/psupload ...` | 上传回显闭环（写一行→上传→回显→删除） |
 | `go run ./cmd/psdiff ... -rest ...` | 与后端 PostgREST 逐行比对 |

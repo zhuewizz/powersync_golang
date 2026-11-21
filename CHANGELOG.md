@@ -32,11 +32,12 @@
   `DisableNetworkMonitor`。
 - **完整示例**：`examples/todo`（默认离线 mock，内置假服务与假后端；可切到真实服务）。
 - **使用手册**：`docs/reference.md`（对齐官方 Flutter SDK 参考的中文 API 文档，含与官方差异清单）。
-- **工具**：`cmd/psq`（只读查询本地 SQLite；`-check` 完整性检查；`-snapshot` 用 `VACUUM INTO` 生成快照供图形工具打开）；`cmd/psdiff`（真机差分）、`cmd/psdemo`（冒烟）、`cmd/psupload`（上传回显闭环）、
+- **工具**：`cmd/pstable`（用 SDK 读/写路径：`-ls`/`-table`/`-q` 查询、`-exec` 写入删除、`-i` 交互、`-upload` 自动上传 + `-verify-table` 前后端行数核对）；`cmd/psq`（只读查询本地 SQLite；`-check` 完整性检查；`-snapshot` 用 `VACUUM INTO` 生成快照供图形工具打开）；`cmd/psdiff`（真机差分）、`cmd/psdemo`（冒烟）、`cmd/psupload`（上传回显闭环）、
   `cmd/psfixture-server`（离线假服务）、`cmd/pscompare`（双实现落库比对）；
   `scripts/probe-*.sh`、`scripts/run-js-diff.sh`、`scripts/js-diff-container.sh`。
 - **工程**：`internal/sync` / `internal/psclient` 直接单测（覆盖率 74%/83%）、工具共用
-  `internal/psclient`（去掉三份重复的 token/REST 样板）、`BenchmarkWatchChangeDetection`。
+  `internal/psclient`（去掉三份重复的 token/REST 样板）、`internal/restconn`（示例连接器：
+  RPC 取 token + PostgREST 上传，examples 与 cmd 共用，避免两套实现分叉）、`BenchmarkWatchChangeDetection`。
 - **CI**：`go vet` / `gofmt` / `go test -race` / 无 cgo 构建 + Go vs 官方 JS SDK 差分 job。
 
 ### 服务端实测发现（已在 `AGENTS.md` 记录）
@@ -49,6 +50,14 @@
 - 32 位 checksum、`REMOVE` 的负 checksum、`REMOVE` 的 `data:null`。
 - `streams.subscriptions` 与其中的 `override_priority` 都是**必填属性**（否则 400）。
 - BSON 与 NDJSON 逐行等价（约 -8% 体积）。
+
+### 修复
+
+- `Close()` 显式 `PRAGMA wal_checkpoint(TRUNCATE)`：正常退出后 `.db` 自包含，不残留 `-wal`
+  （复制或图形工具打开不会再看到半截状态 / `11 database disk image is malformed`）。
+- 上传连接器在 `UploadData` 里**先确保拿到 token**：启动时队列已有积压时，上传循环可能早于
+  首次 `FetchCredentials`，之前会以匿名身份请求 PostgREST 而被 401 拒绝。
+- `401/403` 不再当作“不可重试”丢弃，而是重置 token 后重试；只有真正不可恢复的 4xx 才跳过。
 
 ### 已知限制
 

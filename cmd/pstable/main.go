@@ -12,6 +12,7 @@
 package main
 
 import (
+	"bufio"
 	"context"
 	"database/sql"
 	"encoding/csv"
@@ -28,6 +29,8 @@ import (
 	_ "modernc.org/sqlite"
 
 	powersync "msmkSync"
+	"msmkSync/internal/psclient"
+	"msmkSync/internal/restconn"
 )
 
 func main() {
@@ -35,25 +38,44 @@ func main() {
 		dbPath  = flag.String("db", "", "本地库文件（必填）")
 		schemaF = flag.String("schema", "", "schema JSON；缺省时从库里的 ps_kv.schema_json 自动读取")
 		table   = flag.String("table", "", "要打印的表（可写视图名，如 cutter_info）")
-		query   = flag.String("q", "", "自定义 SQL（select）")
+		query   = flag.String("q", "", "自定义 SQL（select，只读）")
+		execSQL = flag.String("exec", "", "执行写 SQL（INSERT/UPDATE/DELETE，分号分隔多条）")
+		repl    = flag.Bool("i", false, "交互式 SQL（读写都可以；输入 .q 退出）")
 		list    = flag.Bool("ls", false, "列出 schema 里的表 + 行数")
 		limit   = flag.Int("limit", 20, "最多打印多少行（0=全部）")
 		format  = flag.String("format", "table", "输出格式：table|json|csv")
 		full    = flag.Bool("full", false, "不截断长字段")
+		dryRun  = flag.Bool("dry-run", false, "只打印将要执行的写 SQL，不真正执行")
+
+		upload   = flag.Bool("upload", false, "写入后连接服务并把上传队列同步到后端（需要 -endpoint/-rpc/-box/-org/-rest）")
+		endpoint = flag.String("endpoint", os.Getenv("PS_URL"), "PowerSync 服务地址")
+		rpc      = flag.String("rpc", os.Getenv("RPC_URL"), "fetch_credentials RPC")
+		box      = flag.String("box", os.Getenv("BOX_CODE"), "box_code")
+		org      = flag.String("org", os.Getenv("ORG_CODE"), "org_code")
+		restBase = flag.String("rest", os.Getenv("REST_URL"), "PostgREST base，如 http://host:8089/rest")
+		verifyT  = flag.String("verify-table", "", "上传后核对这些表（逗号分隔）本地与后端行数")
 	)
 	flag.Parse()
 
+	writes := *execSQL != "" || *repl
 	if *dbPath == "" {
 		fatalf("需要 -db")
 	}
-	if !*list && *table == "" && *query == "" {
-		fatalf("需要 -ls / -table / -q 之一")
+	if !*list && *table == "" && *query == "" && !writes {
+		fatalf("需要 -ls / -table / -q / -exec / -i 之一")
 	}
 	if _, err := os.Stat(*dbPath); err != nil {
 		fatalf("打开 %s: %v", *dbPath, err)
 	}
+	if *upload {
+		for name, v := range map[string]string{"endpoint": *endpoint, "rpc": *rpc, "box": *box, "org": *org, "rest": *restBase} {
+			if v == "" {
+				fatalf("-upload 需要 -%s（或环境变量 PS_URL/RPC_URL/BOX_CODE/ORG_CODE/REST_URL）", name)
+			}
+		}
+	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 60*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 120*time.Second)
 	defer cancel()
 
 	sch, err := loadSchema(ctx, *dbPath, *schemaF)
@@ -61,23 +83,52 @@ func main() {
 		fatalf("加载 schema: %v", err)
 	}
 
-	db, err := powersync.Open(ctx, powersync.Options{
-		Filename:   *dbPath,
-		Schema:     sch,
-		NoFileLock: true, // 只读查看，不抢锁（避免与正在运行的 App 冲突）
-	})
+	opts := powersync.Options{
+		Filename: *dbPath,
+		Schema:   sch,
+		// 只读查看不抢锁（可与运行中的 App 并存）；要写入则必须正常加锁。
+		NoFileLock: !writes,
+	}
+	var conn *restconn.Connector
+	if *upload {
+		conn = restconn.New(restconn.Config{
+			Endpoint: *endpoint, RPC: *rpc, Box: *box, Org: *org, RESTBase: *restBase,
+		})
+		opts.Connector = conn
+	}
+
+	db, err := powersync.Open(ctx, opts)
 	if err != nil {
 		fatalf("SDK 打开数据库: %v", err)
 	}
 	defer db.Close(context.Background())
 
 	// 元信息走 stderr，避免污染 -format csv/json 的 stdout。
+	mode := "离线只读"
+	if writes {
+		mode = "可读写（本地）"
+	}
+	if *upload {
+		mode = "可读写 + 自动上传"
+	}
 	fmt.Fprintf(os.Stderr, "数据库: %s\nschema: %d 张表（来自 %s）\n", *dbPath, len(sch.Tables()), schemaSource(*schemaF))
-	fmt.Fprintln(os.Stderr, "模式: 离线只读（未连接同步服务；数据来自本地 SQLite）")
+	fmt.Fprintf(os.Stderr, "模式: %s（走 SDK 读/写路径；写入会进入上传队列）\n", mode)
+
+	if *upload {
+		if err := db.Connect(ctx); err != nil {
+			fatalf("Connect: %v", err)
+		}
+		defer db.Disconnect()
+		fmt.Fprintln(os.Stderr, "同步: 已连接，写入会自动上传")
+	}
 
 	switch {
 	case *list:
 		listTables(ctx, db, sch.Tables())
+	case *repl:
+		runREPL(ctx, db, *format, *full, *limit, *upload)
+	case *execSQL != "":
+		runScript(ctx, db, *execSQL, *format, *full, *limit, *dryRun, *upload)
 	case *table != "":
 		sql := fmt.Sprintf(`SELECT * FROM %s`, quote(*table))
 		if *limit > 0 {
@@ -86,6 +137,49 @@ func main() {
 		printRows(ctx, db, *table, sql, *format, *full, *limit)
 	default:
 		printRows(ctx, db, "query", *query, *format, *full, *limit)
+	}
+
+	if *upload {
+		if n, err := restconn.WaitQueueEmpty(ctx, db, 30*time.Second); err != nil {
+			fmt.Fprintf(os.Stderr, "⚠️ %v（剩 %d 条）\n", err, n)
+		} else {
+			fmt.Fprintln(os.Stderr, "同步: 上传队列已清空")
+		}
+		if *verifyT != "" {
+			if err := conn.EnsureToken(ctx); err != nil {
+				fmt.Fprintf(os.Stderr, "后端核对跳过（取 token 失败: %v）\n", err)
+			} else {
+				verifyTables(ctx, db, conn.REST(), *verifyT)
+			}
+		}
+	}
+}
+
+// verifyTables 核对“本地行数 vs 后端行数”，证明写入真的同步过去了。
+func verifyTables(ctx context.Context, db *powersync.DB, rest *psclient.REST, list string) {
+	fmt.Fprintln(os.Stderr, "\n后端核对：")
+	for _, t := range strings.Split(list, ",") {
+		t = strings.TrimSpace(t)
+		if t == "" {
+			continue
+		}
+		var local int64
+		if rows, err := db.GetAll(ctx, `SELECT count(*) AS n FROM `+quote(t)); err == nil && len(rows) == 1 {
+			local = toInt64(rows[0]["n"])
+		}
+		var remote []map[string]json.RawMessage
+		var remoteN int64 = -1
+		if err := rest.GetJSON(ctx, "/"+url.PathEscape(t)+"?select=id&limit=100000", &remote); err == nil {
+			remoteN = int64(len(remote))
+		}
+		switch {
+		case remoteN < 0:
+			fmt.Fprintf(os.Stderr, "  %-24s 本地=%d 后端=查询失败\n", t, local)
+		case local == remoteN:
+			fmt.Fprintf(os.Stderr, "  %-24s 本地=%d 后端=%d ✅ 一致\n", t, local, remoteN)
+		default:
+			fmt.Fprintf(os.Stderr, "  %-24s 本地=%d 后端=%d ⚠️ 不一致\n", t, local, remoteN)
+		}
 	}
 }
 
@@ -111,6 +205,170 @@ func schemaSource(schemaFile string) string {
 		return schemaFile
 	}
 	return "库内 ps_kv.schema_json"
+}
+
+// runScript 执行 -exec 传入的 SQL（分号分隔多条）。
+func runScript(ctx context.Context, db *powersync.DB, script, format string, full bool, limit int, dryRun, uploading bool) {
+	for _, stmt := range splitStatements(script) {
+		runStatement(ctx, db, stmt, format, full, limit, dryRun, uploading)
+	}
+}
+
+// runREPL 交互式：读一行/多条 SQL 并执行；.q 退出、.tables 列表、.schema <表> 看列。
+func runREPL(ctx context.Context, db *powersync.DB, format string, full bool, limit int, uploading bool) {
+	fmt.Fprintln(os.Stderr, "\n交互模式：输入 SQL 以 ; 结尾执行；.tables 列表；.q 退出")
+	scanner := bufio.NewScanner(os.Stdin)
+	scanner.Buffer(make([]byte, 0, 64<<10), 4<<20)
+	var buf strings.Builder
+	for {
+		if buf.Len() == 0 {
+			fmt.Fprint(os.Stderr, "ps> ")
+		} else {
+			fmt.Fprint(os.Stderr, "...> ")
+		}
+		if !scanner.Scan() {
+			fmt.Fprintln(os.Stderr)
+			return
+		}
+		line := scanner.Text()
+		trimmed := strings.TrimSpace(line)
+		if buf.Len() == 0 {
+			switch strings.ToLower(trimmed) {
+			case ".q", ".quit", ".exit", "exit", "quit":
+				return
+			case ".tables":
+				listTables(ctx, db, db.Schema().Tables())
+				continue
+			}
+			if strings.HasPrefix(trimmed, ".schema ") {
+				showTableSchema(ctx, db, strings.TrimSpace(trimmed[len(".schema "):]))
+				continue
+			}
+		}
+		buf.WriteString(line)
+		buf.WriteString("\n")
+		if !strings.Contains(line, ";") {
+			continue
+		}
+		for _, stmt := range splitStatements(buf.String()) {
+			runStatement(ctx, db, stmt, format, full, limit, false, uploading)
+		}
+		buf.Reset()
+	}
+}
+
+// runStatement 执行单条语句：SELECT/PRAGMA/EXPLAIN 走查询，其余走 Execute（写入会进上传队列）。
+func runStatement(ctx context.Context, db *powersync.DB, stmt, format string, full bool, limit int, dryRun, uploading bool) {
+	stmt = strings.TrimSpace(stmt)
+	if stmt == "" {
+		return
+	}
+	if isQuery(stmt) {
+		printRows(ctx, db, abbreviate(stmt, 60), stmt, format, full, limit)
+		return
+	}
+	if dryRun {
+		fmt.Printf("[dry-run] %s\n", stmt)
+		return
+	}
+	n, err := db.Execute(ctx, stmt)
+	if err != nil {
+		fmt.Fprintf(os.Stderr, "✗ %s\n  %v\n", abbreviate(stmt, 100), err)
+		return
+	}
+	hint := ""
+	if uploading {
+		hint = "（已进上传队列，会自动上传）"
+	} else if q, _ := db.UploadQueue(ctx); q > 0 {
+		hint = fmt.Sprintf("（上传队列 %d 条；加 -upload 才会同步到后端）", q)
+	}
+	if n == 0 {
+		// 同步表是“视图 + INSTEAD OF 触发器”，SQLite 拿不到行数（不是没写进去）。
+		fmt.Printf("✓ 已执行  %s%s\n", abbreviate(stmt, 80), hint)
+		return
+	}
+	fmt.Printf("✓ %d 行受影响  %s%s\n", n, abbreviate(stmt, 80), hint)
+}
+
+func isQuery(stmt string) bool {
+	up := strings.ToUpper(strings.TrimLeft(stmt, "( \t\n"))
+	for _, prefix := range []string{"SELECT", "WITH", "PRAGMA", "EXPLAIN"} {
+		if strings.HasPrefix(up, prefix) {
+			// INSERT ... WITH / UPDATE ... 不会这么开头，足够用。
+			return true
+		}
+	}
+	return false
+}
+
+// splitStatements 按分号切分（忽略字符串/注释里的分号）。
+func splitStatements(script string) []string {
+	var (
+		out     []string
+		cur     strings.Builder
+		inStr   byte
+		comment bool
+	)
+	for i := 0; i < len(script); i++ {
+		c := script[i]
+		switch {
+		case comment:
+			cur.WriteByte(c)
+			if c == '\n' {
+				comment = false
+			}
+		case inStr != 0:
+			cur.WriteByte(c)
+			if c == inStr {
+				if i+1 < len(script) && script[i+1] == inStr {
+					cur.WriteByte(script[i+1])
+					i++
+				} else {
+					inStr = 0
+				}
+			}
+		case c == '-' && i+1 < len(script) && script[i+1] == '-':
+			comment = true
+			cur.WriteString("--")
+			i++
+		case c == '\'' || c == '"' || c == '`':
+			inStr = c
+			cur.WriteByte(c)
+		case c == ';':
+			out = append(out, cur.String())
+			cur.Reset()
+		default:
+			cur.WriteByte(c)
+		}
+	}
+	if strings.TrimSpace(cur.String()) != "" {
+		out = append(out, cur.String())
+	}
+	return out
+}
+
+// showTableSchema 打印某张表的列（来自 SDK schema）。
+func showTableSchema(ctx context.Context, db *powersync.DB, table string) {
+	for _, t := range db.Schema().Tables() {
+		if !strings.EqualFold(t.Name, table) {
+			continue
+		}
+		fmt.Printf("表 %s（同步=%v，仅本地=%v）列：\n", t.Name, !t.LocalOnly, t.LocalOnly)
+		fmt.Printf("  %-24s %s\n", "id", "主键（TEXT）")
+		for _, c := range t.Columns {
+			fmt.Printf("  %-24s %s\n", c.Name, c.Type)
+		}
+		return
+	}
+	fmt.Fprintf(os.Stderr, "schema 里没有表 %q\n", table)
+}
+
+func abbreviate(s string, n int) string {
+	s = strings.Join(strings.Fields(s), " ")
+	if len(s) <= n {
+		return s
+	}
+	return s[:n] + "…"
 }
 
 // storedSchemaJSON 从已有库里读回 schema（只读连接，不经过 SDK）。

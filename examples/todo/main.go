@@ -28,7 +28,6 @@ import (
 	"errors"
 	"flag"
 	"fmt"
-	"io"
 	"log/slog"
 	"net/http"
 	"net/http/httptest"
@@ -42,6 +41,7 @@ import (
 	powersync "msmkSync"
 	"msmkSync/internal/fixture"
 	"msmkSync/internal/psclient"
+	"msmkSync/internal/restconn"
 	"msmkSync/internal/rowdiff"
 )
 
@@ -120,11 +120,10 @@ func main() {
 			if *restBase == "" {
 				fail("upload=real 缺少 -rest", errors.New("需要 -rest http://host:8089/rest（或环境变量 REST_URL）"))
 			}
-			conn = &realUploadConnector{
-				endpoint: ep, rpc: *rpc, box: *box, org: *org,
-				rest: &psclient.REST{Base: strings.TrimRight(*restBase, "/")},
-				log:  logger,
-			}
+			conn = restconn.New(restconn.Config{
+				Endpoint: ep, RPC: *rpc, Box: *box, Org: *org, RESTBase: *restBase,
+				Logger: logger,
+			})
 			fmt.Println("上传: real（会真正写 PostgREST；探针行默认保留，-cleanup 才删）")
 		default:
 			conn = &realConnector{endpoint: ep, rpc: *rpc, box: *box, org: *org, logger: logger}
@@ -412,7 +411,7 @@ func runOfflineFirstDemo(ctx context.Context, db *powersync.DB, conn powersync.C
 		printTable(ctx, db, name, limit)
 	}
 
-	writer, ok := conn.(*realUploadConnector)
+	writer, ok := conn.(*restconn.Connector)
 	if !ok {
 		fmt.Println("   （当前连接器不支持真实上传，跳过写入演示）")
 		return
@@ -446,7 +445,7 @@ func runOfflineFirstDemo(ctx context.Context, db *powersync.DB, conn powersync.C
 	if n, _ := db.UploadQueue(ctx); n != 0 {
 		fmt.Printf("   ⚠️ 上传队列仍有 %d 条\n", n)
 	}
-	if n, err := writer.rest.CountByID(ctx, writeTable, id); err == nil {
+	if n, err := writer.REST().CountByID(ctx, writeTable, id); err == nil {
 		fmt.Printf("   后台校验：该行存在 = %v\n", n > 0)
 	} else {
 		fmt.Printf("   后台校验失败：%v\n", err)
@@ -458,13 +457,13 @@ func runOfflineFirstDemo(ctx context.Context, db *powersync.DB, conn powersync.C
 			fmt.Printf("   本地删除失败：%v\n", err)
 		}
 		waitQueueEmpty(ctx, db)
-		_ = writer.rest.Do(ctx, http.MethodDelete,
+		_ = writer.REST().Do(ctx, http.MethodDelete,
 			tablePath(writeTable)+"?id=eq."+url.QueryEscape(id), nil, "return=minimal")
 		fmt.Println("   已删除")
 	} else {
 		fmt.Printf("⑤ 保留后台这一行（id=%s），方便查看同步结果\n", id)
 		fmt.Printf("   手动清理：DELETE %s?id=eq.%s（带 Authorization: Bearer <token>）\n",
-			writer.rest.Base+tablePath(writeTable), url.QueryEscape(id))
+			writer.REST().Base+tablePath(writeTable), url.QueryEscape(id))
 		fmt.Println("   或重新跑一次示例并加 -cleanup（只删它自己生成的行）")
 	}
 }
@@ -518,108 +517,6 @@ func (c *realConnector) UploadData(ctx context.Context, db *powersync.DB) error 
 	}
 	c.logger.Warn("real 模式示例不实现上传，直接出队", "entries", len(batch.Entries))
 	return batch.Complete(ctx)
-}
-
-// realUploadConnector：连真实服务，并且**真正**把 ps_crud 队列写进后端（PostgREST）。
-//
-// 与 cmd/psupload 同一套语义：PUT=upsert、PATCH=update、DELETE=delete；
-// 上传成功后取 legacy write checkpoint 再出队（让服务端把本地写回显回来）。
-type realUploadConnector struct {
-	endpoint, rpc, box, org string
-	rest                    *psclient.REST
-	log                     *slog.Logger
-	token                   string
-}
-
-func (c *realUploadConnector) FetchCredentials(ctx context.Context) (powersync.Credentials, error) {
-	if c.token == "" {
-		tok, err := psclient.FetchToken(ctx, c.rpc, c.box, c.org)
-		if err != nil {
-			return powersync.Credentials{}, err
-		}
-		c.token = tok
-		c.rest.Token = tok
-	}
-	return powersync.Credentials{Endpoint: c.endpoint, Token: c.token}, nil
-}
-
-func (c *realUploadConnector) UploadData(ctx context.Context, db *powersync.DB) error {
-	batch, err := db.GetCrudBatch(ctx, 50)
-	if err != nil || batch == nil {
-		return err
-	}
-	for _, e := range batch.Entries {
-		if err := applyCrudEntry(ctx, c.rest, e); err != nil {
-			var httpErr *psclient.HTTPError
-			if errors.As(err, &httpErr) && httpErr.Fatal() {
-				// 4xx（如 id 不是 uuid、NOT NULL 约束）重试也没用：记录后丢弃，避免堵住队列。
-				fmt.Printf("  [上传-real] %-6s %s/%s 失败且不可重试，已丢弃: %v\n", e.Op, e.Table, e.ID, err)
-				continue
-			}
-			return fmt.Errorf("上传 %s %s/%s: %w", e.Op, e.Table, e.ID, err)
-		}
-		fmt.Printf("  [上传-real] %-6s %s/%s\n", e.Op, e.Table, e.ID)
-	}
-	wc, err := fetchWriteCheckpoint(ctx, c.endpoint, c.token, db)
-	if err != nil {
-		return err
-	}
-	return batch.Complete(ctx, wc)
-}
-
-// applyCrudEntry 把一条 ps_crud 变更写到 PostgREST。
-func applyCrudEntry(ctx context.Context, rest *psclient.REST, e powersync.CrudEntry) error {
-	switch e.Op {
-	case powersync.UpdateTypePut:
-		row := map[string]any{"id": e.ID}
-		for k, v := range e.Data {
-			row[k] = v
-		}
-		return rest.Do(ctx, http.MethodPost, tablePath(e.Table), row, "resolution=merge-duplicates,return=minimal")
-	case powersync.UpdateTypePatch:
-		if len(e.Data) == 0 {
-			return nil
-		}
-		return rest.Do(ctx, http.MethodPatch,
-			tablePath(e.Table)+"?id=eq."+url.QueryEscape(e.ID), e.Data, "return=minimal")
-	case powersync.UpdateTypeDelete:
-		return rest.Do(ctx, http.MethodDelete,
-			tablePath(e.Table)+"?id=eq."+url.QueryEscape(e.ID), nil, "return=minimal")
-	default:
-		return fmt.Errorf("未知 op %q", e.Op)
-	}
-}
-
-func fetchWriteCheckpoint(ctx context.Context, endpoint, token string, db *powersync.DB) (string, error) {
-	clientID, err := db.ClientID(ctx)
-	if err != nil {
-		return "", err
-	}
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet,
-		endpoint+"/write-checkpoint2.json?client_id="+url.QueryEscape(clientID), nil)
-	if err != nil {
-		return "", err
-	}
-	req.Header.Set("Authorization", "Token "+token)
-	req.Header.Set("Accept", "application/json")
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return "", err
-	}
-	defer resp.Body.Close()
-	if resp.StatusCode != http.StatusOK {
-		msg, _ := io.ReadAll(io.LimitReader(resp.Body, 2<<10))
-		return "", fmt.Errorf("write-checkpoint2 HTTP %d: %s", resp.StatusCode, msg)
-	}
-	var out struct {
-		Data struct {
-			WriteCheckpoint string `json:"write_checkpoint"`
-		} `json:"data"`
-	}
-	if err := json.NewDecoder(resp.Body).Decode(&out); err != nil {
-		return "", err
-	}
-	return out.Data.WriteCheckpoint, nil
 }
 
 // ---------------------------------------------------------------- 工具
