@@ -12,12 +12,12 @@
 //	    -schema ./out/schema.json \
 //	    -tables sys_error_report,cutter_info
 //
-// 连真实服务并**真正上传**（会在 sys_error_report 上插入/更新/删除一行，随后清理）：
+// 连真实服务并真正上传 + 演示"断网可用、恢复后自动同步"：
 //
 //	go run ./examples/todo -mode real -upload real -write \
 //	    -endpoint http://120.24.7.22:8080 -rest http://120.24.7.22:8089/rest \
 //	    -rpc http://120.24.7.22:8089/rest/rpc/fetch_credentials \
-//	    -box D1-2 -org ORG001 -schema ./out/schema.json -tables sys_error_report
+//	    -box D1-2 -org ORG001 -schema ./out/schema.json -tables sys_error_report,cutter_info
 package main
 
 import (
@@ -54,7 +54,7 @@ func main() {
 		rpc      = flag.String("rpc", os.Getenv("RPC_URL"), "real 模式：fetch_credentials RPC")
 		box      = flag.String("box", os.Getenv("BOX_CODE"), "real 模式：box_code")
 		org      = flag.String("org", os.Getenv("ORG_CODE"), "real 模式：org_code")
-		schemaF  = flag.String("schema", "", "schema JSON（官方 Schema.toJSON 形状）；real 模式通常必填")
+		schemaF  = flag.String("schema", "", "schema JSON（官方 Schema.toJSON 形状）；real 模式必填")
 		tablesF  = flag.String("tables", "", "只统计/打印这些表（逗号分隔），空=全部")
 		dbPath   = flag.String("db", filepath.Join("out", "example.db"), "本地数据库文件")
 		timeout  = flag.Duration("timeout", 120*time.Second, "整体超时")
@@ -62,7 +62,8 @@ func main() {
 		upload   = flag.String("upload", "mock", "real 模式的上传方式：mock（打印后出队）或 real（真正写 PostgREST）")
 		restBase = flag.String("rest", os.Getenv("REST_URL"), "upload=real 时的 PostgREST base，如 http://host:8089/rest")
 		limit    = flag.Int("limit", 3, "每张表打印多少行样例")
-		verbose  = flag.Bool("v", false, "打印库内部的 debug 日志（同步行/checkpoint 细节）")
+		verbose  = flag.Bool("v", false, "打印库内部 debug 日志（同步行/checkpoint/物化行数）")
+		cleanup  = flag.Bool("cleanup", false, "演示结束后删除探针行（默认**保留**在后台，方便查看）")
 	)
 	flag.Parse()
 
@@ -122,7 +123,7 @@ func main() {
 				rest: &psclient.REST{Base: strings.TrimRight(*restBase, "/")},
 				log:  logger,
 			}
-			fmt.Println("上传: real（会真正写 PostgREST；演示行结束会删除）")
+			fmt.Println("上传: real（会真正写 PostgREST；探针行默认保留，-cleanup 才删）")
 		default:
 			conn = &realConnector{endpoint: ep, rpc: *rpc, box: *box, org: *org, logger: logger}
 			fmt.Println("上传: mock（打印后出队，不写后端）")
@@ -156,7 +157,7 @@ func main() {
 		NetworkCheckTimeout:  time.Second,
 		Debugf: func(format string, args ...any) {
 			if *verbose {
-				logger.Debug("core: " + fmt.Sprintf(format, args...))
+				logger.Debug(fmt.Sprintf(format, args...))
 			}
 		},
 	})
@@ -208,14 +209,14 @@ func main() {
 			fmt.Printf("：%s", strings.Join(tables, ", "))
 		}
 		fmt.Println()
-		fmt.Println("   如果确实需要这些表：把它们加进 schema（AppSchema.ts）后重建本地库（DisconnectAndClear 或删除 .db）")
+		fmt.Println("   这些表不在客户端 schema 里，PowerSync 不会同步它们（要么加进 AppSchema.ts，要么从 sync rules 移除）")
 	}
 
 	for _, name := range wanted {
 		printTable(ctx, db, name, *limit)
 	}
 
-	// ---- 5. 写演示（mock 默认做；real 需要 -write）----
+	// ---- 5. 写演示 ----
 	doWrite := *mode == "mock" || *write
 	if doWrite {
 		writeTable := pickWriteTable(tableNames)
@@ -223,7 +224,7 @@ func main() {
 		case *mode == "real" && *upload == "real" && writeTable != "sys_error_report":
 			fmt.Printf("\n⚠️ upload=real 的写入演示仅支持 sys_error_report（当前是 %s），改为只读\n", writeTable)
 		case *mode == "real" && *upload == "real":
-			runRealUploadDemo(ctx, db, conn, writeTable, *box, *org)
+			runOfflineFirstDemo(ctx, db, conn, writeTable, wanted, *box, *org, *cleanup, *limit)
 		default:
 			runWriteDemo(ctx, db, writeTable, *mode)
 		}
@@ -349,7 +350,7 @@ func formatRow(r map[string]any) string {
 	return strings.Join(parts, " ")
 }
 
-// runWriteDemo 在指定表上做：插入 → 等上传 → 更新 → 等上传 → 删除 → 等上传（上传是 mock）。
+// runWriteDemo 在指定表上做：插入 → 更新 → 删除（上传是 mock，只打印）。
 func runWriteDemo(ctx context.Context, db *powersync.DB, table, mode string) {
 	id := newID()
 	fmt.Printf("\n— 写入演示（表 %s，id=%s，上传=mock）—\n", table, id)
@@ -376,55 +377,84 @@ func runWriteDemo(ctx context.Context, db *powersync.DB, table, mode string) {
 	}
 }
 
-// runRealUploadDemo：在 sys_error_report 上插入 → 更新 → 删除，真正上传到 PostgREST，并核对后端已清理。
-func runRealUploadDemo(ctx context.Context, db *powersync.DB, conn powersync.Connector, table, box, org string) {
-	uploader, ok := conn.(*realUploadConnector)
+// runOfflineFirstDemo 演示离线优先闭环：
+//
+//  1. 已联机下载过 → 本地有数据（cutter_info 等）
+//  2. 断开（模拟断网）→ 仍能读本地数据，作业不中断
+//  3. 断网期间本地写 → 进入上传队列（待同步）
+//  4. 恢复网络 → 自动上传到 PostgREST；默认**保留**后台这一行（-cleanup 才删）
+func runOfflineFirstDemo(ctx context.Context, db *powersync.DB, conn powersync.Connector,
+	writeTable string, wanted []string, box, org string, cleanup bool, limit int) {
+	fmt.Println("\n===== 离线优先演示（断网可用 → 恢复后自动同步）=====")
+
+	// 1) 断开同步，模拟断网
+	db.Disconnect()
+	time.Sleep(150 * time.Millisecond)
+	fmt.Println("① 已断开同步（模拟断网）")
+
+	// 2) 断网时读本地
+	fmt.Println("② 断网状态下读本地数据（不依赖网络）：")
+	for _, name := range wanted {
+		if name == writeTable {
+			continue
+		}
+		printTable(ctx, db, name, limit)
+	}
+
+	writer, ok := conn.(*realUploadConnector)
 	if !ok {
-		runWriteDemo(ctx, db, table, "real")
+		fmt.Println("   （当前连接器不支持真实上传，跳过写入演示）")
 		return
 	}
-	rest := uploader.rest
+
+	// 3) 断网期间本地写
 	id := newID()
-	fmt.Printf("\n— 真实上传演示（表 %s，id=%s）—\n", table, id)
-	fmt.Println("  注意：会真的插入/更新/删除这一行（只碰这个 id）；服务端复制延迟可能几十秒")
-
-	// 兜底清理：无论成功失败，都保证后端不留这行
-	defer func() {
-		cctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
-		defer cancel()
-		if n, err := rest.CountByID(cctx, table, id); err == nil && n > 0 {
-			_ = rest.Do(cctx, http.MethodDelete, tablePath(table)+"?id=eq."+url.QueryEscape(id), nil, "return=minimal")
-			fmt.Println("  [清理] 后端仍有该行，已补删除")
-		}
-	}()
-
-	insertSQL := `INSERT INTO ` + quoteIdent(table) + `
+	fmt.Printf("③ 断网状态下本地插入一行 %s/%s（进入上传队列）\n", writeTable, id)
+	insertSQL := `INSERT INTO ` + quoteIdent(writeTable) + `
 	  (id, org_code, box_code, box_cell, user_id, user_name, error_date, error_desc, trans_type, op_status, box_type)
 	  VALUES(?,?,?,?,?,?,?,?,?,?,?)`
 	if _, err := db.Execute(ctx, insertSQL,
 		id, nonEmpty(org, "ORG001"), nonEmpty(box, "D1-2"), "EXAMPLE", "EXAMPLE",
-		"examples/todo", "2026-01-01 00:00:00", "example upload demo", "PROBE", "PROBE", "PROBE"); err != nil {
-		fmt.Printf("  插入失败（跳过上传演示）：%v\n", err)
+		"examples/todo", "2026-01-01 00:00:00", "offline-first demo", "PROBE", "PROBE", "PROBE"); err != nil {
+		fmt.Printf("   本地插入失败：%v\n", err)
+		return
+	}
+	if n, _ := db.UploadQueue(ctx); n > 0 {
+		fmt.Printf("   上传队列：%d 条待同步（本地数据已可用）\n", n)
+	}
+	rows, _ := db.GetAll(ctx, `SELECT id, error_desc FROM `+quoteIdent(writeTable)+` WHERE id=?`, id)
+	fmt.Printf("   断网时本地已能读到：%v\n", rows)
+
+	// 4) 恢复网络 → 自动上传
+	fmt.Println("④ 恢复连接（Connect）→ 等待上传队列清空")
+	if err := db.Connect(ctx); err != nil {
+		fmt.Printf("   Connect 失败：%v\n", err)
 		return
 	}
 	waitQueueEmpty(ctx, db)
-	if n, err := rest.CountByID(ctx, table, id); err == nil {
-		fmt.Printf("  [后端] 插入后该行存在: %v\n", n > 0)
+	if n, _ := db.UploadQueue(ctx); n != 0 {
+		fmt.Printf("   ⚠️ 上传队列仍有 %d 条\n", n)
+	}
+	if n, err := writer.rest.CountByID(ctx, writeTable, id); err == nil {
+		fmt.Printf("   后台校验：该行存在 = %v\n", n > 0)
+	} else {
+		fmt.Printf("   后台校验失败：%v\n", err)
 	}
 
-	if _, err := db.Execute(ctx, `UPDATE `+quoteIdent(table)+` SET error_desc='updated by example' WHERE id=?`, id); err != nil {
-		fmt.Printf("  更新失败：%v\n", err)
-	} else {
+	if cleanup {
+		fmt.Println("⑤ -cleanup：删除探针行（本地 + 后台）")
+		if _, err := db.Execute(ctx, `DELETE FROM `+quoteIdent(writeTable)+` WHERE id=?`, id); err != nil {
+			fmt.Printf("   本地删除失败：%v\n", err)
+		}
 		waitQueueEmpty(ctx, db)
-	}
-
-	if _, err := db.Execute(ctx, `DELETE FROM `+quoteIdent(table)+` WHERE id=?`, id); err != nil {
-		fmt.Printf("  删除失败：%v\n", err)
+		_ = writer.rest.Do(ctx, http.MethodDelete,
+			tablePath(writeTable)+"?id=eq."+url.QueryEscape(id), nil, "return=minimal")
+		fmt.Println("   已删除")
 	} else {
-		waitQueueEmpty(ctx, db)
-	}
-	if n, err := rest.CountByID(ctx, table, id); err == nil {
-		fmt.Printf("  [后端] 删除后该行存在: %v\n", n > 0)
+		fmt.Printf("⑤ 保留后台这一行（id=%s），方便查看同步结果\n", id)
+		fmt.Printf("   手动清理：DELETE %s?id=eq.%s（带 Authorization: Bearer <token>）\n",
+			writer.rest.Base+tablePath(writeTable), url.QueryEscape(id))
+		fmt.Println("   或重新跑一次示例并加 -cleanup（只删它自己生成的行）")
 	}
 }
 

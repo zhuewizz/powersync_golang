@@ -67,7 +67,7 @@ schema: 来自 ./out/schema.json（37 张表）
 > - 默认 `-upload mock`：`UploadData` 打印后直接出队，不写后端；`-write` 只是本地插入/更新/删除演示。
 > - 真实项目请参考 [`docs/reference.md`](../docs/reference.md) 第 4 节的 Connector 实现。
 
-### 方式三：连真实服务并**真正上传**
+### 方式三：连真实服务 + 真正上传 + 离线优先演示
 
 ```bash
 go run ./examples/todo -mode real -upload real -write   -endpoint http://120.24.7.22:8080 -rest http://120.24.7.22:8089/rest   -rpc http://120.24.7.22:8089/rest/rpc/fetch_credentials   -box D1-2 -org ORG001   -schema ./out/schema.json -tables sys_error_report
@@ -87,14 +87,32 @@ go run ./examples/todo -mode real -upload real -write   -endpoint http://120.24.
 ✅ 示例跑完
 ```
 
+现在这条命令演示的是**离线优先闭环**（对应实际作业场景）：
+
+```
+===== 离线优先演示（断网可用 → 恢复后自动同步）=====
+① 已断开同步（模拟断网）
+② 断网状态下读本地数据（不依赖网络）：
+表 cutter_info: 60 行（直接从本地 SQLite 读，断网也能用）
+③ 断网状态下本地插入一行 sys_error_report/<uuid>（进入上传队列）
+   上传队列：1 条待同步（本地数据已可用）
+④ 恢复连接（Connect）→ 等待上传队列清空
+  [上传-real] PUT    sys_error_report/<uuid>
+   后台校验：该行存在 = true
+⑤ 保留后台这一行（id=...），方便查看同步结果
+```
+
 行为说明：
 
-- `PUT` → PostgREST upsert（`resolution=merge-duplicates`）、`PATCH` → update、`DELETE` → delete；
-  每批上传成功后取 legacy `write-checkpoint2.json` 再 `Complete`（让服务端回显本地写，cursor 会前进）。
-- 探针行 id 用 **UUIDv4**（真实后端主键多为 `uuid` 列；用普通字符串会 400）。
-- HTTP **4xx**（如约束冲突）视为不可重试：打印后丢弃该批，避免堵住队列；5xx/网络错误仍会退避重试。
-- 演示行（只碰自己生成的 id）在结束时删除；异常退出时还有一次兜底删除。
-- 只支持在 `sys_error_report` 上演示真实上传（其它表缺列/约束不确定）；选错会提示并改为只读。
+- **默认保留后台数据**：探针行插入后会留在 `sys_error_report` 里方便你查看；
+  加 `-cleanup` 才会删除（且只删它自己生成的 id）。
+- 断网期间：本地读写完全正常（SQLite 本地库），写操作进入上传队列等待；
+  恢复后自动按顺序上传（PUT/PATCH/DELETE），每批成功后取 `write-checkpoint2.json` 再 `Complete`。
+- 探针行 id 用 **UUIDv4**（真实后端主键是 `uuid` 列；普通字符串会 400）。
+- HTTP **4xx** 视为不可重试：打印后丢弃该批，避免堵住队列；5xx/网络错误仍退避重试。
+- 写入演示只支持 `sys_error_report`（其它表列/约束不确定）；选错会提示并改为只读。
+- 想手动作业数据（如 `cutter_info`）：直接改本地数据，然后把 `UploadData` 里的
+  `applyCrudEntry` 换成你自己的后端接口即可（示例已给出 PostgREST 版本）。
 
 ### 参数
 
@@ -105,6 +123,7 @@ go run ./examples/todo -mode real -upload real -write   -endpoint http://120.24.
 | `-schema` | 空（内置示例 schema） | 真实 schema JSON（官方 `Schema.toJSON()` 形状） |
 | `-tables` | 空（schema 全部） | 只统计/打印这些表（逗号分隔） |
 | `-write` | `false` | real 模式下也做写入/上传演示（mock 默认就做） |
+| `-cleanup` | `false` | 演示结束删除探针行（默认**保留**在后台） |
 | `-upload` | `mock` | real 模式的上传方式：`mock`（打印后出队）/ `real`（真正写 PostgREST） |
 | `-rest` | 环境变量 `REST_URL` | `upload=real` 时的 PostgREST base，如 `http://host:8089/rest` |
 | `-limit` | `3` | 每张表打印多少行样例 |
