@@ -1,0 +1,3 @@
+{"checkpoint":{"last_op_id":"101","buckets":[{"bucket":"50#test_data[\"ORG001\"]","checksum":350,"count":2,"priority":3,"subscriptions":[{"default":1}]}],"streams":[{"name":"test_data","is_default":true,"errors":[]}]}}
+{"data":{"bucket":"50#test_data[\"ORG001\"]","after":"50","has_more":false,"data":[{"op_id":"10","op":"PUT","object_type":"todos","object_id":"a","checksum":100,"subkey":"sub/a","data":"{\"id\":\"a\",\"title\":\"first\",\"done\":1}"},{"op_id":"50","op":"PUT","object_type":"todos","object_id":"b","checksum":250,"subkey":"sub/b","data":"{\"id\":\"b\",\"title\":\"second\",\"done\":0}"}]}}
+{"checkpoint_complete":{"last_op_id":"101"}}

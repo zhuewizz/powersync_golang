@@ -1,0 +1,5 @@
+{"checkpoint":{"last_op_id":"24396","buckets":[{"bucket":"50#box_data[\"D1-2\",\"ORG001\"]","checksum":-96505511,"count":735,"priority":3,"subscriptions":[{"default":1}]}],"streams":[{"name":"box_data","is_default":true,"errors":[]}]}}
+{"data":{"bucket":"50#box_data[\"D1-2\",\"ORG001\"]","after":"24396","has_more":false,"data":[{"op_id":"24396","op":"PUT","object_type":"sys_error_report","object_id":"07ae9768-0000-4000-8000-000000000001","checksum":473003989,"subkey":"136e0228-0000-4000-8000-0000000000a1/0c024956-0000-4000-8000-0000000000b1","data":"{\"id\":\"07ae9768-0000-4000-8000-000000000001\",\"org_code\":\"ORG001\",\"box_code\":\"D1-2\",\"error_desc\":\"probe row\"}"}]}}
+{"checkpoint_complete":{"last_op_id":"24396"}}
+{"data":{"bucket":"50#box_data[\"D1-2\",\"ORG001\"]","after":"24397","has_more":false,"data":[{"op_id":"24397","op":"REMOVE","object_type":"sys_error_report","object_id":"07ae9768-0000-4000-8000-000000000001","checksum":3029235767,"subkey":"136e0228-0000-4000-8000-0000000000a1/0c024956-0000-4000-8000-0000000000b1","data":null}]}}
+{"checkpoint_complete":{"last_op_id":"24397"}}

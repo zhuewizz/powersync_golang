@@ -1,0 +1,16 @@
+{
+ "tables": [
+  {
+   "name": "todos",
+   "columns": [
+    {"name": "title", "type": "TEXT"},
+    {"name": "done", "type": "INTEGER"}
+   ],
+   "indexes": [
+    {"name": "todos_title", "columns": [{"name": "title", "ascending": true}]}
+   ],
+   "local_only": false,
+   "insert_only": false
+  }
+ ]
+}

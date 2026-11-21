@@ -1,0 +1,2 @@
+{"checkpoint":{"last_op_id":"24419","buckets":[{"bucket":"50#org_data[\"ORG001\"]","checksum":1070820748,"count":734,"priority":3,"subscriptions":[{"default":0}]},{"bucket":"50#box_data[\"D1-2\",\"ORG001\"]","checksum":-1077652120,"count":942,"priority":3,"subscriptions":[{"default":1}]}],"streams":[{"name":"org_data","is_default":true,"errors":[]},{"name":"box_data","is_default":true,"errors":[]}]}}
+{"checkpoint_complete":{"last_op_id":"24419"}}

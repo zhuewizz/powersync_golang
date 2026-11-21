@@ -1,0 +1,52 @@
+name: ci
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  go:
+    name: go test / vet / build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+      - name: gofmt
+        run: |
+          out=$(gofmt -l .)
+          if [ -n "$out" ]; then echo "以下文件未格式化："; echo "$out"; exit 1; fi
+      - name: vet
+        run: go vet ./...
+      - name: test (race)
+        run: go test -race ./...
+      - name: pure-go build (no cgo)
+        run: CGO_ENABLED=0 go build ./...
+
+  js-diff:
+    name: Go vs 官方 JS SDK 差分
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      # Node 22.15+ 才有 zlib zstd（@powersync/node 的 undici 7 需要）
+      - name: 安装 JS 依赖（@powersync/node + better-sqlite3）
+        working-directory: scripts/js-reference
+        run: npm ci --no-audit --no-fund
+      - name: 双实现差分
+        run: ./scripts/run-js-diff.sh
+      - name: 上传产物
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: jsdiff
+          path: out/jsdiff
+          retention-days: 7

@@ -1,0 +1,19 @@
+# 本地数据库
+*.db
+*.db-wal
+*.db-shm
+*.sqlite
+
+# 抓包输出（含真实业务数据，永不提交）
+.probe/
+*.ndjson.local
+*.token
+
+# 编辑器/系统
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+out/
+scripts/js-reference/node_modules/
+scripts/js-reference/out/
