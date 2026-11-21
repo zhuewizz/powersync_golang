@@ -2,7 +2,10 @@ package core_test
 
 import (
 	"context"
+	"path/filepath"
 	"testing"
+
+	"msmkSync/internal/core"
 )
 
 // TestPowersyncCrudCompat 验证与官方 core 的 powersync_crud 兼容层：
@@ -65,5 +68,44 @@ func TestPowersyncCrudCompat(t *testing.T) {
 	last = entries[len(entries)-1]
 	if string(last.Old) != `{"title":"y"}` {
 		t.Errorf("old = %s", last.Old)
+	}
+}
+
+// TestIgnoreEmptyUpdate 验证 powersync_crud 的 options bit0（ignore_empty_update）：
+// 开了该标志的表，空 PATCH 不入队；没开的照常入队（{"op":"PATCH", data:{}}）。
+func TestIgnoreEmptyUpdate(t *testing.T) {
+	schemaJSON := `{"tables":[
+	  {"name":"skipped","ignore_empty_update":true,"columns":[{"name":"title","type":"TEXT"}]},
+	  {"name":"kept","columns":[{"name":"title","type":"TEXT"}]}]}`
+	s, err := core.ParseSchema([]byte(schemaJSON))
+	if err != nil {
+		t.Fatal(err)
+	}
+	db, err := core.Open(context.Background(), core.Options{
+		Path:   filepath.Join(t.TempDir(), "ignore.db"),
+		Schema: s,
+	})
+	if err != nil {
+		t.Fatalf("Open: %v", err)
+	}
+	t.Cleanup(func() { db.Close() })
+
+	// 两张表各插一行（PUT 都入队）
+	exec(t, db, `INSERT INTO skipped(id,title) VALUES('a','x')`)
+	exec(t, db, `INSERT INTO kept(id,title) VALUES('b','x')`)
+	if got := crud(t, db); len(got) != 2 {
+		t.Fatalf("初始 ps_crud = %d, want 2", len(got))
+	}
+
+	// 无变化的 UPDATE：skipped 应被忽略，kept 照常产生空 PATCH
+	exec(t, db, `UPDATE skipped SET title='x' WHERE id='a'`)
+	exec(t, db, `UPDATE kept SET title='x' WHERE id='b'`)
+	entries := crud(t, db)
+	if len(entries) != 3 {
+		t.Fatalf("ps_crud = %d, want 3（空 PATCH 只保留 kept 那条）: %+v", len(entries), entries)
+	}
+	last := entries[len(entries)-1]
+	if last.Table != "kept" || last.Op != "PATCH" || string(last.Data) != `{}` {
+		t.Errorf("最后一条 = %+v（应为 kept 的空 PATCH）", last)
 	}
 }

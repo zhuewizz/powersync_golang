@@ -337,6 +337,9 @@ func (t *Table) viewTriggerSQL(kind, sqlVerb string) string {
 			body += t.crudDeleteSQL("OLD")
 		}
 	}
+	// 任何用户表写入都让**该表**的版本 +1（Watch 只重查相关表）。
+	body += fmt.Sprintf("  INSERT INTO ps_internal_version(tbl, v) VALUES(%s, 1) ON CONFLICT(tbl) DO UPDATE SET v = v + 1;\n",
+		sqlString(t.Name))
 	return fmt.Sprintf("CREATE TRIGGER IF NOT EXISTS %s INSTEAD OF %s ON %s%s BEGIN\n%sEND;",
 		quoteIdent(fmt.Sprintf("ps_crud_%s_%s", kind, t.Name)), sqlVerb, view, guard, body)
 }
@@ -354,7 +357,8 @@ func (t *Table) directTriggerSQL(kind, timing string) string {
 			body = t.crudDeleteSQL("OLD")
 		}
 	}
-	body += "  UPDATE ps_internal_version SET v = v + 1;\n"
+	body += fmt.Sprintf("  INSERT INTO ps_internal_version(tbl, v) VALUES(%s, 1) ON CONFLICT(tbl) DO UPDATE SET v = v + 1;\n",
+		sqlString(t.Name))
 	return fmt.Sprintf("CREATE TRIGGER IF NOT EXISTS %s %s %s BEGIN\n%sEND;",
 		quoteIdent(fmt.Sprintf("ps_crud_%s_%s", kind, t.Name)), timing, quoteIdent(t.Name), body)
 }
@@ -383,9 +387,14 @@ func (t *Table) insertCrudStmt(op, rowRef, dataExpr string) string {
 	if t.IncludeMetadata {
 		meta = rowRef + "._metadata"
 	}
+	// options 位标志：bit0 = ignore_empty_update（桥接触发器据此丢弃空 PATCH）。
+	opts := "0"
+	if t.IgnoreEmptyUpdate {
+		opts = "1"
+	}
 	return fmt.Sprintf(
-		"  INSERT INTO powersync_crud(op, id, type, data, metadata) VALUES(%s, %s.id, %s, %s, %s);\n",
-		sqlString(op), rowRef, sqlString(t.Name), data, meta)
+		"  INSERT INTO powersync_crud(op, id, type, data, metadata, options) VALUES(%s, %s.id, %s, %s, %s, %s);\n",
+		sqlString(op), rowRef, sqlString(t.Name), data, meta, opts)
 }
 
 // deleteViaUpdateTriggerSQL：include_metadata 时支持 "UPDATE t SET _deleted = TRUE" 触发删除。

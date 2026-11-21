@@ -22,7 +22,8 @@
   上传回显门控（write checkpoint）、指数退避、token 预取、sync streams 订阅/TTL/优先级、
   按优先级分批应用、多进程 `.lock` 文件锁。
 - **公开 API**：`Open/Connect/Disconnect/Close`、`Execute/GetAll/GetOptional/WriteTransaction`、
-  `Watch`（触发器驱动推送 + 64 位哈希去重（0 分配），兜底轮询 2s）、`GetCrudBatch/GetNextCrudTransaction`、
+  `Watch`（触发器驱动推送 + 64 位哈希去重（0 分配），兜底轮询 2s）、`WatchTables`（表级版本，
+  无关写入不重查）、`powersync_crud.options` bit0 = `ignore_empty_update`、`GetCrudBatch/GetNextCrudTransaction`、
   `SubscribeStream`（`WithTTL`/`WithPriority`）、`CurrentStatus`/`WaitForFirstSync`、
   `UpdateSchema`、`LoadSchemaJSON`。
 - **工具**：`cmd/psdiff`（真机差分）、`cmd/psdemo`（冒烟）、`cmd/psupload`（上传回显闭环）、

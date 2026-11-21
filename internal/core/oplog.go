@@ -332,8 +332,9 @@ func (db *DB) ApplyCheckpoint(ctx context.Context, lastOp protocol.OpID, targets
 	if _, err := tx.ExecContext(ctx, fmt.Sprintf(`INSERT OR IGNORE INTO %s(id) VALUES(1)`, guardTable)); err != nil {
 		return nil, fmt.Errorf("core: apply guard: %w", err)
 	}
+	touchedTables := map[string]struct{}{}
 	for i, t := range targets {
-		if err := db.materializeBucket(ctx, tx, infos[i], t); err != nil {
+		if err := db.materializeBucket(ctx, tx, infos[i], t, touchedTables); err != nil {
 			// 物化失败时丢弃这一批 staged 状态，避免游标已推进但数据没落地、checksum 漂移。
 			// 这些 bucket 会被重置，下一次迭代从 after=0 重下。
 			for _, target := range targets {
@@ -360,7 +361,11 @@ func (db *DB) ApplyCheckpoint(ctx context.Context, lastOp protocol.OpID, targets
 		priority, time.Now().UTC().Format(time.RFC3339Nano)); err != nil {
 		return nil, err
 	}
-	if err := bumpVersionTx(ctx, tx); err != nil {
+	tables := make([]string, 0, len(touchedTables))
+	for name := range touchedTables {
+		tables = append(tables, name)
+	}
+	if err := bumpVersionTx(ctx, tx, tables); err != nil {
 		return nil, err
 	}
 	if err := tx.Commit(); err != nil {
@@ -371,7 +376,7 @@ func (db *DB) ApplyCheckpoint(ctx context.Context, lastOp protocol.OpID, targets
 }
 
 // materializeBucket 把某个 bucket 待应用的 oplog 行写进用户表。
-func (db *DB) materializeBucket(ctx context.Context, tx *sql.Tx, info *bucketInfo, target BucketTarget) error {
+func (db *DB) materializeBucket(ctx context.Context, tx *sql.Tx, info *bucketInfo, target BucketTarget, touched map[string]struct{}) error {
 	const q = `
 WITH updated AS (
   SELECT row_type, row_id FROM ps_oplog WHERE bucket = ?1 AND op_id > ?2
@@ -413,6 +418,7 @@ SELECT u.row_type, u.row_id,
 		if p.table == "" || p.id == "" {
 			continue
 		}
+		touched[p.table] = struct{}{}
 		if !p.data.Valid {
 			// 没有最新的 PUT（被 REMOVE 掉了）→ 从用户表删除。
 			if _, err := tx.ExecContext(ctx,

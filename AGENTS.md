@@ -101,6 +101,7 @@ go run ./cmd/psupload -endpoint $PS_URL -rest $REST_URL -rpc $RPC_URL -box D1-2 
   cmd/pscompare/   # 【已存在】比对两份 rows.jsonl（CI 门禁）
   .github/workflows/ci.yml # go test/vet + 双实现差分 job
   README.md   # 面向使用者的快速开始 + 能力/限制
+  STATUS.md   # 给非技术读者的项目状态一页纸
   CHANGELOG.md
   scripts/         # probe-sync.sh / probe-remove.mjs / probe-checksum.sh / probe-bson.sh /
                    # run-js-diff.sh / js-diff-container.sh / js-reference/（官方 SDK 对照端）
@@ -426,6 +427,10 @@ direct 表走 `AFTER` 触发器（写真实列 + `ps_crud`）。schema JSON 形�
   `Options.WatchInterval`（默认 2s）只是兜底轮询，正常情况毫秒级。ctx 结束即关闭。
   结果用 **64 位 FNV 哈希**（键排序、复用 buffer）去重：1000 行结果集实测 **0 allocs、~119µs**
   （对比 `fmt.Sprint` 的 7002 allocs / ~571µs），无关写入不会产生推送。
+- **版本号按表维护**（`ps_internal_version(tbl, v)`）：触发器只 bump 自己那张表，同步物化按实际
+  触及的表 bump。`WatchTables(ctx, []string{"todos"}, ...)` 只有这些表的版本变了才**重新执行查询**
+  （无关写入连查询都不跑）；`Watch` 保持"任何写入都重查 + 哈希去重"。
+  `ps_internal_version` 旧结构（单列 `v`）会在 `Open` 时自动重建成按表结构（版本计数重置无害）。
 - 上传循环按 `Options.UploadInterval`（默认 1s）轮询 `ps_crud`，本地写会自动触发一次；
   上传失败指数退避（1s→30s），401 会让 connector 的 `InvalidateCredentials` 被调用后重取凭据。
 - schema 未声明的表（服务端 sync rules 更宽时）**跳过物化**并计数，不影响 checksum 与 oplog。
@@ -474,7 +479,8 @@ db.WaitForFirstSync(ctx)        // 首次同步完成
 - `internal/core`：schema / 视图 / 触发器 / oplog / checksum / 物化 / 上传队列 / `powersync_*` 函数 /
   schema 迁移（JSON↔direct、加列、删表、重新 Open 自动迁移）、`include_metadata`、
   sync streams（订阅/取消/过期清理/状态回填/partial checkpoint）、文件锁、`powersync_crud`
-  兼容层、`WriteTransaction` panic 后 tx_id 清理、schema 并发替换单测，含真实 golden 回放（35 个用例）；
+  兼容层（含 `options` bit0 = ignore_empty_update）、`WriteTransaction` panic 后 tx_id 清理、
+  schema 并发替换、按表版本号单测，含真实 golden 回放（37 个用例）；
 - `internal/sync` 直接单测（74% 覆盖）：流格式选择（NDJSON/BSON）、write-checkpoint 门控、
   500 重试后成功、checksum 不一致重连、上传失败重试恢复、`Stop()` 不阻塞；
 - `internal/psclient` 单测（83% 覆盖）：token RPC 四条失败路径、REST Do/GetJSON/CountByID；

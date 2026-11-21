@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -800,5 +801,55 @@ func TestWatchDoesNotResendUnchangedResults(t *testing.T) {
 		}
 	case <-ctx.Done():
 		t.Fatal("真正变化没有推送")
+	}
+}
+
+// TestWatchTablesSkipsUnrelatedWrites 用 `SELECT random()` 证明：
+// WatchTables 在**无关表**写入时根本不会重新执行查询（否则 random() 会让结果变化并推送）。
+func TestWatchTablesSkipsUnrelatedWrites(t *testing.T) {
+	path := tempDBPath(t)
+	db, err := powersync.Open(context.Background(), powersync.Options{
+		Filename: path,
+		Schema: powersync.NewSchema(
+			powersync.Table{Name: "todos", Columns: []powersync.Column{{Name: "title", Type: powersync.TextColumn}}},
+			powersync.Table{Name: "logs", Columns: []powersync.Column{{Name: "msg", Type: powersync.TextColumn}}},
+		),
+		WatchInterval: 10 * time.Second, // 只靠推送
+	})
+	if err != nil {
+		t.Fatalf("Open: %v", err)
+	}
+	cleanupDBPath(t, db, path)
+
+	ctx, cancel := context.WithTimeout(context.Background(), 6*time.Second)
+	defer cancel()
+	ch, err := db.WatchTables(ctx, []string{"todos"}, `SELECT random() AS r`)
+	if err != nil {
+		t.Fatalf("WatchTables: %v", err)
+	}
+	if _, ok := <-ch; !ok {
+		t.Fatal("初值未推送")
+	}
+
+	// 写无关表：版本变了（signal 会触发），但 todos 版本没变 → 不应重查 → 不应推送
+	for i := 0; i < 3; i++ {
+		if _, err := db.Execute(ctx, `INSERT INTO logs(id, msg) VALUES(?, ?)`, fmt.Sprintf("l%d", i), "noise"); err != nil {
+			t.Fatalf("Execute: %v", err)
+		}
+	}
+	select {
+	case rows := <-ch:
+		t.Fatalf("无关表写入却推送了（说明查询被重跑了）: %+v", rows)
+	case <-time.After(400 * time.Millisecond):
+	}
+
+	// 写被监听的表 → 必须重查并推送（random() 保证结果不同）
+	if _, err := db.Execute(ctx, `INSERT INTO todos(id,title) VALUES('a','x')`); err != nil {
+		t.Fatalf("Execute: %v", err)
+	}
+	select {
+	case <-ch:
+	case <-ctx.Done():
+		t.Fatal("被监听表变化没有推送")
 	}
 }

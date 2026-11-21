@@ -176,6 +176,21 @@ func (db *DB) init(ctx context.Context, clientID string) (string, error) {
 			return "", fmt.Errorf("core: exec %q: %w", firstLine(s), err)
 		}
 	}
+	// 兼容旧库：ps_internal_version 曾是单列 (v)，现在按表 (tbl, v)。
+	var hasTbl int
+	if err := db.sql.QueryRowContext(ctx, migrateVersionTable).Scan(&hasTbl); err != nil {
+		return "", err
+	}
+	if hasTbl == 0 {
+		for _, stmt := range []string{
+			`DROP TABLE IF EXISTS ps_internal_version`,
+			versionTableDDL,
+		} {
+			if _, err := db.sql.ExecContext(ctx, stmt); err != nil {
+				return "", fmt.Errorf("core: 迁移 ps_internal_version: %w", err)
+			}
+		}
+	}
 	if _, err := db.sql.ExecContext(ctx, fmt.Sprintf(`DELETE FROM %s`, guardTable)); err != nil {
 		return "", err
 	}

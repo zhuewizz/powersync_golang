@@ -18,7 +18,7 @@
 | 协议 | `POST /sync/stream`（**NDJSON 与 BSON**，默认 BSON）、`checkpoint`/`data`/`checkpoint_complete`/`partial_checkpoint_complete`/`token_expires_in`、`/sync/checkpoint-request`、legacy `write-checkpoint2.json` |
 | 本地库 | 与 `powersync-sqlite-core` 同构：`ps_data__*` + 同名视图 + INSTEAD OF 触发器、`ps_oplog`、`ps_buckets` checksum、`ps_crud`（`powersync_crud` 兼容层）、`ps_kv`、`ps_tx`、`ps_untyped`（schema 迁移）、`ps_stream_subscriptions`、`include_metadata` |
 | 同步 | 下载 + 上传双循环、断点续传（`last_op`）、checksum 校验与漂移恢复、上传回显门控、指数退避、token 预取、sync streams（订阅/TTL/优先级）、多进程文件锁 |
-| 公开 API | `Open`/`Connect`/`Close`、`Execute`/`GetAll`/`GetOptional`/`WriteTransaction`、`Watch`（**推送**，64 位哈希去重、0 分配）、`GetCrudBatch`/`GetNextCrudTransaction`、`SubscribeStream`、`CurrentStatus`/`WaitForFirstSync` |
+| 公开 API | `Open`/`Connect`/`Close`、`Execute`/`GetAll`/`GetOptional`/`WriteTransaction`、`Watch` / `WatchTables`（**推送** + 表级版本 + 64 位哈希去重、0 分配）、`GetCrudBatch`/`GetNextCrudTransaction`、`SubscribeStream`、`CurrentStatus`/`WaitForFirstSync` |
 
 ## 快速开始
 
@@ -46,7 +46,8 @@ db.WaitForFirstSync(ctx)
 db.Execute(ctx, `INSERT INTO todos(id, title) VALUES(?, ?)`, "t1", "写代码")
 rows, _ := db.GetAll(ctx, `SELECT * FROM todos`)
 
-ch, _ := db.Watch(ctx, `SELECT count(*) AS n FROM todos`) // 变化即推送
+ch, _ := db.Watch(ctx, `SELECT count(*) AS n FROM todos`)        // 任何写入→重查+哈希去重
+ch2, _ := db.WatchTables(ctx, []string{"todos"}, sql, args...)   // 只有 todos 变才重查（大结果集推荐）
 ```
 
 ### Connector
@@ -118,6 +119,8 @@ cmd/…               工具；scripts/… 探针与 CI 辅助；testdata/… �
 MIT，见 [`LICENSE`](./LICENSE)。
 
 ## 文档
+
+- 给非技术读者的项目状态：[`STATUS.md`](./STATUS.md)
 
 - 架构与硬性约定：[`AGENTS.md`](./AGENTS.md)（含服务端实测行为、踩坑记录、兼容性差异）
 - 变更记录：[`CHANGELOG.md`](./CHANGELOG.md)

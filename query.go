@@ -210,6 +210,85 @@ func hashRows(rows []map[string]any) uint64 {
 	return h.Sum64()
 }
 
+// WatchTables 与 Watch 类似，但只在这些表的数据版本变化时才重新执行查询。
+//
+// 相比 `Watch`（任何写入都会重查再哈希去重），它能把"无关写入"的总开销降到一次
+// 版本读取（O(表数)），适合大结果集/高频写入的场景。
+//
+// tables 用的是 schema 里的表名（本地写与同步物化都会让对应表的版本 +1）。
+func (db *DB) WatchTables(ctx context.Context, tables []string, query string, args ...any) (<-chan []map[string]any, error) {
+	if err := db.check(); err != nil {
+		return nil, err
+	}
+	snapshot, err := db.store.Versions(ctx, tables)
+	if err != nil {
+		return nil, err
+	}
+	ch := make(chan []map[string]any, 1)
+	go func() {
+		defer close(ch)
+		var last uint64
+		first := true
+		emit := func() bool {
+			rows, err := db.GetAll(ctx, query, args...)
+			if err != nil {
+				if ctx.Err() != nil {
+					return false
+				}
+				db.logger.Warn("watch query failed", "err", err)
+				return true
+			}
+			hash := hashRows(rows)
+			if !first && hash == last {
+				return true
+			}
+			first = false
+			last = hash
+			select {
+			case ch <- rows:
+				return true
+			case <-ctx.Done():
+				return false
+			}
+		}
+		if !emit() {
+			return
+		}
+		for {
+			signal := db.store.VersionSignal()
+			cur, err := db.store.Versions(ctx, tables)
+			if err != nil && ctx.Err() != nil {
+				return
+			}
+			if !versionsEqual(cur, snapshot) {
+				snapshot = cur
+				if !emit() {
+					return
+				}
+			}
+			select {
+			case <-ctx.Done():
+				return
+			case <-signal:
+			case <-time.After(db.watchInterval):
+			}
+		}
+	}()
+	return ch, nil
+}
+
+func versionsEqual(a, b map[string]int64) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for k, v := range a {
+		if b[k] != v {
+			return false
+		}
+	}
+	return true
+}
+
 func scanRows(rows *sql.Rows) ([]map[string]any, error) {
 	cols, err := rows.Columns()
 	if err != nil {
