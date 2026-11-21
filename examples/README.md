@@ -38,9 +38,48 @@ go run ./examples/todo -verify                      # 额外逐行比对后台 R
 go run ./examples/todo -db .\out\mine.db -box D1-1   # 换库/换柜
 ```
 
+## 交互式版：examples/demo
+
+```powershell
+go run ./examples/demo                 # 交互：先验证，再列出有数据的表，选一个看数据
+go run ./examples/demo -cols "id,mat_code,mat_name"   # 只看几列
+go run ./examples/demo -all            # 连空表一起列
+go run ./examples/demo -limit 0        # 表数据全打出来
+go run ./examples/demo -once           # 只同步+打印表清单，非交互（脚本用）
+```
+
+运行效果：
+
+```
+===== 1/3 验证环境 =====
+  本地库: out/demo.db
+  schema: 65 张表（来自 syncRules.yaml）
+  已连接，等待首次同步…
+  ✅ 首次同步完成：耗时 2.187s，cursor=24501，buckets=2
+  ✅ 没有被跳过的行（schema 覆盖了服务端下发的所有表）
+
+===== 2/3 表清单（32 张有数据，合计 1626 行）=====
+   #  表                                      行数
+------------------------------------------------
+   1  cutter_transaction                    309
+   2  work_code_bom                         182
+   ...
+   5  i                                     120  *
+  11  cutter_info                            60
+
+输入表编号查看数据（回车刷新列表，q 退出）：11
+
+===== 3/3 表 cutter_info（共 60 行，显示 20 行）=====
+id                                    mat_code  mat_name           mat_pn
+-----------------------------------------------------------------------------------
+03b01053-a96c-440f-b1fc-50c6a97...    MAT00075  按钮开关           PN-BTN-GRN
+```
+
+`*` 标记的是同步规则里的**短别名表**（`AS i` 之类），实体分散在 material_*/tool_*/delivery_*。
+
 ## 方式二：手动指定参数（原始用法，留作参考）
 
-最简单：加 `-cutter` 用内置的 65 张表 schema（来自 `syncRules.yaml`，见 `schema_cutter.go`）：
+最简单：加 `-cutter` 用内置的 65 张表 schema（来自 `syncRules.yaml`，见 `examples/cutterschema`）：
 
 **PowerShell（Windows）**：先用 `. .\scripts\go-env.ps1` 修 GOROOT，且**不用 `\` 续行**：
 
@@ -63,7 +102,7 @@ go run ./examples/todo -mode real -cutter \
 输出：
 
 ```
-schema: 内置 cutter（65 张表，来自 syncRules.yaml；见 schema_cutter.go）
+schema: 内置 cutter（65 张表，来自 syncRules.yaml；见 examples/cutterschema）
 ===== 校验：后台 REST → 本地（逐行比对）=====
   表 cutter_info          OK  本地=60 后台=60 一致=60
   表 sys_error_report     OK  本地=2  后台=2  一致=2

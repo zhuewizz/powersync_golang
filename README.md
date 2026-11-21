@@ -130,11 +130,11 @@ PowerSync 要求客户端声明 schema（本地有哪些表、每张表哪些列
 
 1. 表清单 → PowerSync 同步规则（`syncRules.yaml`）里的 `FROM "schema"."table"`；
 2. 列定义 → PostgREST 的 OpenAPI（`GET <rest>/` 的 `definitions`）；
-3. 生成 → `examples/todo/schema_cutter.go`（示例包的 `cutterSchema()`，一行一张表，可手改）
-   + `examples/todo/schema-cutter.json`（官方 `Schema.toJSON()` 形状，给 `-schema` 用）。
+3. 生成 → `examples/cutterschema/schema.go`（包 `cutterschema`，`Schema()`，一行一张表，可手改）
+   + `examples/cutterschema/schema.json`（官方 `Schema.toJSON()` 形状，给 `-schema` 用）。
 
 > SDK 根包保持**项目无关**：只有通用 API，不含任何业务 schema；业务 schema 属于使用方
-> （示例里放在 `examples/todo/`）。换项目时用 `cmd/genschema -pkg main -out-go <你的项目>/schema.go`。
+> （示例里放在 `examples/todo/`）。换项目时用 `cmd/genschema -pkg cutterschema -func Schema -out-go <你的项目>/schema.go`。
 >
 > 客户端只认**裸表名**（同步流里 `object_type` 就是 `cutter_info`）；PG 的 schema 分组、
 > PostgREST 的 `schema:api` 都是服务端/网关的事，客户端 schema 只是“本地有哪些表、哪些列”的声明。
@@ -145,11 +145,11 @@ PowerSync 要求客户端声明 schema（本地有哪些表、每张表哪些列
 go run ./cmd/genschema \
   -rules E:/cutter/syncRules.yaml \
   -rpc http://120.24.7.22:8089/rest/rpc/fetch_credentials -box D1-2 -org ORG001 \
-  -pkg main -out-go ./examples/todo/schema_cutter.go \
-  -out-json ./examples/todo/schema-cutter.json
+  -pkg cutterschema -func Schema -out-go ./examples/cutterschema/schema.go \
+  -out-json ./examples/cutterschema/schema.json
 
 # 全量同步 + 逐表打印“行数 + 样例”
-go run ./cmd/pstable -db ./out/cutter.db -schema ./examples/todo/schema-cutter.json \
+go run ./cmd/pstable -db ./out/cutter.db -schema ./examples/cutterschema/schema.json \
   -sync -report -limit 1 \
   -endpoint http://120.24.7.22:8080 -rest http://120.24.7.22:8089/rest \
   -rpc http://120.24.7.22:8089/rest/rpc/fetch_credentials -box D1-2 -org ORG001
@@ -175,6 +175,7 @@ go run ./cmd/pstable -db ./out/cutter.db -schema ./examples/todo/schema-cutter.j
 | `cmd/psfixture-server` | 离线假服务（回放 `testdata/sync/*.ndjson`），给官方 JS SDK 做对照 |
 | `cmd/pscompare` | 比对两份 `rows.jsonl`（双实现差分门禁） |
 | `cmd/psq` | 直接查本地 SQLite（`-ls`/`-q`/`-check`/**`-snapshot`**，核对落库或给图形工具做快照） |
+| `examples/demo` | **交互式演示**：先验证 → 列出有数据的表 → 选表看数据（`go run ./examples/demo`） |
 | `cmd/pstable` | **用 SDK 读/写路径**操作本地库：`-ls`/`-table`/`-q` 查询、`-exec` 写入/删除、`-i` 交互、`-upload` 自动上传、`-sync -report` 同步并逐表打印行数+样例 |
 | `cmd/genschema` | 从 syncRules.yaml + PostgREST OpenAPI 生成客户端 schema（`-pkg main` 可生成到任意项目） |
 | `scripts/go-env.ps1` | 修 GOROOT/PATH：`. .scriptsgo-env.ps1`（当前会话）或 `-FixProfile`（永久改 profile） |

@@ -30,12 +30,14 @@
 - **网络状态监控**：`CurrentNetworkStatus` / `WatchNetworkStatus`（TCP 拨号探测 + 变化推送，
   同步失败/成功时立即重测）、`Options.NetworkTarget`/`NetworkCheckInterval`/`NetworkCheckTimeout`/
   `DisableNetworkMonitor`。
+- **交互式演示**：`examples/demo` —— `go run ./examples/demo` 先验证环境/同步，再列出有数据的表，
+  输入编号看表数据（支持 `-cols` 选列、`-all` 含空表、`-limit` 行数、`-once` 非交互）。
 - **完整示例**：`examples/todo` —— **参数写死，`go run ./examples/todo` 直接跑真实环境**：
   全量同步 65 张表 → 每表行数总表 + 关键表样例 → 离线优先演示（断网读/断网写/恢复上传）→ 后台校验；
   启动时先删旧库，可用 `-cleanup`/`-mode mock`/`-box` 等覆盖。
 - **使用手册**：`docs/reference.md`（对齐官方 Flutter SDK 参考的中文 API 文档，含与官方差异清单）。
 - **客户端 schema 生成**：`cmd/genschema` 从 syncRules.yaml + PostgREST OpenAPI（缺表时用抓包推断）
-  生成 `examples/todo/schema_cutter.go`（示例包的 `cutterSchema()`）与 `examples/todo/schema-cutter.json`；
+  生成 `examples/cutterschema/schema.go`（包 `cutterschema`，`Schema()`）与 `examples/cutterschema/schema.json`；
   根包保持项目无关（`-pkg main` 可生成到任意项目），示例新增 `-cutter` 开关直接用内置 65 表 schema；
   实测全量 65 张表 / 1644 行，2 个 bucket，首次同步 ~2.4s。
 - **双向同步校验**：`scripts/verify-sync.ps1` 一条命令跑完「下载+逐表校验 → 新增 → 修改 → 删除」，

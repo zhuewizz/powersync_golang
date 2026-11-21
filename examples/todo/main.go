@@ -39,6 +39,7 @@ import (
 	"time"
 
 	powersync "msmkSync"
+	"msmkSync/examples/cutterschema"
 	"msmkSync/internal/fixture"
 	"msmkSync/internal/psclient"
 	"msmkSync/internal/restconn"
@@ -282,9 +283,9 @@ func selectSchema(useCutter bool, path string) (*powersync.Schema, []string, err
 		return nil, nil, errors.New("-cutter 与 -schema 只能二选一")
 	}
 	if useCutter {
-		sch := cutterSchema()
+		sch := cutterschema.Schema()
 		tables := tableNamesOf(sch)
-		fmt.Printf("schema: 内置 cutter（%d 张表，来自 syncRules.yaml；见 schema_cutter.go）\n", len(tables))
+		fmt.Printf("schema: 内置 cutter（%d 张表，来自 syncRules.yaml；见 examples/cutterschema）\n", len(tables))
 		return sch, tables, nil
 	}
 	return loadSchema(path)

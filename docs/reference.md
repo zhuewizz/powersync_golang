@@ -521,7 +521,7 @@ go run ./cmd/psq -db ./out/verify.db -q "select name, last_applied_op, op_checks
 - 客户端 schema 就是“本地有哪些表、每张表哪些列”（`Table{Name, Columns}`），无命名空间概念；
 - `syncRules.yaml` 只在服务端；本仓库只在**构建期**读它发现表名，**运行时不依赖**。
 
-### schema 是怎么来的（示例：examples/todo/schema_cutter.go）
+### schema 是怎么来的（示例：examples/cutterschema/schema.go）
 
 PowerSync 的硬性要求：**客户端必须声明 schema**，没声明的表不会同步（哪怕服务端会下发）。
 本仓库的 schema 由 `cmd/genschema` 生成：
@@ -534,9 +534,9 @@ PowerSync 的硬性要求：**客户端必须声明 schema**，没声明的表�
 
 生成两个产物：
 
-- `examples/todo/schema_cutter.go`：示例包里的 `cutterSchema()`，一行一张表
+- `examples/cutterschema/schema.go`：`cutterschema.Schema()`，一行一张表
   （`{Name: "cutter_info", Columns: cols("mat_code:TEXT", ...)}`），可直接手改；
-- `examples/todo/schema-cutter.json`：官方 `Schema.toJSON()` 形状，给 `-schema` 参数、其它语言、或 CI 使用。
+- `examples/cutterschema/schema.json`：官方 `Schema.toJSON()` 形状，给 `-schema` 参数、其它语言、或 CI 使用。
 
 > 根包 `msmkSync` 只放通用 API，**不含任何业务 schema**；换项目时用 `-pkg <包名>` 生成到自己的项目目录。
 
@@ -544,8 +544,8 @@ PowerSync 的硬性要求：**客户端必须声明 schema**，没声明的表�
 go run ./cmd/genschema -rules E:/cutter/syncRules.yaml \
   -rpc http://host:8089/rest/rpc/fetch_credentials -box D1-2 -org ORG001 \
   -extra role -stream ./out/stream-raw.ndjson \
-  -pkg main -out-go ./examples/todo/schema_cutter.go \
-  -out-json ./examples/todo/schema-cutter.json
+  -pkg cutterschema -func Schema -out-go ./examples/cutterschema/schema.go \
+  -out-json ./examples/cutterschema/schema.json
 ```
 
 在代码里直接用：
@@ -553,7 +553,7 @@ go run ./cmd/genschema -rules E:/cutter/syncRules.yaml \
 ```go
 db, err := powersync.Open(ctx, powersync.Options{
     Filename: "app.db",
-    Schema:   cutterSchema(),   // 你自己的项目：genschema 生成的那个函数
+    Schema:   cutterschema.Schema(),   // 示例直接复用；你自己的项目：genschema 生成的那个函数
     Connector: myConnector,
 })
 ```
@@ -570,7 +570,7 @@ db, err := powersync.Open(ctx, powersync.Options{
 #### 全量同步 + 逐表核对
 
 ```bash
-go run ./cmd/pstable -db ./out/cutter.db -schema ./examples/todo/schema-cutter.json \
+go run ./cmd/pstable -db ./out/cutter.db -schema ./examples/cutterschema/schema.json \
   -sync -report -limit 1 \
   -endpoint http://host:8080 -rest http://host:8089/rest \
   -rpc http://host:8089/rest/rpc/fetch_credentials -box D1-2 -org ORG001
