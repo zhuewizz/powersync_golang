@@ -33,6 +33,9 @@ go run . -selftest -db out/x.db
 
 服务端参数默认写死（可用环境变量覆盖）：`PS_URL` / `RPC_URL` / `REST_URL` / `BOX_CODE` / `ORG_CODE`。
 
+**本地库**：默认落在 **可执行文件同目录** → `binapp.db`（`-db` 可改）。
+想重置本地数据：关掉程序，删掉 `binapp.db`*，重新打开即可全量重同步。
+
 ## 结构
 
 ```

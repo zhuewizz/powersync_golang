@@ -713,12 +713,19 @@ func newID() string {
 }
 
 func defaultDBPath() string {
-	// 放在 exe 同级的 data 目录；开发时就是 examples/wailsapp/data
-	dir, err := os.UserConfigDir()
-	if err != nil {
-		return "powersync-wails.db"
+	// 默认放在 **可执行文件同目录**（即 examples/wailsapp/bin/app.db），
+	// 方便直接看到/备份/删掉重建本地库；用 -db 参数可以换。
+	dir := "bin"
+	if exe, err := os.Executable(); err == nil {
+		d := filepath.Dir(exe)
+		// `go run .` 时 exe 在临时目录（go-build…），改用当前目录下的 bin
+		lower := strings.ToLower(d)
+		if !strings.Contains(lower, "go-build") && !strings.Contains(lower, "\\temp\\") && !strings.Contains(lower, "/tmp") {
+			dir = d
+		}
 	}
-	return filepath.Join(dir, "powersync-wails", "app.db")
+	_ = os.MkdirAll(dir, 0o755)
+	return filepath.Join(dir, "app.db")
 }
 
 func envOr(key, def string) string {
