@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/zhuweizz/powersync_golang/internal/core"
+	"github.com/zhuewizz/powersync_golang/internal/core"
 )
 
 // TestCloseCheckpointsWAL 验证关闭时会把 WAL 截断回主库，使 .db 自包含

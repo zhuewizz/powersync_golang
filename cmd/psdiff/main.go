@@ -31,10 +31,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/zhuweizz/powersync_golang/internal/bson"
-	"github.com/zhuweizz/powersync_golang/internal/core"
-	"github.com/zhuweizz/powersync_golang/internal/protocol"
-	"github.com/zhuweizz/powersync_golang/internal/psclient"
+	"github.com/zhuewizz/powersync_golang/internal/bson"
+	"github.com/zhuewizz/powersync_golang/internal/core"
+	"github.com/zhuewizz/powersync_golang/internal/protocol"
+	"github.com/zhuewizz/powersync_golang/internal/psclient"
 )
 
 func main() {

@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/zhuweizz/powersync_golang/internal/core"
-	"github.com/zhuweizz/powersync_golang/internal/protocol"
+	"github.com/zhuewizz/powersync_golang/internal/core"
+	"github.com/zhuewizz/powersync_golang/internal/protocol"
 )
 
 // put/remove 构造 op，checksum 使用服务端语义：

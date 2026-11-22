@@ -8,7 +8,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/zhuweizz/powersync_golang/internal/rowdiff"
+	"github.com/zhuewizz/powersync_golang/internal/rowdiff"
 )
 
 func main() {

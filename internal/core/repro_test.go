@@ -6,8 +6,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/zhuweizz/powersync_golang/internal/core"
-	"github.com/zhuweizz/powersync_golang/internal/protocol"
+	"github.com/zhuewizz/powersync_golang/internal/core"
+	"github.com/zhuewizz/powersync_golang/internal/protocol"
 )
 
 // 用真实 schema 复现：服务端回显（整行）后本地 UPDATE，行是否还在。

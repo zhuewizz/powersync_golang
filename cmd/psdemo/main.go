@@ -1,4 +1,4 @@
-// Command psdemo 用公开 API（import "github.com/zhuweizz/powersync_golang"）对一个真实的 PowerSync 服务做冒烟验证：
+// Command psdemo 用公开 API（import "github.com/zhuewizz/powersync_golang"）对一个真实的 PowerSync 服务做冒烟验证：
 // 打开本地库 → 建表 → Connect → 等首次同步 → 打印状态与各表行数。
 //
 // 用法：
@@ -20,8 +20,8 @@ import (
 	"strings"
 	"time"
 
-	powersync "github.com/zhuweizz/powersync_golang"
-	"github.com/zhuweizz/powersync_golang/internal/psclient"
+	powersync "github.com/zhuewizz/powersync_golang"
+	"github.com/zhuewizz/powersync_golang/internal/psclient"
 )
 
 func main() {

@@ -8,7 +8,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/zhuweizz/powersync_golang/internal/protocol"
+	"github.com/zhuewizz/powersync_golang/internal/protocol"
 )
 
 // StreamSubscription 是 ps_stream_subscriptions 中的一行（core v11+ 的表结构）。

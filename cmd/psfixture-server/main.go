@@ -9,7 +9,7 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/zhuweizz/powersync_golang/internal/fixture"
+	"github.com/zhuewizz/powersync_golang/internal/fixture"
 )
 
 func main() {

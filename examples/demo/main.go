@@ -24,9 +24,9 @@ import (
 	"strings"
 	"time"
 
-	powersync "github.com/zhuweizz/powersync_golang"
-	"github.com/zhuweizz/powersync_golang/examples/cutterschema"
-	"github.com/zhuweizz/powersync_golang/restconn"
+	powersync "github.com/zhuewizz/powersync_golang"
+	"github.com/zhuewizz/powersync_golang/examples/cutterschema"
+	"github.com/zhuewizz/powersync_golang/restconn"
 )
 
 func main() {

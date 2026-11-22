@@ -7,9 +7,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/zhuweizz/powersync_golang/internal/core"
-	"github.com/zhuweizz/powersync_golang/internal/netmon"
-	syncpkg "github.com/zhuweizz/powersync_golang/internal/sync"
+	"github.com/zhuewizz/powersync_golang/internal/core"
+	"github.com/zhuewizz/powersync_golang/internal/netmon"
+	syncpkg "github.com/zhuewizz/powersync_golang/internal/sync"
 )
 
 // Options 是 Open 的参数。

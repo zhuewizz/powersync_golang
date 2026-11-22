@@ -1,4 +1,4 @@
-// Command todo 是 github.com/zhuweizz/powersync_golang 的完整可运行示例。
+// Command todo 是 github.com/zhuewizz/powersync_golang 的完整可运行示例。
 //
 // 默认是**离线模式**：内置一个假的 PowerSync 服务（回放 fixture.ndjson）+ 假后端，
 // 不连任何真实服务，直接 `go run ./examples/todo` 就能跑完整个流程。
@@ -38,12 +38,12 @@ import (
 	"strings"
 	"time"
 
-	powersync "github.com/zhuweizz/powersync_golang"
-	"github.com/zhuweizz/powersync_golang/examples/cutterschema"
-	"github.com/zhuweizz/powersync_golang/internal/fixture"
-	"github.com/zhuweizz/powersync_golang/internal/psclient"
-	"github.com/zhuweizz/powersync_golang/internal/rowdiff"
-	"github.com/zhuweizz/powersync_golang/restconn"
+	powersync "github.com/zhuewizz/powersync_golang"
+	"github.com/zhuewizz/powersync_golang/examples/cutterschema"
+	"github.com/zhuewizz/powersync_golang/internal/fixture"
+	"github.com/zhuewizz/powersync_golang/internal/psclient"
+	"github.com/zhuewizz/powersync_golang/internal/rowdiff"
+	"github.com/zhuewizz/powersync_golang/restconn"
 )
 
 //go:embed fixture.ndjson

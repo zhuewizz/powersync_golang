@@ -17,7 +17,7 @@ import (
 	"testing"
 	"time"
 
-	powersync "github.com/zhuweizz/powersync_golang"
+	powersync "github.com/zhuewizz/powersync_golang"
 )
 
 // ---------------------------------------------------------------- 测试替身

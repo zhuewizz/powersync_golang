@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/zhuweizz/powersync_golang/internal/core"
+	"github.com/zhuewizz/powersync_golang/internal/core"
 )
 
 // TestSQLFunctions 验证注册的 powersync_* 函数（子集）。

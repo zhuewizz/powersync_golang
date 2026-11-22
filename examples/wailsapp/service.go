@@ -16,9 +16,9 @@ import (
 
 	"github.com/wailsapp/wails/v3/pkg/application"
 
-	powersync "github.com/zhuweizz/powersync_golang"
-	"github.com/zhuweizz/powersync_golang/examples/cutterschema"
-	"github.com/zhuweizz/powersync_golang/restconn"
+	powersync "github.com/zhuewizz/powersync_golang"
+	"github.com/zhuewizz/powersync_golang/examples/cutterschema"
+	"github.com/zhuewizz/powersync_golang/restconn"
 )
 
 // beijingZone 是固定 +8 时区（北京时间）；用 FixedZone 避免依赖系统 tzdata。

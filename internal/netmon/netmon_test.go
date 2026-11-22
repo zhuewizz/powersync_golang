@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/zhuweizz/powersync_golang/internal/netmon"
+	"github.com/zhuewizz/powersync_golang/internal/netmon"
 )
 
 func waitForState(t *testing.T, m *netmon.Monitor, d time.Duration, cond func(netmon.State) bool) netmon.State {

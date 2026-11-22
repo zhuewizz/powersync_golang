@@ -28,10 +28,10 @@ import (
 
 	_ "modernc.org/sqlite"
 
-	powersync "github.com/zhuweizz/powersync_golang"
-	"github.com/zhuweizz/powersync_golang/internal/psclient"
-	"github.com/zhuweizz/powersync_golang/internal/rowdiff"
-	"github.com/zhuweizz/powersync_golang/restconn"
+	powersync "github.com/zhuewizz/powersync_golang"
+	"github.com/zhuewizz/powersync_golang/internal/psclient"
+	"github.com/zhuewizz/powersync_golang/internal/rowdiff"
+	"github.com/zhuewizz/powersync_golang/restconn"
 )
 
 func main() {

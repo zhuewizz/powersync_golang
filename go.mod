@@ -1,4 +1,4 @@
-module github.com/zhuweizz/powersync_golang
+module github.com/zhuewizz/powersync_golang
 
 go 1.25
 

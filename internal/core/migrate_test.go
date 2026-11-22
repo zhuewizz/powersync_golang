@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/zhuweizz/powersync_golang/internal/core"
+	"github.com/zhuewizz/powersync_golang/internal/core"
 )
 
 func openSchema(t *testing.T, path, schemaJSON string) *core.DB {

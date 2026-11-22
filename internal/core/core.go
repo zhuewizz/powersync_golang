@@ -16,7 +16,7 @@ import (
 
 	_ "modernc.org/sqlite"
 
-	"github.com/zhuweizz/powersync_golang/internal/protocol"
+	"github.com/zhuewizz/powersync_golang/internal/protocol"
 )
 
 // guardTable 是“正在应用同步数据”的标记表。触发器看到它有行就静默，

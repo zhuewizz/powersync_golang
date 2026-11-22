@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/zhuweizz/powersync_golang/internal/psclient"
+	"github.com/zhuewizz/powersync_golang/internal/psclient"
 )
 
 // TestFetchToken 覆盖成功、空 token、非 200、非法 JSON 四条路径。

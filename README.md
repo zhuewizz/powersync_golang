@@ -3,7 +3,7 @@
 用**纯 Go** 实现的 [PowerSync](https://www.powersync.com/) 客户端：本地 SQLite 为权威数据源，
 通过 sync rules 生成的 buckets 与自建 PowerSync 服务做双向增量同步。
 
-- 模块：`msmkSync`（包名仍是 `powersync`，所以是 `import powersync "github.com/zhuweizz/powersync_golang"`）
+- 模块：`msmkSync`（包名仍是 `powersync`，所以是 `import powersync "github.com/zhuewizz/powersync_golang"`）
 - 形态：**库**，不提供 CLI 可执行文件
 - Go：**1.25+**，`CGO_ENABLED=0`（SQLite 绑定用 `modernc.org/sqlite`）
 - 目标服务端：自建 `powersync-service`（已对真实实例做端到端验证）
@@ -71,7 +71,7 @@ go run ./examples/todo -mode mock                     # 完全离线（内置假
 ### 在自己的代码里
 
 ```go
-import powersync "github.com/zhuweizz/powersync_golang"
+import powersync "github.com/zhuewizz/powersync_golang"
 
 sch := powersync.NewSchema(
     powersync.Table{

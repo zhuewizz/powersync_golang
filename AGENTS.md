@@ -664,7 +664,7 @@ BSON vs NDJSON（`scripts/probe-bson.sh`，同一服务、同一 schema）：
 
 ## 15. 未决问题（需产品/负责人确认）
 
-1. 模块路径：已定为 `module github.com/zhuweizz/powersync_golang`（包名仍为 `powersync`）。若今后发布到远端仓库，
+1. 模块路径：已定为 `module github.com/zhuewizz/powersync_golang`（包名仍为 `powersync`）。若今后发布到远端仓库，
    建议改成 `github.com/<org>/msmkSync`（Go 要求模块路径可解析）。
    （公开 API、同步循环、上传回显闭环、BSON、视图层、`include_metadata`、sync streams、
    文件锁、Watch 推送、双实现差分基线**均已完成/实测通过**。）

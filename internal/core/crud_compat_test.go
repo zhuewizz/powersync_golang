@@ -5,7 +5,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/zhuweizz/powersync_golang/internal/core"
+	"github.com/zhuewizz/powersync_golang/internal/core"
 )
 
 // TestPowersyncCrudCompat 验证与官方 core 的 powersync_crud 兼容层：
