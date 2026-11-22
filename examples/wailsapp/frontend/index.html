@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>PowerSync 双向同步演示</title>
+  <link rel="stylesheet" href="/src/style.css"/>
+</head>
+<body>
+<header class="topbar">
+  <div class="brand">
+    <span class="logo">⇄</span>
+    <div>
+      <div class="title">PowerSync 双向同步</div>
+      <div class="sub" id="dbpath">—</div>
+    </div>
+  </div>
+
+  <div class="status" id="status">
+    <span class="pill" id="pill-conn" title="是否连上同步服务">连接 …</span>
+    <span class="pill" id="pill-net" title="网络探测">网络 …</span>
+    <span class="pill" id="pill-cursor" title="同步游标">cursor —</span>
+    <span class="pill" id="pill-buckets" title="bucket 数">buckets —</span>
+    <span class="pill" id="pill-queue" title="待上传队列">待上传 —</span>
+    <span class="pill" id="pill-sync" title="最近同步时间">—</span>
+  </div>
+
+  <div class="actions">
+    <button id="btn-sync" class="ghost" title="重连同步">重连</button>
+    <button id="btn-reload" class="ghost" title="刷新当前表">刷新</button>
+    <button id="btn-insert" class="primary" title="在当前表新增一行">＋ 新增</button>
+  </div>
+</header>
+
+<main class="layout">
+  <aside class="sidebar">
+    <div class="sidebar-head">
+      <input id="filter" type="search" placeholder="过滤表名…" autocomplete="off"/>
+      <label class="chk"><input id="only-data" type="checkbox" checked/> 只看有数据</label>
+    </div>
+    <ul id="tables" class="tables"></ul>
+    <div class="sidebar-foot" id="tables-foot">—</div>
+  </aside>
+
+  <section class="content">
+    <div class="content-head">
+      <div>
+        <h2 id="table-title">请选择左侧的表</h2>
+        <div class="hint" id="table-hint">—</div>
+      </div>
+      <div class="toolbar">
+        <label class="page-size">每页
+          <select id="page-size">
+            <option>50</option>
+            <option selected>100</option>
+            <option>200</option>
+            <option>500</option>
+          </select>
+        </label>
+        <button id="btn-prev" class="ghost">‹ 上一页</button>
+        <span class="page-info" id="page-info">—</span>
+        <button id="btn-next" class="ghost">下一页 ›</button>
+        <button id="btn-check" class="ghost" title="对比本地与后端行数">核对后端</button>
+      </div>
+    </div>
+
+    <div class="grid-wrap" id="grid-wrap">
+      <table class="grid" id="grid">
+        <thead id="grid-head"></thead>
+        <tbody id="grid-body"></tbody>
+      </table>
+      <div class="empty" id="grid-empty">还没有选择表</div>
+    </div>
+  </section>
+</main>
+
+<!-- 新增/编辑弹窗 -->
+<div class="modal-mask" id="modal" hidden>
+  <div class="modal">
+    <div class="modal-head">
+      <h3 id="modal-title">新增</h3>
+      <button class="icon" id="modal-close">✕</button>
+    </div>
+    <div class="modal-body" id="modal-fields"></div>
+    <div class="modal-foot">
+      <label class="chk" id="null-hint-wrap">
+        <span class="hint">留空 = 空字符串；勾选「NULL」可显式写入 NULL</span>
+      </label>
+      <div class="spacer"></div>
+      <button class="ghost" id="modal-cancel">取消</button>
+      <button class="primary" id="modal-ok">保存</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast" hidden></div>
+<script type="module" src="/src/main.js"></script>
+</body>
+</html>

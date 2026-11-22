@@ -79,6 +79,7 @@ go run ./cmd/psupload -endpoint $PS_URL -rest $REST_URL -rpc $RPC_URL -box D1-2 
   query.go                     # Execute/GetAll/GetOptional/WriteTransaction/Watch
   crud.go                      # CrudEntry/CrudBatch/CrudTransaction + Complete
   powersync_test.go            # 用 httptest 回放 golden 的公开 API 测试
+  restconn/        # 【已实现】公开包：PostgREST 上传连接器（examples 与外部项目共用）
   internal/
     protocol/      # 【已存在】线协议 DTO + NDJSON 解码 + 请求体，含 golden 测试
     psclient/      # 工具共用的小 HTTP 客户端（RPC 取 token + PostgREST CRUD）

@@ -32,6 +32,9 @@
 - **网络状态监控**：`CurrentNetworkStatus` / `WatchNetworkStatus`（TCP 拨号探测 + 变化推送，
   同步失败/成功时立即重测）、`Options.NetworkTarget`/`NetworkCheckInterval`/`NetworkCheckTimeout`/
   `DisableNetworkMonitor`。
+- **桌面版（Wails v3.1）**：`examples/wailsapp` —— 独立 module，表清单 + 数据表格 + 新增/编辑/删除 +
+  同步状态栏 + 变化事件自动刷新；`-selftest`/`-writes` 可不开窗口验证 Go 侧。
+  上传连接器从 `internal/restconn` 提升为公共包 `msmkSync/restconn`（外部项目可直接用）。
 - **交互式演示**：`examples/demo` —— `go run ./examples/demo` 先验证环境/同步，再列出有数据的表，
   输入编号看表数据（支持 `-cols` 选列、`-all` 含空表、`-limit` 行数、`-once` 非交互）。
 - **完整示例**：`examples/todo` —— **参数写死，`go run ./examples/todo` 直接跑真实环境**：

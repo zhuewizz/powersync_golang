@@ -1,0 +1,9 @@
+# 构建产物
+bin/
+frontend/dist/
+frontend/node_modules/
+*.syso
+
+# 本地数据库（自检参数 -db 会写这里）
+data/
+frontend/bindings/

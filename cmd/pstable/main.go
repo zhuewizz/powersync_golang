@@ -30,8 +30,8 @@ import (
 
 	powersync "msmkSync"
 	"msmkSync/internal/psclient"
-	"msmkSync/internal/restconn"
 	"msmkSync/internal/rowdiff"
+	"msmkSync/restconn"
 )
 
 func main() {

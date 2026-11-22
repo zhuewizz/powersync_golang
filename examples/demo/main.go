@@ -26,7 +26,7 @@ import (
 
 	powersync "msmkSync"
 	"msmkSync/examples/cutterschema"
-	"msmkSync/internal/restconn"
+	"msmkSync/restconn"
 )
 
 func main() {

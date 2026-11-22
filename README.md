@@ -175,6 +175,7 @@ go run ./cmd/pstable -db ./out/cutter.db -schema ./examples/cutterschema/schema.
 | `cmd/psfixture-server` | 离线假服务（回放 `testdata/sync/*.ndjson`），给官方 JS SDK 做对照 |
 | `cmd/pscompare` | 比对两份 `rows.jsonl`（双实现差分门禁） |
 | `cmd/psq` | 直接查本地 SQLite（`-ls`/`-q`/`-check`/**`-snapshot`**，核对落库或给图形工具做快照） |
+| `examples/wailsapp` | **Wails v3 桌面版**：表清单 + 数据表格 + 增删改 + 同步状态（`wails3 dev` / `wails3 build`） |
 | `examples/demo` | **交互式演示**：先验证 → 列出有数据的表 → 选表看数据（`go run ./examples/demo`） |
 | `cmd/pstable` | **用 SDK 读/写路径**操作本地库：`-ls`/`-table`/`-q` 查询、`-exec` 写入/删除、`-i` 交互、`-upload` 自动上传、`-sync -report` 同步并逐表打印行数+样例 |
 | `cmd/genschema` | 从 syncRules.yaml + PostgREST OpenAPI 生成客户端 schema（`-pkg main` 可生成到任意项目） |

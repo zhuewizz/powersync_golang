@@ -1,4 +1,4 @@
-// Package restconn 提供一个把 PowerSync 上传队列写进 PostgREST 的示例连接器。
+// Package restconn 是把 PowerSync 上传队列写进 PostgREST 的连接器（可直接用于你的项目）。
 //
 // 语义与官方 Supabase 连接器一致：
 //
@@ -9,7 +9,13 @@
 // 每批上传成功后取一次 legacy write checkpoint（/write-checkpoint2.json）再 Complete，
 // 这样服务端会把本地写回显给客户端，cursor 继续前进。
 //
-// 它同时被 examples/todo 与 cmd/pstable 使用，避免两处维护同一套上传逻辑。
+// 用法：
+//
+//	conn := restconn.New(restconn.Config{Endpoint: ..., RPC: ..., Box: ..., Org: ..., RESTBase: ...})
+//	db, _ := powersync.Open(ctx, powersync.Options{Filename: "app.db", Schema: sch, Connector: conn})
+//
+// 它在 SDK 内部被 examples/todo、examples/demo、cmd/pstable、examples/wailsapp 共用，
+// 也是接入自建 PostgREST 后端的最小参考实现。
 package restconn
 
 import (

@@ -42,8 +42,8 @@ import (
 	"msmkSync/examples/cutterschema"
 	"msmkSync/internal/fixture"
 	"msmkSync/internal/psclient"
-	"msmkSync/internal/restconn"
 	"msmkSync/internal/rowdiff"
+	"msmkSync/restconn"
 )
 
 //go:embed fixture.ndjson
