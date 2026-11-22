@@ -38,6 +38,7 @@ func main() {
 	dbFlag := flag.String("db", defaultDBPath(), "本地数据库文件")
 	selftest := flag.Bool("selftest", false, "不开窗口：打开库+同步+打印表清单后退出（CI/自检用）")
 	writes := flag.Bool("writes", false, "配合 -selftest：再跑一遍 增→改→删（验证 Service 的写路径）")
+	checkT := flag.String("check", "", "配合 -selftest：核对某张表的 本地/后端 行数（如 users）")
 	flag.Parse()
 
 	svc := NewService(Config{
@@ -87,6 +88,9 @@ func main() {
 		runSelftest(svc)
 		if *writes {
 			runWriteTest(svc)
+		}
+		if *checkT != "" {
+			runCheck(svc, *checkT)
 		}
 		svc.Stop()
 		return
@@ -184,7 +188,7 @@ func runWriteTest(svc *Service) {
 	}
 	fmt.Println("  Insert ok, id =", id)
 
-	page, err := svc.Rows(table, 500, 0)
+	page, err := svc.Rows(table, 500, 0, false)
 	if err != nil {
 		fmt.Fprintln(os.Stderr, "Rows 失败:", err)
 		os.Exit(1)
@@ -213,4 +217,17 @@ func runWriteTest(svc *Service) {
 		os.Exit(1)
 	}
 	fmt.Println("  Delete ok ✓（本地删除会进上传队列，稍后自动同步到后端）")
+}
+
+// runCheck 打印一张表的本地/后端行数核对结果（含软删除统计）。
+func runCheck(svc *Service, table string) {
+	res, err := svc.Check(table)
+	if err != nil {
+		fmt.Fprintln(os.Stderr, "Check 失败:", err)
+		return
+	}
+	fmt.Printf("核对 %s: 未删除 本地=%d 后端=%d；软删除 本地=%d 后端=%d；后端总行数=%d；结论=%v",
+		res.Table, res.Local, res.Remote, res.LocalDeleted, res.RemoteDeleted, res.RemoteTotal, res.OK)
+	fmt.Println()
+	fmt.Println("  说明:", res.Note)
 }

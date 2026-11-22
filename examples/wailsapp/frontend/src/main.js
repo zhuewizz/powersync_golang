@@ -17,6 +17,7 @@ const state = {
   limit: 100,
   filter: "",
   onlyData: true,
+  includeDeleted: false,
   editingID: null,   // null = 新增
   ready: false,
 };
@@ -130,7 +131,8 @@ function renderTables() {
     li.title = t.alias
       ? `${t.name}：同步规则里的短别名表（object_type 就是别名）`
       : t.name;
-    li.innerHTML = `<span class="name">${t.name}</span><span class="rows">${fmtRows(t.rows)}</span>`;
+    const delTxt = t.deleted > 0 ? ` <span class="del" title="软删除行（deleted_at 非空），默认不显示">+${t.deleted}</span>` : "";
+    li.innerHTML = `<span class="name">${t.name}</span><span class="rows">${fmtRows(t.rows)}${delTxt}</span>`;
     li.onclick = () => selectTable(t.name);
     ul.appendChild(li);
   }
@@ -165,7 +167,7 @@ async function selectTable(name) {
 async function loadRows() {
   if (!state.table) return;
   try {
-    state.page = await Service.Rows(state.table, state.limit, state.offset);
+    state.page = await Service.Rows(state.table, state.limit, state.offset, state.includeDeleted);
   } catch (err) {
     toast("读取数据失败：" + err, "err");
     return;
@@ -186,8 +188,11 @@ function renderGrid() {
     return;
   }
 
+  const delHint = page.deleted > 0
+    ? (page.includeDeleted ? `（含 ${page.deleted} 行软删除）` : `（另有 ${page.deleted} 行软删除未显示）`)
+    : "";
   $("table-hint").textContent =
-    `共 ${page.total} 行 · 第 ${page.total === 0 ? 0 : page.offset + 1}–${Math.min(page.offset + page.limit, page.total)} 行`;
+    `共 ${page.total} 行${delHint} · 第 ${page.total === 0 ? 0 : page.offset + 1}–${Math.min(page.offset + page.limit, page.total)} 行`;
 
   // 表头
   const tr = document.createElement("tr");
@@ -210,6 +215,7 @@ function renderGrid() {
 
   for (const row of page.rows) {
     const tr = document.createElement("tr");
+    const rowDeleted = row.deleted_at !== null && row.deleted_at !== undefined;
     for (const c of page.columns) {
       const td = document.createElement("td");
       const { text, null: isNull } = cellText(row[c]);
@@ -217,6 +223,7 @@ function renderGrid() {
       td.title = text;
       if (isNull) td.classList.add("null");
       if (typeof row[c] === "number") td.classList.add("num");
+      if (rowDeleted) td.classList.add("deleted");
       tr.appendChild(td);
     }
     const td = document.createElement("td");
@@ -374,6 +381,15 @@ function bindUI() {
     state.onlyData = e.target.checked;
     renderTables();
   });
+  const delChk = $("include-deleted");
+  if (delChk) {
+    delChk.checked = state.includeDeleted;
+    delChk.onchange = (e) => {
+      state.includeDeleted = e.target.checked;
+      state.offset = 0;
+      loadRows();
+    };
+  }
   $("page-size").addEventListener("change", (e) => {
     state.limit = Number(e.target.value) || 100;
     state.offset = 0;
@@ -419,7 +435,10 @@ function bindUI() {
     try {
       const r = await Service.Check(state.table);
       const icon = r.ok ? "✅" : "⚠️";
-      toast(`${icon} ${r.table}: 本地 ${r.local} / 后端 ${r.remote}${r.note ? " — " + r.note : ""}`, r.ok ? "ok" : "err");
+      const del = (r.localDeleted || r.remoteDeleted)
+        ? `（软删除：本地 ${r.localDeleted} / 后端 ${r.remoteDeleted}）`
+        : "";
+      toast(`${icon} ${r.table}: 未删除 本地 ${r.local} / 后端 ${r.remote}${del} — ${r.note || ""}`, r.ok ? "ok" : "err");
     } catch (err) {
       toast("核对失败：" + err, "err");
     }

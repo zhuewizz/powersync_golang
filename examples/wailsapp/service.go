@@ -74,9 +74,12 @@ type Status struct {
 
 // TableInfo 是左侧表清单的一项。
 type TableInfo struct {
-	Name  string `json:"name"`
-	Rows  int64  `json:"rows"`
-	Alias bool   `json:"alias"`
+	Name string `json:"name"`
+	// Rows 是未删除的行数（deleted_at 为空）
+	Rows int64 `json:"rows"`
+	// Deleted 是软删除行数（deleted_at 非空），界面上单独标注
+	Deleted int64 `json:"deleted"`
+	Alias   bool  `json:"alias"`
 }
 
 // ColumnInfo 描述一列，前端据此渲染表格与表单。
@@ -94,15 +97,23 @@ type RowsPage struct {
 	Total   int64            `json:"total"`
 	Offset  int              `json:"offset"`
 	Limit   int              `json:"limit"`
+	// Deleted 是这张表的软删除行数；IncludeDeleted 表示当前是否包含它们
+	Deleted        int64 `json:"deleted"`
+	IncludeDeleted bool  `json:"includeDeleted"`
 }
 
 // CheckResult 是“本地 vs 后端”行数核对结果（稳定性测试用）。
 type CheckResult struct {
-	Table  string `json:"table"`
-	Local  int64  `json:"local"`
-	Remote int64  `json:"remote"`
-	OK     bool   `json:"ok"`
-	Note   string `json:"note"`
+	Table string `json:"table"`
+	// Local/Remote 都是“未删除行数”
+	Local  int64 `json:"local"`
+	Remote int64 `json:"remote"`
+	// LocalDeleted/RemoteDeleted 是软删除行数；RemoteTotal 是后端返回的总行数
+	LocalDeleted  int64  `json:"localDeleted"`
+	RemoteDeleted int64  `json:"remoteDeleted"`
+	RemoteTotal   int64  `json:"remoteTotal"`
+	OK            bool   `json:"ok"`
+	Note          string `json:"note"`
 }
 
 // NewService 构造服务（不会打开数据库，Start 才打开）。
@@ -245,11 +256,13 @@ func (s *Service) Tables() ([]TableInfo, error) {
 	tables := cutterschema.Schema().Tables()
 	out := make([]TableInfo, 0, len(tables))
 	for _, t := range tables {
-		n, err := s.countRows(ctx, db, t.Name)
+		alive, deleted, err := s.countRowsBoth(ctx, db, t.Name)
 		if err != nil {
 			continue
 		}
-		out = append(out, TableInfo{Name: t.Name, Rows: n, Alias: aliasTables[t.Name]})
+		out = append(out, TableInfo{
+			Name: t.Name, Rows: alive, Deleted: deleted, Alias: aliasTables[t.Name],
+		})
 	}
 	sort.SliceStable(out, func(i, j int) bool {
 		if out[i].Rows != out[j].Rows {
@@ -274,13 +287,14 @@ func (s *Service) Columns(table string) ([]ColumnInfo, error) {
 	return out, nil
 }
 
-// Rows 返回一页数据。
-func (s *Service) Rows(table string, limit, offset int) (*RowsPage, error) {
+// Rows 返回一页数据。includeDeleted=false 时排除软删除行（deleted_at 非空）。
+func (s *Service) Rows(table string, limit, offset int, includeDeleted bool) (*RowsPage, error) {
 	db, err := s.database()
 	if err != nil {
 		return nil, err
 	}
-	if _, err := findTable(table); err != nil {
+	t, err := findTable(table)
+	if err != nil {
 		return nil, err
 	}
 	if limit <= 0 || limit > 2000 {
@@ -292,12 +306,21 @@ func (s *Service) Rows(table string, limit, offset int) (*RowsPage, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	total, err := s.countRows(ctx, db, table)
+	where := ""
+	if !includeDeleted && hasColumn(t, "deleted_at") {
+		where = " WHERE deleted_at IS NULL"
+	}
+	alive, deleted, err := s.countRowsBoth(ctx, db, table)
 	if err != nil {
 		return nil, err
 	}
-	rows, err := db.GetAll(ctx, fmt.Sprintf(`SELECT * FROM %s ORDER BY id LIMIT %d OFFSET %d`,
-		quoteIdent(table), limit, offset))
+	total := alive
+	if includeDeleted {
+		total = alive + deleted
+	}
+
+	rows, err := db.GetAll(ctx, fmt.Sprintf(`SELECT * FROM %s%s ORDER BY id LIMIT %d OFFSET %d`,
+		quoteIdent(table), where, limit, offset))
 	if err != nil {
 		return nil, err
 	}
@@ -322,7 +345,10 @@ func (s *Service) Rows(table string, limit, offset int) (*RowsPage, error) {
 		}
 		return cols[i] < cols[j]
 	})
-	return &RowsPage{Table: table, Columns: cols, Rows: rows, Total: total, Offset: offset, Limit: limit}, nil
+	return &RowsPage{
+		Table: table, Columns: cols, Rows: rows, Total: total,
+		Offset: offset, Limit: limit, Deleted: deleted, IncludeDeleted: includeDeleted,
+	}, nil
 }
 
 // Insert 新增一行（id 未给则自动生成 UUIDv4），并触发上传。
@@ -484,13 +510,17 @@ func (s *Service) Unwatch() {
 	s.mu.Unlock()
 }
 
-// Check 核对一张表的“本地行数 vs 后端行数”（稳定性测试：点一下就知道同步是否跟上）。
+// Check 核对“本地 vs 后端”的行数（同口径比较，软删除行单独统计）。
+//
+// 注意：本地列表默认不显示软删除行（deleted_at 非空），而后端 REST 可能仍返回它们，
+// 所以这里把两边都按“未删除行数”对齐比较，并把软删除数量一起报出来，避免误会。
 func (s *Service) Check(table string) (*CheckResult, error) {
 	db, err := s.database()
 	if err != nil {
 		return nil, err
 	}
-	if _, err := findTable(table); err != nil {
+	t, err := findTable(table)
+	if err != nil {
 		return nil, err
 	}
 	if s.readOnly {
@@ -499,30 +529,54 @@ func (s *Service) Check(table string) (*CheckResult, error) {
 	if err := s.conn.EnsureToken(context.Background()); err != nil {
 		return nil, err
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 20*time.Second)
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
-	local, err := s.countRows(ctx, db, table)
+	local, localDeleted, err := s.countRowsBoth(ctx, db, table)
 	if err != nil {
 		return nil, err
 	}
-	res := &CheckResult{Table: table, Local: local, Remote: -1}
+	res := &CheckResult{Table: table, Local: local, LocalDeleted: localDeleted, Remote: -1}
+
+	selectCols := "id"
+	if hasColumn(t, "deleted_at") {
+		selectCols = "id,deleted_at"
+	}
 	var raw []map[string]json.RawMessage
-	if err := s.conn.REST().GetJSON(ctx, "/"+table+"?select=id&limit=200000", &raw); err != nil {
+	if err := s.conn.REST().GetJSON(ctx, "/"+table+"?select="+selectCols+"&limit=200000", &raw); err != nil {
 		res.Note = "后端无此表/REST 不可达: " + err.Error()
 		return res, nil
 	}
-	res.Remote = int64(len(raw))
-	res.OK = local <= res.Remote // 后端可能因 sync rules 多于本地
+	var remoteAlive, remoteDeleted int64
+	for _, r := range raw {
+		if d, ok := r["deleted_at"]; ok && isNonNullJSON(d) {
+			remoteDeleted++
+			continue
+		}
+		remoteAlive++
+	}
+	res.Remote = remoteAlive
+	res.RemoteTotal = int64(len(raw))
+	res.RemoteDeleted = remoteDeleted
+
+	res.OK = local == remoteAlive
 	switch {
-	case local == res.Remote:
-		res.Note = "本地与后端行数一致"
-	case res.OK:
-		res.Note = fmt.Sprintf("后端多 %d 行（sync rules 过滤/其它端写入，正常）", res.Remote-local)
+	case local == remoteAlive && localDeleted == remoteDeleted:
+		res.Note = fmt.Sprintf("本地与后端一致（未删除 %d，软删除 %d）", local, localDeleted)
+	case local == remoteAlive:
+		res.Note = fmt.Sprintf("未删除行一致（%d）；软删除本地 %d / 后端 %d（不影响）", local, localDeleted, remoteDeleted)
+	case local < remoteAlive:
+		res.Note = fmt.Sprintf("后端多 %d 行（sync rules 过滤 / 其它端刚写入，正常）", remoteAlive-local)
 	default:
-		res.Note = fmt.Sprintf("本地多 %d 行：可能还没上传完/上传失败", local-res.Remote)
+		res.Note = fmt.Sprintf("本地多 %d 行：可能还没上传完", local-remoteAlive)
 	}
 	return res, nil
+}
+
+// isNonNullJSON 判断 JSON 值不是 null。
+func isNonNullJSON(raw json.RawMessage) bool {
+	s := strings.TrimSpace(string(raw))
+	return s != "" && s != "null"
 }
 
 // SyncNow 重新连接同步（用于断线后手动重连）。
@@ -609,6 +663,46 @@ func (s *Service) emitDataChanged(table string) {
 		return
 	}
 	app.Event.Emit("data:changed", table)
+}
+
+// countRowsBoth 同时返回“未删除行数”和“软删除行数”（没有 deleted_at 列时后者为 0）。
+func (s *Service) countRowsBoth(ctx context.Context, db *powersync.DB, table string) (alive, deleted int64, err error) {
+	if _, ok := findTableLoose(table); !ok {
+		return 0, 0, fmt.Errorf("schema 里没有表 %q", table)
+	}
+	rows, err := db.GetAll(ctx, fmt.Sprintf(
+		`SELECT count(*) AS total, sum(CASE WHEN deleted_at IS NULL THEN 1 ELSE 0 END) AS alive FROM %s`,
+		quoteIdent(table)))
+	if err == nil && len(rows) == 1 {
+		total := toInt64(rows[0]["total"])
+		a := toInt64(rows[0]["alive"])
+		return a, total - a, nil
+	}
+	// 没有 deleted_at 列：全部算未删除
+	rows, err = db.GetAll(ctx, fmt.Sprintf(`SELECT count(*) AS n FROM %s`, quoteIdent(table)))
+	if err != nil {
+		return 0, 0, err
+	}
+	if len(rows) != 1 {
+		return 0, 0, fmt.Errorf("count 查询没有结果")
+	}
+	return toInt64(rows[0]["n"]), 0, nil
+}
+
+// findTableLoose 判断表是否在 schema 里。
+func findTableLoose(name string) (powersync.Table, bool) {
+	for _, t := range cutterschema.Schema().Tables() {
+		if t.Name == name {
+			return t, true
+		}
+	}
+	return powersync.Table{}, false
+}
+
+// hasColumn 判断表是否有某一列。
+func hasColumn(t powersync.Table, name string) bool {
+	_, ok := findColumn(t, name)
+	return ok
 }
 
 func (s *Service) countRows(ctx context.Context, db *powersync.DB, table string) (int64, error) {
