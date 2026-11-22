@@ -111,7 +111,7 @@ func runSelftest(svc *Service) {
 	}
 
 	st := svc.Status()
-	fmt.Printf("状态: ready=%v connected=%v readOnly=%v cursor=%s buckets=%d uploadQueue=%d", st.Ready, st.Connected, st.ReadOnly, st.Cursor, st.Buckets, st.UploadQueue)
+	fmt.Printf("状态: ready=%v connected=%v readOnly=%v cursor=%s buckets=%d uploadQueue=%d lastSynced=%s", st.Ready, st.Connected, st.ReadOnly, st.Cursor, st.Buckets, st.UploadQueue, st.LastSyncedAt)
 	fmt.Println()
 	if !st.Ready {
 		fmt.Fprintf(os.Stderr, "自检失败: %s", st.Message)

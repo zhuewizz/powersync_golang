@@ -21,6 +21,9 @@ import (
 	"msmkSync/restconn"
 )
 
+// beijingZone 是固定 +8 时区（北京时间）；用 FixedZone 避免依赖系统 tzdata。
+var beijingZone = time.FixedZone("CST", 8*3600)
+
 // aliasTables 是同步规则里用短别名（AS i 等）的表：服务端下发的 object_type 就是别名。
 var aliasTables = map[string]bool{"d": true, "h": true, "i": true, "l": true, "r": true, "s": true, "t": true}
 
@@ -576,7 +579,8 @@ func (s *Service) status() Status {
 	st.Cursor = cur.Cursor
 	st.Buckets = cur.Buckets
 	if !cur.LastSyncedAt.IsZero() {
-		st.LastSyncedAt = cur.LastSyncedAt.Format("15:04:05")
+		// 库里存的是 UTC，界面按东八区显示（不依赖系统 tzdata）
+		st.LastSyncedAt = cur.LastSyncedAt.In(beijingZone).Format("01-02 15:04:05")
 	}
 	st.Online = net.Online
 	st.LatencyMS = net.Latency.Milliseconds()

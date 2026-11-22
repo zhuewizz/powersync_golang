@@ -607,11 +607,12 @@ func truncate(s string, n int) string {
 	return s[:n] + "…"
 }
 
+// fmtTime 把 UTC 时间按东八区显示（库里存的是 UTC）。
 func fmtTime(t time.Time) string {
 	if t.IsZero() {
 		return "-"
 	}
-	return t.Format("15:04:05")
+	return t.In(time.FixedZone("CST", 8*3600)).Format("15:04:05")
 }
 
 func fail(what string, err error) {
