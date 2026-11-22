@@ -5,7 +5,7 @@
  *
  * 用法：
  *   PS_URL=http://host:8080 PS_TOKEN=<jwt> node sync.mjs            # 已有 token
- *   PS_URL=... RPC_URL=.../rest/rpc/fetch_credentials BOX_CODE=D1-2 ORG_CODE=ORG001 node sync.mjs
+ *   PS_URL=... RPC_URL=.../rest/rpc/fetch_credentials BOX_CODE=<box_code> ORG_CODE=<org_code> node sync.mjs
  *
  * 可选：
  *   APP_SCHEMA=/e/cutter_client/src/library/powersync/AppSchema.ts   参照 schema 源文件

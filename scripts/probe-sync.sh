@@ -7,7 +7,7 @@
 # 用法二（从 PostgREST 风格 RPC 取 token，参考 e:/cutter_client）：
 #   PS_URL=http://host:8080 \
 #   RPC_URL=http://host:8089/rest/rpc/fetch_credentials \
-#   BOX_CODE=D1-2 ORG_CODE=ORG001 ./scripts/probe-sync.sh
+#   BOX_CODE=<box_code> ORG_CODE=<org_code> ./scripts/probe-sync.sh
 #
 # 可选：
 #   OUT_DIR=./.probe        输出目录（默认 .probe，已在 .gitignore 中）

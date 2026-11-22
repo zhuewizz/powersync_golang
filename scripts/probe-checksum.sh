@@ -7,7 +7,7 @@
 # 若第 4 步没有 "校验和不符/重置"，说明 supersede/REMOVE 的累计规则是对的。
 #
 # 用法：
-#   PS_URL=... REST_URL=... RPC_URL=... BOX_CODE=D1-2 ORG_CODE=ORG001 ./scripts/probe-checksum.sh
+#   PS_URL=... REST_URL=... RPC_URL=... BOX_CODE=<box_code> ORG_CODE=<org_code> ./scripts/probe-checksum.sh
 set -uo pipefail
 : "${PS_URL:?}" "${REST_URL:?}"
 TABLE="${TABLE:-sys_error_report}"
@@ -40,7 +40,7 @@ trap cleanup EXIT
 
 row() { # $1=desc
   printf '{"id":"%s","org_code":"%s","box_code":"%s","box_cell":"CK","user_id":"CK","user_name":"checksum","error_date":"2026-01-01 00:00:00","error_desc":"%s","trans_type":"CK","op_status":"CK","box_type":"CK"}' \
-    "$ID" "${ORG_CODE:-ORG001}" "${BOX_CODE:-D1-2}" "$1"
+    "$ID" "${ORG_CODE:?需要 ORG_CODE}" "${BOX_CODE:?需要 BOX_CODE}" "$1"
 }
 
 echo "=== 0. 基线同步（首次会全量，校验应 OK） ==="

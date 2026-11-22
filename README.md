@@ -144,15 +144,15 @@ PowerSync 要求客户端声明 schema（本地有哪些表、每张表哪些列
 # 重新生成（服务端表结构变了就跑一次）
 go run ./cmd/genschema \
   -rules E:/cutter/syncRules.yaml \
-  -rpc http://120.24.7.22:8089/rest/rpc/fetch_credentials -box D1-2 -org ORG001 \
+  -rpc http://<your-postgrest-host>:8089/rest/rpc/fetch_credentials -box <box_code> -org <org_code> \
   -pkg cutterschema -func Schema -out-go ./examples/cutterschema/schema.go \
   -out-json ./examples/cutterschema/schema.json
 
 # 全量同步 + 逐表打印“行数 + 样例”
 go run ./cmd/pstable -db ./out/cutter.db -schema ./examples/cutterschema/schema.json \
   -sync -report -limit 1 \
-  -endpoint http://120.24.7.22:8080 -rest http://120.24.7.22:8089/rest \
-  -rpc http://120.24.7.22:8089/rest/rpc/fetch_credentials -box D1-2 -org ORG001
+  -endpoint http://<your-powersync-host>:8080 -rest http://<your-postgrest-host>:8089/rest \
+  -rpc http://<your-postgrest-host>:8089/rest/rpc/fetch_credentials -box <box_code> -org <org_code>
 ```
 
 实测：65 张表 / 1644 行，2 个 bucket（`org_data` + `box_data`），首次同步约 2.4s。

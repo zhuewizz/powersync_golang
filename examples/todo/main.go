@@ -6,18 +6,18 @@
 // 连真实服务（只下载）：
 //
 //	go run ./examples/todo -mode real \
-//	    -endpoint http://120.24.7.22:8080 \
-//	    -rpc http://120.24.7.22:8089/rest/rpc/fetch_credentials \
-//	    -box D1-2 -org ORG001 \
+//	    -endpoint http://<your-powersync-host>:8080 \
+//	    -rpc http://<your-postgrest-host>:8089/rest/rpc/fetch_credentials \
+//	    -box <box_code> -org <org_code> \
 //	    -schema ./out/schema.json \
 //	    -tables sys_error_report,cutter_info
 //
 // 连真实服务并真正上传 + 演示"断网可用、恢复后自动同步"：
 //
 //	go run ./examples/todo -mode real -upload real -write \
-//	    -endpoint http://120.24.7.22:8080 -rest http://120.24.7.22:8089/rest \
-//	    -rpc http://120.24.7.22:8089/rest/rpc/fetch_credentials \
-//	    -box D1-2 -org ORG001 -schema ./out/schema.json -tables sys_error_report,cutter_info
+//	    -endpoint http://<your-powersync-host>:8080 -rest http://<your-postgrest-host>:8089/rest \
+//	    -rpc http://<your-postgrest-host>:8089/rest/rpc/fetch_credentials \
+//	    -box <box_code> -org <org_code> -schema ./out/schema.json -tables sys_error_report,cutter_info
 package main
 
 import (
@@ -52,11 +52,12 @@ var fixtureData []byte
 func main() {
 	var (
 		// 默认就把本机真实环境写死：`go run ./examples/todo` 直接跑完整演示
-		mode     = flag.String("mode", "real", "mock（内置假服务）或 real（连真实服务）")
-		endpoint = flag.String("endpoint", envOr("PS_URL", "http://120.24.7.22:8080"), "real 模式：PowerSync 服务地址")
-		rpc      = flag.String("rpc", envOr("RPC_URL", "http://120.24.7.22:8089/rest/rpc/fetch_credentials"), "real 模式：fetch_credentials RPC")
-		box      = flag.String("box", envOr("BOX_CODE", "D1-2"), "real 模式：box_code")
-		org      = flag.String("org", envOr("ORG_CODE", "ORG001"), "real 模式：org_code")
+		mode = flag.String("mode", "real", "mock（内置假服务）或 real（连真实服务）")
+		// 连接参数不在代码里写死：用 -endpoint/-rpc/-box/-org 或环境变量提供
+		endpoint = flag.String("endpoint", os.Getenv("PS_URL"), "PowerSync 服务地址（或用 PS_URL）")
+		rpc      = flag.String("rpc", os.Getenv("RPC_URL"), "fetch_credentials RPC（或用 RPC_URL）")
+		box      = flag.String("box", os.Getenv("BOX_CODE"), "box_code（或用 BOX_CODE）")
+		org      = flag.String("org", os.Getenv("ORG_CODE"), "org_code（或用 ORG_CODE）")
 		schemaF  = flag.String("schema", "", "schema JSON（官方 Schema.toJSON 形状）；默认用内置 -cutter")
 		cutterF  = flag.Bool("cutter", true, "用内置的 cutter schema（65 张表，来自 syncRules.yaml，见 schema_cutter.go）")
 		tablesF  = flag.String("tables", "", "只统计/打印这些表（逗号分隔），空=全部")
@@ -65,7 +66,7 @@ func main() {
 		timeout  = flag.Duration("timeout", 180*time.Second, "整体超时")
 		write    = flag.Bool("write", true, "real 模式下做写入演示（含断网离线优先环节）")
 		upload   = flag.String("upload", "real", "real 模式的上传方式：mock（打印后出队）或 real（真正写 PostgREST）")
-		restBase = flag.String("rest", envOr("REST_URL", "http://120.24.7.22:8089/rest"), "PostgREST base，如 http://host:8089/rest")
+		restBase = flag.String("rest", os.Getenv("REST_URL"), "PostgREST base，如 http://host:8089/rest（或用 REST_URL）")
 		limit    = flag.Int("limit", 2, "每张表打印多少行样例")
 		verbose  = flag.Bool("v", false, "打印库内部 debug 日志（同步行/checkpoint/物化行数）")
 		cleanup  = flag.Bool("cleanup", false, "演示结束后删除探针行（默认**保留**在后台，方便查看）")
@@ -470,7 +471,7 @@ func runOfflineFirstDemo(ctx context.Context, db *powersync.DB, conn powersync.C
 	  (id, org_code, box_code, box_cell, user_id, user_name, error_date, error_desc, trans_type, op_status, box_type)
 	  VALUES(?,?,?,?,?,?,?,?,?,?,?)`
 	if _, err := db.Execute(ctx, insertSQL,
-		id, nonEmpty(org, "ORG001"), nonEmpty(box, "D1-2"), "EXAMPLE", "EXAMPLE",
+		id, org, box, "EXAMPLE", "EXAMPLE",
 		"examples/todo", "2026-01-01 00:00:00", "offline-first demo", "PROBE", "PROBE", "PROBE"); err != nil {
 		fmt.Printf("   本地插入失败：%v\n", err)
 		return

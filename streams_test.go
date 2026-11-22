@@ -13,11 +13,11 @@ import (
 )
 
 const streamsFixtureHead = `{"checkpoint":{"last_op_id":"101","buckets":[` +
-	`{"bucket":"50#hi[\"ORG001\"]","checksum":100,"count":1,"priority":3,"subscriptions":[{"default":1}]},` +
-	`{"bucket":"50#lo[\"ORG001\"]","checksum":250,"count":1,"priority":0,"subscriptions":[{"default":1}]}` +
+	`{"bucket":"50#hi[\"ORG-A\"]","checksum":100,"count":1,"priority":3,"subscriptions":[{"default":1}]},` +
+	`{"bucket":"50#lo[\"ORG-A\"]","checksum":250,"count":1,"priority":0,"subscriptions":[{"default":1}]}` +
 	`],"streams":[{"name":"hi","is_default":true,"errors":[]},{"name":"lo","is_default":false,"errors":[]}]}}` + "\n" +
-	`{"data":{"bucket":"50#hi[\"ORG001\"]","after":"101","has_more":false,"data":[{"op_id":"100","op":"PUT","object_type":"todos","object_id":"a","checksum":100,"subkey":"s/a","data":"{\"id\":\"a\",\"title\":\"high\"}"}]}}` + "\n" +
-	`{"data":{"bucket":"50#lo[\"ORG001\"]","after":"101","has_more":false,"data":[{"op_id":"101","op":"PUT","object_type":"todos","object_id":"b","checksum":250,"subkey":"s/b","data":"{\"id\":\"b\",\"title\":\"low\"}"}]}}` + "\n" +
+	`{"data":{"bucket":"50#hi[\"ORG-A\"]","after":"101","has_more":false,"data":[{"op_id":"100","op":"PUT","object_type":"todos","object_id":"a","checksum":100,"subkey":"s/a","data":"{\"id\":\"a\",\"title\":\"high\"}"}]}}` + "\n" +
+	`{"data":{"bucket":"50#lo[\"ORG-A\"]","after":"101","has_more":false,"data":[{"op_id":"101","op":"PUT","object_type":"todos","object_id":"b","checksum":250,"subkey":"s/b","data":"{\"id\":\"b\",\"title\":\"low\"}"}]}}` + "\n" +
 	`{"partial_checkpoint_complete":{"last_op_id":"101","priority":3}}` + "\n"
 
 // streamsServer 先回放 checkpoint + data + partial_checkpoint_complete，
@@ -84,7 +84,7 @@ func TestStreamsPartialCheckpoint(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
 
-	sub, err := db.SubscribeStream(ctx, "lo", map[string]any{"org": "ORG001"},
+	sub, err := db.SubscribeStream(ctx, "lo", map[string]any{"org": "ORG-A"},
 		powersync.WithPriority(0), powersync.WithTTL(time.Hour))
 	if err != nil {
 		t.Fatalf("SubscribeStream: %v", err)
@@ -138,7 +138,7 @@ func TestStreamsPartialCheckpoint(t *testing.T) {
 		t.Fatalf("订阅数 = %d: %s", len(req.Streams.Subscriptions), srv.bodies[0])
 	}
 	s := req.Streams.Subscriptions[0]
-	if s.Stream != "lo" || s.Parameters["org"] != "ORG001" || s.OverridePriority == nil || *s.OverridePriority != 0 {
+	if s.Stream != "lo" || s.Parameters["org"] != "ORG-A" || s.OverridePriority == nil || *s.OverridePriority != 0 {
 		t.Errorf("订阅请求字段 = %+v", s)
 	}
 

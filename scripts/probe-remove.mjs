@@ -12,7 +12,7 @@
  *
  * 用法：
  *   PS_URL=http://host:8080 REST_URL=http://host:8089/rest \
- *   RPC_URL=http://host:8089/rest/rpc/fetch_credentials BOX_CODE=D1-2 ORG_CODE=ORG001 \
+ *   RPC_URL=http://host:8089/rest/rpc/fetch_credentials BOX_CODE=<box_code> ORG_CODE=<org_code> \
  *     node scripts/probe-remove.mjs
  *
  * 可选环境变量：STATE（默认 ./out/state.json）、TABLE（默认 sys_error_report）、
@@ -20,6 +20,16 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
+
+// 连接参数不在脚本里写死：缺了就报错
+function requireEnv(name) {
+  const v = process.env[name];
+  if (!v) {
+    console.error(`缺少环境变量 ${name}。示例：BOX_CODE=<box_code> ORG_CODE=<org_code>`);
+    process.exit(1);
+  }
+  return v;
+}
 
 const PS_URL = (process.env.PS_URL ?? '').replace(/\/$/, '');
 const REST_URL = (process.env.REST_URL ?? '').replace(/\/$/, '');
@@ -160,8 +170,8 @@ async function waitFor(label, predicate) {
 const rowId = crypto.randomUUID();
 const body = JSON.stringify({
   id: rowId,
-  org_code: process.env.ORG_CODE ?? 'ORG001',
-  box_code: process.env.BOX_CODE ?? 'D1-2',
+  org_code: requireEnv('ORG_CODE'),
+  box_code: requireEnv('BOX_CODE'),
   box_cell: 'PROBE',
   user_id: 'PROBE',
   user_name: 'probe-remove',

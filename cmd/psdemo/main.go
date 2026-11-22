@@ -4,7 +4,7 @@
 // 用法：
 //
 //	go run ./cmd/psdemo -endpoint http://host:8080 \
-//	    -rpc http://host:8089/rest/rpc/fetch_credentials -box D1-2 -org ORG001 \
+//	    -rpc http://host:8089/rest/rpc/fetch_credentials -box <box_code> -org <org_code> \
 //	    -schema ./out/schema.json -db ./out/demo.db
 //
 // 只读：UploadData 是空实现，不会向服务端写任何数据。

@@ -8,7 +8,7 @@
 //
 // 用法：
 //
-//	go run ./cmd/psdiff -endpoint $PS_URL -rpc $RPC_URL -box D1-2 -org ORG001 \
+//	go run ./cmd/psdiff -endpoint $PS_URL -rpc $RPC_URL -box <box_code> -org <org_code> \
 //	    -schema ./out/schema.json -rest $REST_URL -out ./out
 //
 // schema.json 可用 scripts/js-reference/dump-schema.mjs 从 AppSchema.ts 导出；

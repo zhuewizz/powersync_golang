@@ -9,3 +9,6 @@ data/
 frontend/bindings/
 *.exe
 out.log
+
+# 连接参数（用户本机填写，不入库）
+config.json

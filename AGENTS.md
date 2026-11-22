@@ -52,13 +52,13 @@ CGO_ENABLED=0 GOOS=linux go build ./...  # 纯 Go 校验
 
 # 差分测试（需要可达的自建服务 + token）
 node scripts/js-reference/dump-schema.mjs   # 从 e:/cutter_client 的 AppSchema.ts 导出 out/schema.json
-go run ./cmd/psdiff -endpoint $PS_URL -rpc $RPC_URL -box D1-2 -org ORG001 \
+go run ./cmd/psdiff -endpoint $PS_URL -rpc $RPC_URL -box <box_code> -org <org_code> \
     -schema ./out/schema.json -rest $REST_URL -out ./out   # 同步 + 落真实表 + 与 REST 逐行比对
 node scripts/probe-remove.mjs           # 验证 PUT/REMOVE 增量（会插入并删除一行测试数据）
 PS_URL=... RPC_URL=... BOX_CODE=... ORG_CODE=... ./scripts/probe-bson.sh  # NDJSON vs BSON 落库一致性
-go run ./cmd/psdemo -endpoint $PS_URL -rpc $RPC_URL -box D1-2 -org ORG001 \
+go run ./cmd/psdemo -endpoint $PS_URL -rpc $RPC_URL -box <box_code> -org <org_code> \
     -schema ./out/schema.json -db ./out/demo.db   # 公开 API 冒烟（只读）
-go run ./cmd/psupload -endpoint $PS_URL -rest $REST_URL -rpc $RPC_URL -box D1-2 -org ORG001 \
+go run ./cmd/psupload -endpoint $PS_URL -rest $REST_URL -rpc $RPC_URL -box <box_code> -org <org_code> \
     -schema ./out/schema.json -db ./out/upload.db # 上传回显闭环（写入并删除一行 sys_error_report）
 
 # 双实现差分（离线假服务，无需真实后端；Linux/macOS/WSL/CI）
@@ -265,7 +265,7 @@ X-User-Agent: powersync-go/<version>
 
 ```json
 {
-  "buckets": [{"name": "50#org_data[\"ORG001\"]", "after": "1234"}],
+  "buckets": [{"name": "50#org_data[\"<org_code>\"]", "after": "1234"}],
   "include_checksum": true,
   "raw_data": true,
   "app_metadata": {"k": "v"},
@@ -296,13 +296,13 @@ X-User-Agent: powersync-go/<version>
 // 1) 每个 checkpoint 的首行：bucket 清单 + 优先级 + 流状态
 {"checkpoint": {
   "last_op_id": "24387",
-  "buckets": [{"bucket": "50#org_data[\"ORG001\"]", "checksum": 1070820748, "count": 734,
+  "buckets": [{"bucket": "50#org_data[\"<org_code>\"]", "checksum": 1070820748, "count": 734,
                "priority": 3, "subscriptions": [{"default": 0}]}],
   "streams": [{"name": "org_data", "is_default": true, "errors": []}]
 }}
 
 // 2) 数据行：**每个 bucket 可以出现多行**，靠 after + has_more 分页
-{"data": {"bucket": "50#org_data[\"ORG001\"]", "after": "22775", "has_more": true,
+{"data": {"bucket": "50#org_data[\"<org_code>\"]", "after": "22775", "has_more": true,
           "data": [{"op_id": "22776", "op": "PUT",
                     "object_type": "org", "object_id": "<uuid>",
                     "checksum": 2931144126,
@@ -310,7 +310,7 @@ X-User-Agent: powersync-go/<version>
                     "data": "{\"id\":\"...\"}"}]}}
 
 // 2b) 删除：op=REMOVE，data 为 null，其余字段不变（subkey 与之前的 PUT 相同）
-{"data": {"bucket": "50#box_data[\"D1-2\",\"ORG001\"]", "after": "24397", "has_more": false,
+{"data": {"bucket": "50#box_data[\"<box_code>\",\"<org_code>\"]", "after": "24397", "has_more": false,
           "data": [{"op_id": "24397", "op": "REMOVE",
                     "object_type": "sys_error_report", "object_id": "<uuid>",
                     "checksum": 3029235767, "subkey": "<uuid>/<uuid>", "data": null}]}}
@@ -367,7 +367,7 @@ X-User-Agent: powersync-go/<version>
 **未实测**（实现前必须再抓包，不要凭文档假定字段）：
 
 - ~~`checkpoint_diff`~~：**已实测**（2026-11，真实服务在上传后推送增量时下发）。形状：
-  `{"checkpoint_diff":{"last_op_id":"24457","removed_buckets":[],"updated_buckets":[{"bucket":"50#box_data[\"D1-2\",\"ORG001\"]","checksum":2134983222,"count":980,"priority":3,"subscriptions":[{"default":1}]}]}}`。
+  `{"checkpoint_diff":{"last_op_id":"24457","removed_buckets":[],"updated_buckets":[{"bucket":"50#box_data[\"<box_code>\",\"<org_code>\"]","checksum":2134983222,"count":980,"priority":3,"subscriptions":[{"default":1}]}]}}`。
   它**代替 checkpoint 行**出现，只给变化 bucket 的新 checksum/count。客户端处理：用 `updated_buckets` 作为
   应用目标（并据此校验 checksum），`removed_buckets` → `ResetBucket`（**已落库的行不会自动删除**，
   需要后续按 bucket 归属清理）。样本见 `testdata/sync/checkpoint-diff.ndjson`。
@@ -528,7 +528,7 @@ db.WaitForFirstSync(ctx)        // 首次同步完成
 
 ### 11.1 差分测试基线（2026-11 实测可重复）
 
-`cmd/psdiff` 对自建服务 `D1-2 / ORG001` 的结果（改动解析/落库逻辑后应保持一致）：
+`cmd/psdiff` 对自建服务 `<box_code> / <org_code>` 的结果（改动解析/落库逻辑后应保持一致）：
 
 ```
 第 1 次同步：data 行=3 op=1680 checkpoint=24423 bucket=2

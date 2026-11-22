@@ -21,11 +21,11 @@ param(
     [string]$Schema = './examples/todo/schema-cutter.json',
     [string]$Table = 'sys_error_report',
 
-    [string]$Endpoint = $(if ($env:PS_URL) { $env:PS_URL } else { 'http://120.24.7.22:8080' }),
-    [string]$Rest = $(if ($env:REST_URL) { $env:REST_URL } else { 'http://120.24.7.22:8089/rest' }),
-    [string]$Rpc = $(if ($env:RPC_URL) { $env:RPC_URL } else { 'http://120.24.7.22:8089/rest/rpc/fetch_credentials' }),
-    [string]$Box = $(if ($env:BOX_CODE) { $env:BOX_CODE } else { 'D1-2' }),
-    [string]$Org = $(if ($env:ORG_CODE) { $env:ORG_CODE } else { 'ORG001' }),
+    [string]$Endpoint = $env:PS_URL,
+    [string]$Rest = $env:REST_URL,
+    [string]$Rpc = $env:RPC_URL,
+    [string]$Box = $env:BOX_CODE,
+    [string]$Org = $env:ORG_CODE,
 
     [switch]$KeepRow,
     [switch]$SkipDownload,
@@ -33,6 +33,16 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+
+# 连接参数不在脚本里写死：必须用参数或环境变量提供
+if (-not $Endpoint -or -not $Rest -or -not $Rpc -or -not $Box -or -not $Org) {
+    Write-Host "连接参数未提供。请用参数或环境变量指定：" -ForegroundColor Yellow
+    Write-Host '  $env:PS_URL="http://<host>:8080"' -ForegroundColor Yellow
+    Write-Host '  $env:REST_URL="http://<host>:8089/rest"' -ForegroundColor Yellow
+    Write-Host '  $env:RPC_URL="http://<host>:8089/rest/rpc/fetch_credentials"' -ForegroundColor Yellow
+    Write-Host '  $env:BOX_CODE="<box_code>"; $env:ORG_CODE="<org_code>"' -ForegroundColor Yellow
+    exit 1
+}
 try { [Console]::OutputEncoding = [System.Text.Encoding]::UTF8 } catch { }
 $OutputEncoding = [System.Text.Encoding]::UTF8
 

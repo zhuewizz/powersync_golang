@@ -13,7 +13,7 @@
 
 .EXAMPLE
     .\scripts\ps-write.ps1 -Action insert -Table sys_error_report `
-        -Values @{ org_code='ORG001'; box_code='D1-2'; box_cell='A1';
+        -Values @{ org_code='<org_code>'; box_code='<box_code>'; box_cell='A1';
                    user_id='u1'; user_name='ps-write'; error_date='2026-01-01 00:00:00';
                    error_desc='ps-write 插入演示'; trans_type='PROBE'; op_status='PROBE'; box_type='1' }
 
@@ -41,11 +41,11 @@ param(
 
     [string]$Database = $(if ($env:PS_DB) { $env:PS_DB } else { './out/verify.db' }),
 
-    [string]$Endpoint = $(if ($env:PS_URL) { $env:PS_URL } else { 'http://120.24.7.22:8080' }),
-    [string]$Rest = $(if ($env:REST_URL) { $env:REST_URL } else { 'http://120.24.7.22:8089/rest' }),
-    [string]$Rpc = $(if ($env:RPC_URL) { $env:RPC_URL } else { 'http://120.24.7.22:8089/rest/rpc/fetch_credentials' }),
-    [string]$Box = $(if ($env:BOX_CODE) { $env:BOX_CODE } else { 'D1-2' }),
-    [string]$Org = $(if ($env:ORG_CODE) { $env:ORG_CODE } else { 'ORG001' }),
+    [string]$Endpoint = $env:PS_URL,
+    [string]$Rest = $env:REST_URL,
+    [string]$Rpc = $env:RPC_URL,
+    [string]$Box = $env:BOX_CODE,
+    [string]$Org = $env:ORG_CODE,
 
     [switch]$NoUpload,
     [switch]$DryRun,
@@ -54,6 +54,16 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+
+# 连接参数不在脚本里写死：必须用参数或环境变量提供
+if (-not $Endpoint -or -not $Rest -or -not $Rpc -or -not $Box -or -not $Org) {
+    Write-Host "连接参数未提供。请用参数或环境变量指定：" -ForegroundColor Yellow
+    Write-Host '  $env:PS_URL="http://<host>:8080"' -ForegroundColor Yellow
+    Write-Host '  $env:REST_URL="http://<host>:8089/rest"' -ForegroundColor Yellow
+    Write-Host '  $env:RPC_URL="http://<host>:8089/rest/rpc/fetch_credentials"' -ForegroundColor Yellow
+    Write-Host '  $env:BOX_CODE="<box_code>"; $env:ORG_CODE="<org_code>"' -ForegroundColor Yellow
+    exit 1
+}
 
 # 控制台按 UTF-8 解码 go 的输出（否则 PS 5.1 下中文会变乱码）
 try { [Console]::OutputEncoding = [System.Text.Encoding]::UTF8 } catch { }
@@ -84,8 +94,8 @@ function Quote-Ident([string]$name) {
 }
 
 # ConvertTo-ValuesTable 兼容两种传法：
-#   -Values @{ org_code='ORG001'; box_type='1' }  （PowerShell 里直接写 hashtable，推荐）
-#   -Values "org_code=ORG001;box_type=1"              （cmd / bash 传字符串，便于脚本化）
+#   -Values @{ org_code='<org_code>'; box_type='1' }  （PowerShell 里直接写 hashtable，推荐）
+#   -Values "org_code=<org_code>;box_type=1"              （cmd / bash 传字符串，便于脚本化）
 function ConvertTo-ValuesTable($v) {
     if ($null -eq $v) { return @{} }
     if ($v -is [System.Collections.IDictionary]) { return $v }

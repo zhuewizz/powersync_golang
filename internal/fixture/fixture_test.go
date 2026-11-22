@@ -80,7 +80,7 @@ func TestFullSyncThenUpToDate(t *testing.T) {
 	up := stream(t, srv, streamRequest{Buckets: []struct {
 		Name  string `json:"name"`
 		After string `json:"after"`
-	}{{Name: `50#test_data["ORG001"]`, After: "50"}}})
+	}{{Name: `50#test_data["ORG-A"]`, After: "50"}}})
 	if got := strings.Join(kinds(up), ","); got != "checkpoint,checkpoint_complete" {
 		t.Fatalf("已是最新行类型 = %s（after 够大时不应再下发 data）", got)
 	}

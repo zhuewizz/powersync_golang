@@ -32,7 +32,7 @@ func TestReproRealSchemaEchoThenUpdate(t *testing.T) {
 		return n
 	}
 
-	row := `{"id":"r1","org_code":"ORG001","box_code":"D1-2","box_cell":"X","user_id":"U","user_name":"N",
+	row := `{"id":"r1","org_code":"ORG-A","box_code":"BOX-A","box_cell":"X","user_id":"U","user_name":"N",
 	  "error_date":"2026-01-01 00:00:00","error_desc":"x","trans_type":"T","op_status":"O","box_type":"B",
 	  "created_at":"2026-01-01 00:00:00","updated_at":null,"extra_col":"v"}`
 	if err := db.ApplyOps(ctx, "b", []protocol.Op{{

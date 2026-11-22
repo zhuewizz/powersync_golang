@@ -364,7 +364,7 @@ for n := range ch {
 ```go
 // 订阅一个流（参数会原样发给服务端，一般是 sync rules 里声明的参数）
 sub, err := db.SubscribeStream(ctx, "box_data",
-    map[string]any{"box_code": "D1-2"},
+    map[string]any{"box_code": "<box_code>"},
     powersync.WithPriority(0),      // 数值越小越优先
     powersync.WithTTL(time.Hour),   // 取消后多久可被清理
 )
@@ -502,7 +502,7 @@ go run ./cmd/psq -db ./out/verify.db -q "select name, last_applied_op, op_checks
 ```powershell
 # 1) 插入（id 自动生成 UUIDv4；自动上传并核对前后端行数）
 .\scripts\ps-write.ps1 -Action insert -Table sys_error_report -Values @{
-    org_code='ORG001'; box_code='D1-2'; box_cell='A1'; box_type='1'
+    org_code='<org_code>'; box_code='<box_code>'; box_cell='A1'; box_type='1'
     user_id='u1'; user_name='ps-write'; error_date='2026-01-01 00:00:00'
     error_desc='一键脚本插入'; trans_type='PROBE'; op_status='PROBE'
 }
@@ -518,7 +518,7 @@ go run ./cmd/psq -db ./out/verify.db -q "select name, last_applied_op, op_checks
 .\scripts\ps-write.ps1 -Action list
 
 # 5) 任意 SQL（分号分隔多条），带 WHERE 的批量改删
-.\scripts\ps-write.ps1 -Action exec -Sql "update sys_error_report set op_status='DONE' where box_code='D1-2'"
+.\scripts\ps-write.ps1 -Action exec -Sql "update sys_error_report set op_status='DONE' where box_code='<box_code>'"
 
 # 6) 只写本地、暂不上传（断网场景）；或只看 SQL 不执行
 .\scripts\ps-write.ps1 -Action insert -Table sys_error_report -Values @{...} -NoUpload
@@ -562,7 +562,7 @@ PowerSync 的硬性要求：**客户端必须声明 schema**，没声明的表�
 
 ```bash
 go run ./cmd/genschema -rules E:/cutter/syncRules.yaml \
-  -rpc http://host:8089/rest/rpc/fetch_credentials -box D1-2 -org ORG001 \
+  -rpc http://host:8089/rest/rpc/fetch_credentials -box <box_code> -org <org_code> \
   -extra role -stream ./out/stream-raw.ndjson \
   -pkg cutterschema -func Schema -out-go ./examples/cutterschema/schema.go \
   -out-json ./examples/cutterschema/schema.json
@@ -593,7 +593,7 @@ db, err := powersync.Open(ctx, powersync.Options{
 go run ./cmd/pstable -db ./out/cutter.db -schema ./examples/cutterschema/schema.json \
   -sync -report -limit 1 \
   -endpoint http://host:8080 -rest http://host:8089/rest \
-  -rpc http://host:8089/rest/rpc/fetch_credentials -box D1-2 -org ORG001
+  -rpc http://host:8089/rest/rpc/fetch_credentials -box <box_code> -org <org_code>
 ```
 
 输出每张表的行数与一行样例，结尾是合计与空表数（实测 65 张表 / 1644 行）。
@@ -605,7 +605,7 @@ go run ./cmd/pstable -db ./out/cutter.db -schema ./examples/cutterschema/schema.
 
 ```bash
 PS="-upload -endpoint http://host:8080 -rest http://host:8089/rest \
-     -rpc http://host:8089/rest/rpc/fetch_credentials -box D1-2 -org ORG001"
+     -rpc http://host:8089/rest/rpc/fetch_credentials -box <box_code> -org <org_code>"
 
 # 读
 go run ./cmd/pstable -db ./out/verify.db -ls
@@ -615,7 +615,7 @@ go run ./cmd/pstable -db ./out/verify.db -q "select mat_code, mat_name from cutt
 # 写 / 改 / 删（本地立即生效，同时进上传队列；带 -upload 就自动同步到后端）
 go run ./cmd/pstable -db ./out/verify.db $PS -verify-table sys_error_report \
   -exec "insert into sys_error_report(id, org_code, box_code, error_desc, error_date, box_type)
-          values('...uuid...','ORG001','D1-2','note','2026-01-01 00:00:00','1')"
+          values('...uuid...','<org_code>','<box_code>','note','2026-01-01 00:00:00','1')"
 go run ./cmd/pstable -db ./out/verify.db $PS -exec "update sys_error_report set error_desc='改过了' where id='...'"
 go run ./cmd/pstable -db ./out/verify.db $PS -exec "delete from sys_error_report where id='...'"
 

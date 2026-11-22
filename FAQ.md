@@ -66,6 +66,39 @@ DELETE → DELETE /<table>  ?id=eq.<id>
 
 ---
 
+## Q3. 连接参数（服务地址 / box / org）放在哪里？代码里能写死吗？
+
+**不要写死**。本仓库的代码/脚本/示例里都已经没有硬编码的地址、柜号、组织，按优先级从这三处取：
+
+| 方式 | 适用 | 说明 |
+| --- | --- | --- |
+| 环境变量 | 命令行工具、CI | `PS_URL` / `RPC_URL` / `REST_URL` / `BOX_CODE` / `ORG_CODE` |
+| `config.json` | 桌面应用 | 放在**可执行文件同目录**，界面「⚙ 设置」保存后自动写入（已 gitignore） |
+| 界面填写 | Wails 桌面版 | 首次启动若没配置会自动弹出设置框 |
+
+`config.json` 例：
+
+```json
+{
+  "endpoint": "http://<your-powersync-host>:8080",
+  "rpc": "http://<your-postgrest-host>:8089/rest/rpc/fetch_credentials",
+  "rest": "http://<your-postgrest-host>:8089/rest",
+  "box": "<box_code>",
+  "org": "<org_code>"
+}
+```
+
+PowerShell 里设环境变量（当前窗口有效）：
+
+```powershell
+$env:PS_URL="http://<your-powersync-host>:8080"
+$env:REST_URL="http://<your-postgrest-host>:8089/rest"
+$env:RPC_URL="http://<your-postgrest-host>:8089/rest/rpc/fetch_credentials"
+$env:BOX_CODE="<box_code>"; $env:ORG_CODE="<org_code>"
+```
+
+---
+
 ## Q2. 在别的目录新建一个项目，需要哪些 SDK 包 / 依赖？
 
 结论：**运行时只需要 SDK 根包 `msmkSync`（一个 import）**；要注意的就是 `go.mod` 的两行和"schema 要自己生成"。
@@ -160,11 +193,11 @@ func main() {
 
 	// 2) connector：取 token + 上传（不实现上传可给 nil，Connect 时会报 ErrNotConnected）
 	conn := restconn.New(restconn.Config{
-		Endpoint: "http://120.24.7.22:8080",
-		RPC:      "http://120.24.7.22:8089/rest/rpc/fetch_credentials",
-		Box:      "D1-2",
-		Org:      "ORG001",
-		RESTBase: "http://120.24.7.22:8089/rest",
+		Endpoint: "http://<your-powersync-host>:8080",
+		RPC:      "http://<your-postgrest-host>:8089/rest/rpc/fetch_credentials",
+		Box:      "<box_code>",
+		Org:      "<org_code>",
+		RESTBase: "http://<your-postgrest-host>:8089/rest",
 	})
 
 	// 3) 打开本地库（SQLite 是本地唯一事实来源）
@@ -191,7 +224,7 @@ func main() {
 	rows, _ := db.GetAll(ctx, `SELECT * FROM cutter_info LIMIT 5`)
 	log.Println(rows)
 	if _, err := db.Execute(ctx, `INSERT INTO sys_error_report(id, org_code, box_code, error_desc) VALUES(?,?,?,?)`,
-		newUUID(), "ORG001", "D1-2", "hello"); err != nil {
+		newUUID(), "<org_code>", "<box_code>", "hello"); err != nil {
 		log.Println(err)
 	}
 
@@ -209,7 +242,7 @@ func main() {
 cd E:/powersync_golang
 go run ./cmd/genschema \
   -rules E:/cutter/syncRules.yaml \
-  -rpc http://120.24.7.22:8089/rest/rpc/fetch_credentials -box D1-2 -org ORG001 \
+  -rpc http://<your-postgrest-host>:8089/rest/rpc/fetch_credentials -box <box_code> -org <org_code> \
   -extra role -stream ./out/stream-raw.ndjson \
   -pkg main -func mySchema \
   -out-go ../myapp/schema.go -out-json ../myapp/schema.json

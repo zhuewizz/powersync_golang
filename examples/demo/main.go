@@ -32,11 +32,11 @@ import (
 func main() {
 	var (
 		dbPath   = flag.String("db", "out/demo.db", "本地数据库文件（不存在则新建并全量同步）")
-		endpoint = flag.String("endpoint", envOr("PS_URL", "http://120.24.7.22:8080"), "PowerSync 服务地址")
-		rpc      = flag.String("rpc", envOr("RPC_URL", "http://120.24.7.22:8089/rest/rpc/fetch_credentials"), "fetch_credentials RPC")
-		box      = flag.String("box", envOr("BOX_CODE", "D1-2"), "box_code")
-		org      = flag.String("org", envOr("ORG_CODE", "ORG001"), "org_code")
-		rest     = flag.String("rest", envOr("REST_URL", "http://120.24.7.22:8089/rest"), "PostgREST base（仅用于展示，可留空）")
+		endpoint = flag.String("endpoint", os.Getenv("PS_URL"), "PowerSync 服务地址（或用 PS_URL）")
+		rpc      = flag.String("rpc", os.Getenv("RPC_URL"), "fetch_credentials RPC（或用 RPC_URL）")
+		box      = flag.String("box", os.Getenv("BOX_CODE"), "box_code（或用 BOX_CODE）")
+		org      = flag.String("org", os.Getenv("ORG_CODE"), "org_code（或用 ORG_CODE）")
+		rest     = flag.String("rest", os.Getenv("REST_URL"), "PostgREST base（可选，仅用于展示）")
 		limit    = flag.Int("limit", 20, "每张表最多打印多少行（0 = 全部）")
 		all      = flag.Bool("all", false, "列出所有表（默认只列有数据的）")
 		cols     = flag.String("cols", "", "只显示这些列（逗号分隔），如 id,mat_code,mat_name")

@@ -1,4 +1,4 @@
-// Command wailsapp 是 Wails v3 桌面版演示：把 github.com/zhuewizz/powersync_golang 的双向同步能力做成可点的界面。
+// Command wailsapp 是 Wails v3 桌面版演示：把 msmkSync 的双向同步能力做成可点的界面。
 //
 // 页面能力：
 //   - 左侧：所有表的清单（行数、同步状态），点一下就看这张表的数据
@@ -41,18 +41,14 @@ func main() {
 	checkT := flag.String("check", "", "配合 -selftest：核对某张表的 本地/后端 行数（如 users）")
 	flag.Parse()
 
-	svc := NewService(Config{
-		DBPath:   *dbFlag,
-		Endpoint: envOr("PS_URL", "http://120.24.7.22:8080"),
-		RPC:      envOr("RPC_URL", "http://120.24.7.22:8089/rest/rpc/fetch_credentials"),
-		Box:      envOr("BOX_CODE", "D1-2"),
-		Org:      envOr("ORG_CODE", "ORG001"),
-		REST:     envOr("REST_URL", "http://120.24.7.22:8089/rest"),
-	})
+	// 连接参数不写死：环境变量 > 可执行文件同目录的 config.json > 界面里填写
+	cfg := LoadConfig()
+	cfg.DBPath = *dbFlag
+	svc := NewService(cfg)
 
 	app := application.New(application.Options{
 		Name:        "PowerSync 双向同步演示",
-		Description: "github.com/zhuewizz/powersync_golang + Wails v3：表清单 / 增删改 / 同步状态",
+		Description: "PowerSync + Wails v3：表清单 / 增删改 / 同步状态",
 		Services: []application.Service{
 			application.NewService(svc),
 		},
@@ -104,6 +100,10 @@ func main() {
 
 // runSelftest 是 -selftest 的实现：验证 Go 侧（库 + 同步 + 表清单）通不通，不开窗口。
 func runSelftest(svc *Service) {
+	if svc.NeedsSetup() {
+		fmt.Println("未配置连接参数：请在界面里点“设置”填写，或设置环境变量 PS_URL / RPC_URL / BOX_CODE / ORG_CODE")
+		return
+	}
 	deadline := time.Now().Add(2 * time.Minute)
 	for time.Now().Before(deadline) {
 		st := svc.Status()
@@ -170,8 +170,8 @@ func runWriteTest(svc *Service) {
 	fmt.Printf("  列数: %d（id 自动生成）\n", len(cols))
 
 	values := map[string]any{
-		"org_code":   "ORG001",
-		"box_code":   "D1-2",
+		"org_code":   svc.cfg.Org,
+		"box_code":   svc.cfg.Box,
 		"box_cell":   "A1",
 		"box_type":   "1",
 		"user_id":    "u1",

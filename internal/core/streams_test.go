@@ -15,14 +15,14 @@ func TestStreamSubscriptions(t *testing.T) {
 
 	ttl := 30 * time.Minute
 	prio := 0
-	sub, err := db.SubscribeStream(ctx, "box_data", map[string]any{"box": "D1-2"}, &ttl, &prio)
+	sub, err := db.SubscribeStream(ctx, "box_data", map[string]any{"box": "BOX-A"}, &ttl, &prio)
 	if err != nil {
 		t.Fatalf("SubscribeStream: %v", err)
 	}
 	if sub.ID == 0 || !sub.Active || sub.Name != "box_data" {
 		t.Fatalf("订阅 = %+v", sub)
 	}
-	if sub.Parameters["box"] != "D1-2" || sub.Priority == nil || *sub.Priority != 0 {
+	if sub.Parameters["box"] != "BOX-A" || sub.Priority == nil || *sub.Priority != 0 {
 		t.Errorf("参数/优先级 = %+v", sub)
 	}
 	if sub.TTL == nil || *sub.TTL != ttl || sub.ExpiresAt == nil {
@@ -30,7 +30,7 @@ func TestStreamSubscriptions(t *testing.T) {
 	}
 
 	// 同 name+params 再订阅：更新而不是插入新行
-	if _, err := db.SubscribeStream(ctx, "box_data", map[string]any{"box": "D1-2"}, nil, nil); err != nil {
+	if _, err := db.SubscribeStream(ctx, "box_data", map[string]any{"box": "BOX-A"}, nil, nil); err != nil {
 		t.Fatal(err)
 	}
 	active, err := db.ActiveStreams(ctx)
@@ -57,15 +57,15 @@ func TestStreamSubscriptions(t *testing.T) {
 
 	// 取消订阅 → 非 active；带 ttl 时从"现在"开始过期
 	if ttl != 0 {
-		if _, err := db.SubscribeStream(ctx, "box_data", map[string]any{"box": "D1-2"}, &ttl, nil); err != nil {
+		if _, err := db.SubscribeStream(ctx, "box_data", map[string]any{"box": "BOX-A"}, &ttl, nil); err != nil {
 			t.Fatal(err)
 		}
 	}
-	sub, _ = db.StreamSubscription(ctx, "box_data", map[string]any{"box": "D1-2"})
+	sub, _ = db.StreamSubscription(ctx, "box_data", map[string]any{"box": "BOX-A"})
 	if err := db.UnsubscribeStream(ctx, sub.ID); err != nil {
 		t.Fatalf("UnsubscribeStream: %v", err)
 	}
-	got, _ := db.StreamSubscription(ctx, "box_data", map[string]any{"box": "D1-2"})
+	got, _ := db.StreamSubscription(ctx, "box_data", map[string]any{"box": "BOX-A"})
 	if got.Active {
 		t.Error("取消后应 active=0")
 	}
@@ -81,7 +81,7 @@ func TestStreamSubscriptions(t *testing.T) {
 	if err != nil || n != 1 {
 		t.Fatalf("PurgeExpiredStreams = %d, %v; want 1", n, err)
 	}
-	if got, _ := db.StreamSubscription(ctx, "box_data", map[string]any{"box": "D1-2"}); got != nil {
+	if got, _ := db.StreamSubscription(ctx, "box_data", map[string]any{"box": "BOX-A"}); got != nil {
 		t.Error("过期订阅应被删除")
 	}
 }

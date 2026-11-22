@@ -29,12 +29,58 @@ var aliasTables = map[string]bool{"d": true, "h": true, "i": true, "l": true, "r
 
 // Config 是服务参数（默认值写死在本机测试环境，可用环境变量覆盖）。
 type Config struct {
-	DBPath   string
-	Endpoint string
-	RPC      string
-	Box      string
-	Org      string
-	REST     string
+	DBPath   string `json:"dbPath,omitempty"`
+	Endpoint string `json:"endpoint"`
+	RPC      string `json:"rpc"`
+	Box      string `json:"box"`
+	Org      string `json:"org"`
+	REST     string `json:"rest,omitempty"`
+}
+
+// IsZero 判断连接参数是否齐全（缺任何一项都需要在界面里填）。
+func (c Config) IsZero() bool {
+	return strings.TrimSpace(c.Endpoint) == "" ||
+		strings.TrimSpace(c.RPC) == "" ||
+		strings.TrimSpace(c.Box) == "" ||
+		strings.TrimSpace(c.Org) == ""
+}
+
+// configPath 是连接参数的保存位置：可执行文件同目录的 config.json。
+func configPath() string {
+	dir := "bin"
+	if exe, err := os.Executable(); err == nil {
+		d := filepath.Dir(exe)
+		lower := strings.ToLower(d)
+		if !strings.Contains(lower, "go-build") && !strings.Contains(lower, "\temp\\") && !strings.Contains(lower, "/tmp") {
+			dir = d
+		}
+	}
+	_ = os.MkdirAll(dir, 0o755)
+	return filepath.Join(dir, "config.json")
+}
+
+// LoadConfig 读取连接参数：环境变量优先，其次 config.json（都为空则返回零值，等界面填写）。
+func LoadConfig() Config {
+	var c Config
+	if raw, err := os.ReadFile(configPath()); err == nil {
+		_ = json.Unmarshal(raw, &c)
+	}
+	if v := os.Getenv("PS_URL"); v != "" {
+		c.Endpoint = v
+	}
+	if v := os.Getenv("RPC_URL"); v != "" {
+		c.RPC = v
+	}
+	if v := os.Getenv("REST_URL"); v != "" {
+		c.REST = v
+	}
+	if v := os.Getenv("BOX_CODE"); v != "" {
+		c.Box = v
+	}
+	if v := os.Getenv("ORG_CODE"); v != "" {
+		c.Org = v
+	}
+	return c
 }
 
 // Service 是暴露给前端的服务（Wails v3 会把导出的方法绑定成 JS 函数）。
@@ -70,6 +116,9 @@ type Status struct {
 	Skipped      int64  `json:"skipped"`
 	DBPath       string `json:"dbPath"`
 	Message      string `json:"message"`
+	// NeedsSetup 为 true 时说明连接参数还没填（界面应弹出设置框）
+	NeedsSetup bool   `json:"needsSetup"`
+	Config     Config `json:"config"`
 }
 
 // TableInfo 是左侧表清单的一项。
@@ -139,6 +188,12 @@ func (s *Service) Start() {
 
 	go func() {
 		s.mu.Lock()
+		if s.cfg.IsZero() {
+			s.msg = "还没有配置连接参数（点右上角“设置”填写服务地址 / box / org）"
+			s.mu.Unlock()
+			s.emitStatus()
+			return
+		}
 		s.msg = "正在打开本地库…"
 		s.mu.Unlock()
 		s.emitStatus()
@@ -598,6 +653,55 @@ func (s *Service) SyncNow() error {
 	return nil
 }
 
+// NeedsSetup 报告连接参数是否还没填。
+func (s *Service) NeedsSetup() bool {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.cfg.IsZero()
+}
+
+// SaveConfig 保存连接参数到 config.json 并重新连接（界面“设置”用）。
+func (s *Service) SaveConfig(cfg Config) error {
+	cfg.Endpoint = strings.TrimSpace(cfg.Endpoint)
+	cfg.RPC = strings.TrimSpace(cfg.RPC)
+	cfg.Box = strings.TrimSpace(cfg.Box)
+	cfg.Org = strings.TrimSpace(cfg.Org)
+	cfg.REST = strings.TrimSpace(cfg.REST)
+	if cfg.IsZero() {
+		return fmt.Errorf("服务地址 / RPC / box_code / org_code 都不能为空")
+	}
+
+	raw, err := json.MarshalIndent(cfg, "", "  ")
+	if err != nil {
+		return err
+	}
+	path := configPath()
+	if err := os.WriteFile(path, raw, 0o600); err != nil {
+		return fmt.Errorf("写入 %s: %w", path, err)
+	}
+	s.log.Info("已保存连接参数", "path", path, "endpoint", cfg.Endpoint, "box", cfg.Box, "org", cfg.Org)
+
+	// 重新启动：先停掉旧的同步与库，再用新参数打开
+	s.mu.Lock()
+	oldDB := s.db
+	dbPath := s.cfg.DBPath
+	s.cfg = cfg
+	s.cfg.DBPath = dbPath
+	s.db = nil
+	s.conn = nil
+	s.readOnly = false
+	s.mu.Unlock()
+	if oldDB != nil {
+		oldDB.Disconnect()
+		_ = oldDB.Close(context.Background())
+	}
+	if s.stop != nil {
+		s.stop()
+	}
+	s.Start()
+	return nil
+}
+
 // ---------------------------------------------------------------- 内部
 
 func (s *Service) database() (*powersync.DB, error) {
@@ -623,7 +727,10 @@ func (s *Service) status() Status {
 	db, readOnly, msg := s.db, s.readOnly, s.msg
 	s.mu.Unlock()
 
-	st := Status{Ready: db != nil, ReadOnly: readOnly, DBPath: s.cfg.DBPath, Message: msg}
+	st := Status{
+		Ready: db != nil, ReadOnly: readOnly, DBPath: s.cfg.DBPath, Message: msg,
+		NeedsSetup: s.cfg.IsZero(), Config: s.cfg,
+	}
 	if db == nil {
 		return st
 	}

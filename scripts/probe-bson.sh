@@ -7,7 +7,7 @@
 # 再用 cmd/pscompare 比对两份落库导出。BSON 解码有问题会立刻在这里暴露。
 #
 # 用法：
-#   PS_URL=... RPC_URL=... BOX_CODE=D1-2 ORG_CODE=ORG001 ./scripts/probe-bson.sh
+#   PS_URL=... RPC_URL=... BOX_CODE=<box_code> ORG_CODE=<org_code> ./scripts/probe-bson.sh
 set -uo pipefail
 
 : "${PS_URL:?需要 PS_URL}" "${RPC_URL:?需要 RPC_URL}" "${BOX_CODE:?}" "${ORG_CODE:?}"

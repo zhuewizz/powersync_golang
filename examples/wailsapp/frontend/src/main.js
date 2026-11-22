@@ -18,6 +18,7 @@ const state = {
   filter: "",
   onlyData: true,
   includeDeleted: false,
+  setupOpen: false,
   editingID: null,   // null = 新增
   ready: false,
 };
@@ -94,8 +95,57 @@ function renderStatus(st) {
     : st.lastSyncedAt ? "同步于 " + st.lastSyncedAt : "尚未同步";
   sy.className = "pill " + (st.message ? "busy" : "");
 
-  $("btn-insert").disabled = st.readOnly || !st.ready;
-  $("btn-sync").disabled = st.readOnly || !st.ready;
+  $("btn-insert").disabled = st.readOnly || !st.ready || st.needsSetup;
+  $("btn-sync").disabled = st.readOnly || !st.ready || st.needsSetup;
+  if (st.needsSetup) {
+    openSetup(st.config || {});
+  } else if (state.setupOpen) {
+    closeSetup();
+  }
+}
+
+// ---------------------------------------------------------------- 连接设置
+
+function openSetup(cfg) {
+  if (state.setupOpen) return;
+  state.setupOpen = true;
+  const set = (id, v) => { const el = $(id); if (el) el.value = v || ""; };
+  set("cfg-endpoint", cfg.endpoint);
+  set("cfg-rpc", cfg.rpc);
+  set("cfg-rest", cfg.rest);
+  set("cfg-box", cfg.box);
+  set("cfg-org", cfg.org);
+  $("setup").hidden = false;
+  const first = $("cfg-endpoint");
+  if (!cfg.endpoint && first) first.focus();
+}
+
+function closeSetup() {
+  state.setupOpen = false;
+  $("setup").hidden = true;
+}
+
+async function saveSetup() {
+  const cfg = {
+    endpoint: $("cfg-endpoint").value.trim(),
+    rpc: $("cfg-rpc").value.trim(),
+    rest: $("cfg-rest").value.trim(),
+    box: $("cfg-box").value.trim(),
+    org: $("cfg-org").value.trim(),
+  };
+  if (!cfg.endpoint || !cfg.rpc || !cfg.box || !cfg.org) {
+    toast("服务地址 / RPC / box_code / org_code 都必须填", "err");
+    return;
+  }
+  try {
+    await Service.SaveConfig(cfg);
+    toast("已保存，正在连接…", "ok");
+    closeSetup();
+    state.tables = [];
+    setTimeout(tickOnce, 500);
+  } catch (err) {
+    toast("保存失败：" + err, "err");
+  }
 }
 
 // ---------------------------------------------------------------- 表清单
@@ -443,6 +493,15 @@ function bindUI() {
       toast("核对失败：" + err, "err");
     }
   };
+  $("btn-settings").onclick = () => openSetup((state.status && state.status.config) || {});
+  $("setup-cancel").onclick = () => {
+    if (state.status && state.status.needsSetup) {
+      toast("还没配置连接参数，填完才能同步", "err");
+      return;
+    }
+    closeSetup();
+  };
+  $("setup-save").onclick = saveSetup;
   $("modal-close").onclick = closeModal;
   $("modal-cancel").onclick = closeModal;
   $("modal-ok").onclick = saveModal;
@@ -453,6 +512,17 @@ function bindUI() {
 }
 
 // ---------------------------------------------------------------- 启动
+
+async function tickOnce() {
+  try {
+    const st = await Service.Status();
+    state.status = st;
+    renderStatus(st);
+    if (st.ready && !st.needsSetup && state.tables.length === 0) await loadTables();
+  } catch (err) {
+    /* 后端还没起来 */
+  }
+}
 
 async function boot() {
   bindUI();
@@ -467,17 +537,8 @@ async function boot() {
   });
 
   // 事件可能比窗口加载更早；先主动拉一次状态与表清单，然后持续轮询兜底。
-  const tick = async () => {
-    try {
-      const st = await Service.Status();
-      renderStatus(st);
-      if (st.ready && state.tables.length === 0) await loadTables();
-    } catch (err) {
-      /* 后端还没起来 */
-    }
-  };
-  await tick();
-  setInterval(tick, 2000);
+  await tickOnce();
+  setInterval(tickOnce, 2000);
 }
 
 boot().catch((err) => {

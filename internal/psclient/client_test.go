@@ -20,7 +20,7 @@ func TestFetchToken(t *testing.T) {
 		gotBody = string(body)
 		switch r.URL.Path {
 		case "/ok":
-			_, _ = io.WriteString(w, `{"token":"jwt-value","org_code":"ORG001"}`)
+			_, _ = io.WriteString(w, `{"token":"jwt-value","org_code":"ORG-A"}`)
 		case "/empty":
 			_, _ = io.WriteString(w, `{"token":""}`)
 		case "/bad":
@@ -33,7 +33,7 @@ func TestFetchToken(t *testing.T) {
 	defer srv.Close()
 
 	ctx := context.Background()
-	tok, err := psclient.FetchToken(ctx, srv.URL+"/ok", "D1-2", "ORG001")
+	tok, err := psclient.FetchToken(ctx, srv.URL+"/ok", "BOX-A", "ORG-A")
 	if err != nil || tok != "jwt-value" {
 		t.Fatalf("FetchToken = %q, %v", tok, err)
 	}
@@ -41,7 +41,7 @@ func TestFetchToken(t *testing.T) {
 	if err := json.Unmarshal([]byte(gotBody), &parsed); err != nil {
 		t.Fatalf("RPC body 不是 JSON: %s", gotBody)
 	}
-	if parsed["box_code"] != "D1-2" || parsed["org_code"] != "ORG001" {
+	if parsed["box_code"] != "BOX-A" || parsed["org_code"] != "ORG-A" {
 		t.Errorf("RPC body = %s", gotBody)
 	}
 

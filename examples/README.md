@@ -12,10 +12,10 @@ go run ./examples/todo
 
 | 参数 | 默认值 |
 | --- | --- |
-| `-mode` | `real`（连 http://120.24.7.22:8080） |
+| `-mode` | `real`（连 http://<your-powersync-host>:8080） |
 | `-cutter` | `true`（内置 65 张表 schema） |
-| `-rest` / `-rpc` | http://120.24.7.22:8089/rest / …/rpc/fetch_credentials |
-| `-box` / `-org` | D1-2 / ORG001 |
+| `-rest` / `-rpc` | http://<your-postgrest-host>:8089/rest / …/rpc/fetch_credentials |
+| `-box` / `-org` | <box_code> / <org_code> |
 | `-db` | `out/example.db`（**每次启动先删掉**，保证全量重同步） |
 | `-write` / `-upload` | `true` / `real`（真写 PostgREST；探针行默认保留） |
 | `-detail` | `cutter_info,sys_error_report`（表多时只对这些表打样例） |
@@ -85,17 +85,17 @@ id                                    mat_code  mat_name           mat_pn
 
 ```powershell
 . .\scripts\go-env.ps1
-go run ./examples/todo -mode real -cutter -endpoint http://120.24.7.22:8080 -rest http://120.24.7.22:8089/rest -rpc http://120.24.7.22:8089/rest/rpc/fetch_credentials -box D1-2 -org ORG001 -tables cutter_info,sys_error_report,org
+go run ./examples/todo -mode real -cutter -endpoint http://<your-powersync-host>:8080 -rest http://<your-postgrest-host>:8089/rest -rpc http://<your-postgrest-host>:8089/rest/rpc/fetch_credentials -box <box_code> -org <org_code> -tables cutter_info,sys_error_report,org
 ```
 
 **bash/Git Bash**：
 
 ```bash
 go run ./examples/todo -mode real -cutter \
-  -endpoint http://120.24.7.22:8080 \
-  -rest http://120.24.7.22:8089/rest \
-  -rpc http://120.24.7.22:8089/rest/rpc/fetch_credentials \
-  -box D1-2 -org ORG001 \
+  -endpoint http://<your-powersync-host>:8080 \
+  -rest http://<your-postgrest-host>:8089/rest \
+  -rpc http://<your-postgrest-host>:8089/rest/rpc/fetch_credentials \
+  -box <box_code> -org <org_code> \
   -tables cutter_info,sys_error_report,org
 ```
 
@@ -115,9 +115,9 @@ schema: 内置 cutter（65 张表，来自 syncRules.yaml；见 examples/cutters
 node scripts/js-reference/dump-schema.mjs        # 生成 out/schema.json
 
 go run ./examples/todo -mode real \
-  -endpoint http://120.24.7.22:8080 \
-  -rpc http://120.24.7.22:8089/rest/rpc/fetch_credentials \
-  -box D1-2 -org ORG001 \
+  -endpoint http://<your-powersync-host>:8080 \
+  -rpc http://<your-postgrest-host>:8089/rest/rpc/fetch_credentials \
+  -box <box_code> -org <org_code> \
   -schema ./out/schema.json \
   -tables sys_error_report,cutter_info
 ```
@@ -126,13 +126,13 @@ go run ./examples/todo -mode real \
 
 ```
 schema: 来自 ./out/schema.json（37 张表）
-模式: real（http://120.24.7.22:8080）
-  [网络] online=true target=120.24.7.22:8080 latency=22ms err=
+模式: real（http://<your-powersync-host>:8080）
+  [网络] online=true target=<your-host>:8080 latency=22ms err=
   [状态] connected=true cursor=24429 lastSynced=18:42:58
 
 表 sys_error_report: 0 行（样例 0 行）
 表 cutter_info: 60 行（样例 3 行）
-    id=03b01053-… mat_name=按钮开关 mat_pn=PN-BTN-GRN org_code=ORG001 …
+    id=03b01053-… mat_name=按钮开关 mat_pn=PN-BTN-GRN org_code=<org_code> …
 （real 模式默认只读；要演示写入/上传请加 -write）
 ```
 
@@ -148,7 +148,7 @@ schema: 来自 ./out/schema.json（37 张表）
 （`-verify` 默认开启）：把本地表与后台 PostgREST 对比，证明数据确实同步下来了。
 
 ```bash
-go run ./examples/todo -mode real   -endpoint http://120.24.7.22:8080 -rest http://120.24.7.22:8089/rest   -rpc http://120.24.7.22:8089/rest/rpc/fetch_credentials   -box D1-2 -org ORG001   -schema ./out/schema.json -tables cutter_info,sys_error_report
+go run ./examples/todo -mode real   -endpoint http://<your-powersync-host>:8080 -rest http://<your-postgrest-host>:8089/rest   -rpc http://<your-postgrest-host>:8089/rest/rpc/fetch_credentials   -box <box_code> -org <org_code>   -schema ./out/schema.json -tables cutter_info,sys_error_report
 ```
 
 实测输出：
@@ -167,7 +167,7 @@ go run ./examples/todo -mode real   -endpoint http://120.24.7.22:8080 -rest http
 ### 方式三：连真实服务 + 真正上传 + 离线优先演示
 
 ```bash
-go run ./examples/todo -mode real -upload real -write   -endpoint http://120.24.7.22:8080 -rest http://120.24.7.22:8089/rest   -rpc http://120.24.7.22:8089/rest/rpc/fetch_credentials   -box D1-2 -org ORG001   -schema ./out/schema.json -tables sys_error_report
+go run ./examples/todo -mode real -upload real -write   -endpoint http://<your-powersync-host>:8080 -rest http://<your-postgrest-host>:8089/rest   -rpc http://<your-postgrest-host>:8089/rest/rpc/fetch_credentials   -box <box_code> -org <org_code>   -schema ./out/schema.json -tables sys_error_report
 ```
 
 实测输出：

@@ -7,9 +7,9 @@
 // 用法：
 //
 //	go run ./cmd/genschema \
-//	    -rules E:/cutter/syncRules.yaml \
-//	    -rpc http://120.24.7.22:8089/rest/rpc/fetch_credentials \
-//	    -box D1-2 -org ORG001 \
+//	    -rules ./syncRules.yaml \
+//	    -rpc http://<your-host>:8089/rest/rpc/fetch_credentials \
+//	    -box <box_code> -org <org_code> \
 //	    -out-go ./schema_cutter.go \
 //	    -out-json ./out/schema-cutter.json
 //
@@ -42,12 +42,12 @@ import (
 
 func main() {
 	var (
-		rulesF   = flag.String("rules", "E:/cutter/syncRules.yaml", "syncRules.yaml 路径")
+		rulesF   = flag.String("rules", "syncRules.yaml", "syncRules.yaml 路径（服务端配置的副本）")
 		openapiF = flag.String("openapi-file", "", "已有的 OpenAPI JSON（给了就不再请求）")
-		restBase = flag.String("rest", "http://120.24.7.22:8089/rest", "PostgREST base（取 OpenAPI）")
-		rpc      = flag.String("rpc", "http://120.24.7.22:8089/rest/rpc/fetch_credentials", "fetch_credentials RPC")
-		box      = flag.String("box", "D1-2", "box_code")
-		org      = flag.String("org", "ORG001", "org_code")
+		restBase = flag.String("rest", os.Getenv("REST_URL"), "PostgREST base（取 OpenAPI），如 http://host:8089/rest")
+		rpc      = flag.String("rpc", os.Getenv("RPC_URL"), "fetch_credentials RPC")
+		box      = flag.String("box", os.Getenv("BOX_CODE"), "box_code")
+		org      = flag.String("org", os.Getenv("ORG_CODE"), "org_code")
 		token    = flag.String("token", "", "JWT（不给则用 RPC 换）")
 		outGo    = flag.String("out-go", "./schema_cutter.go", "生成的 Go 文件")
 		fnName   = flag.String("func", "", "导出的 schema 函数名（默认：pkg=powersync → CutterSchema，其它 → cutterSchema）")

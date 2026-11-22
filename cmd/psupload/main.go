@@ -12,7 +12,7 @@
 // 用法：
 //
 //	go run ./cmd/psupload -endpoint http://host:8080 -rest http://host:8089/rest \
-//	    -rpc http://host:8089/rest/rpc/fetch_credentials -box D1-2 -org ORG001 \
+//	    -rpc http://host:8089/rest/rpc/fetch_credentials -box <box_code> -org <org_code> \
 //	    -schema ./out/schema.json -db ./out/upload.db
 package main
 
@@ -110,7 +110,7 @@ func main() {
 		`INSERT INTO `+quoteIdent(*table)+`
 		 (id, org_code, box_code, box_cell, user_id, user_name, error_date, error_desc, trans_type, op_status, box_type)
 		 VALUES(?,?,?,?,?,?,?,?,?,?,?)`,
-		rowID, valueOr(*org, "ORG001"), valueOr(*box, "D1-2"), "UPLOAD", "UPLOAD",
+		rowID, valueOr(*org, "ORG000"), valueOr(*box, "BOX000"), "UPLOAD", "UPLOAD",
 		"upload-probe", "2026-01-01 00:00:00", "psupload roundtrip", "PROBE", "PROBE", "PROBE",
 	); err != nil {
 		fatalf("本地 INSERT: %v", err)
