@@ -89,6 +89,32 @@ msmkSync                    ← 唯一的必需依赖（包名 powersync）
 > ❌ 不要 import `msmkSync/internal/...`（Go 的 internal 规则不允许外部模块引用；其中 `internal/psclient`
 > 之类的工具只服务于本仓库）。`restconn` 已经提到公共路径就是因为这个原因。
 
+### 从 GitHub 用（已发布）
+
+SDK 已推到 <https://github.com/zhuewizz/powersync_golang>（private，tag `v0.1.0`）：
+
+```bash
+# 私有仓库要先配好凭据（GitHub 登录 / PAT），并让 go 走私有模块
+export GOPRIVATE=github.com/zhuewizz/*        # PowerShell: $env:GOPRIVATE="github.com/zhuewizz/*"
+
+mkdir myapp && cd myapp
+go mod init myapp
+go get github.com/zhuewizz/powersync_golang@v0.1.0
+```
+
+代码里：
+
+```go
+import powersync "github.com/zhuewizz/powersync_golang"
+```
+
+本地开发（改 SDK 同时改 App）仍推荐 clone 两个仓库 + replace：
+
+```
+require github.com/zhuewizz/powersync_golang v0.0.0
+replace github.com/zhuewizz/powersync_golang => ../powersync_golang
+```
+
 ### 新建项目的步骤
 
 ```bash
