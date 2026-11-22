@@ -40,6 +40,8 @@
 - **完整示例**：`examples/todo` —— **参数写死，`go run ./examples/todo` 直接跑真实环境**：
   全量同步 65 张表 → 每表行数总表 + 关键表样例 → 离线优先演示（断网读/断网写/恢复上传）→ 后台校验；
   启动时先删旧库，可用 `-cleanup`/`-mode mock`/`-box` 等覆盖。
+- **FAQ**：`FAQ.md` —— 同步通道（HTTP 流 vs WebSocket）、新项目只需 `msmkSync` 根包（+可选 `restconn`）、
+  生成 schema、常见坑（ErrSchemaRequired / ErrDatabaseLocked / GOROOT）。
 - **使用手册**：`docs/reference.md`（对齐官方 Flutter SDK 参考的中文 API 文档，含与官方差异清单）。
 - **客户端 schema 生成**：`cmd/genschema` 从 syncRules.yaml + PostgREST OpenAPI（缺表时用抓包推断）
   生成 `examples/cutterschema/schema.go`（包 `cutterschema`，`Schema()`）与 `examples/cutterschema/schema.json`；

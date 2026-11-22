@@ -230,6 +230,7 @@ MIT，见 [`LICENSE`](./LICENSE)。
 
 ## 文档
 
+- **常见问题（FAQ）**：[`FAQ.md`](./FAQ.md)（同步通道是 HTTP 流还是 WebSocket、新项目需要哪些包、常见坑）
 - **使用手册（完整 API 参考，中文）**：[`docs/reference.md`](./docs/reference.md)
 - 给非技术读者的项目状态：[`STATUS.md`](./STATUS.md)
 
