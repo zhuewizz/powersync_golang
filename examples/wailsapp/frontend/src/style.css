@@ -13,6 +13,9 @@
 
 * { box-sizing: border-box; }
 
+/* 关键：类选择器的 display 会盖掉 hidden 属性的默认 display:none，这里显式兜底 */
+[hidden] { display: none !important; }
+
 html, body {
   margin: 0;
   height: 100%;

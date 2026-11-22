@@ -727,3 +727,9 @@ func envOr(key, def string) string {
 	}
 	return def
 }
+
+// Log 让前端把错误/调试信息打到 Go 的日志里（WebView 的 console 看不到时很有用）。
+func (s *Service) Log(msg string) {
+	s.log.Info("frontend", "msg", msg)
+	fmt.Println("[frontend]", msg)
+}

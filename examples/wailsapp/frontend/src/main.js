@@ -21,6 +21,15 @@ const state = {
   ready: false,
 };
 
+// 把前端异常写到 Go 日志（WebView 的 console 不方便看）
+function reportError(where, err) {
+  const msg = `${where}: ${err && err.message ? err.message : err}`;
+  console.error(msg, err);
+  try { Service.Log(msg); } catch (_) { /* 后端还没起来 */ }
+}
+window.addEventListener("error", (e) => reportError("window.error", e.error || e.message));
+window.addEventListener("unhandledrejection", (e) => reportError("unhandledrejection", e.reason));
+
 // ---------------------------------------------------------------- 工具
 
 function toast(msg, kind = "") {
@@ -99,6 +108,10 @@ async function loadTables() {
     return;
   }
   renderTables();
+  if (!state._loggedBoot) {
+    state._loggedBoot = true;
+    try { Service.Log("前端启动完成：表清单 " + state.tables.length + " 张"); } catch (_) {}
+  }
 }
 
 function renderTables() {
@@ -241,7 +254,11 @@ function openModal(row) {
   const box = $("modal-fields");
   box.innerHTML = "";
 
-  const cols = state.columns.filter((c) => !c.isID);
+  const cols = (state.columns || []).filter((c) => !c.isID);
+  if (cols.length === 0) {
+    toast("这张表没有可编辑的列（或列定义未加载）", "err");
+    return;
+  }
   for (const c of cols) {
     const wrap = document.createElement("div");
     wrap.className = "field";
@@ -348,6 +365,7 @@ async function removeRow(row) {
 // ---------------------------------------------------------------- 事件绑定
 
 function bindUI() {
+  $("modal").hidden = true;   // 兜底：任何情况下启动都不显示弹窗
   $("filter").addEventListener("input", (e) => {
     state.filter = e.target.value;
     renderTables();
@@ -373,10 +391,18 @@ function bindUI() {
     loadRows();
     loadTables();
   };
-  $("btn-insert").onclick = () => {
+  $("btn-insert").onclick = async () => {
     if (!state.table) {
-      toast("先在左侧选一张表", "err");
+      toast("先在左侧选一张表，再点新增", "err");
       return;
+    }
+    if (!state.columns || state.columns.length === 0) {
+      try {
+        state.columns = await Service.Columns(state.table);
+      } catch (err) {
+        toast("读取列定义失败：" + err, "err");
+        return;
+      }
     }
     openModal(null);
   };
@@ -435,4 +461,7 @@ async function boot() {
   setInterval(tick, 2000);
 }
 
-boot();
+boot().catch((err) => {
+  reportError("boot", err);
+  document.getElementById("tables-foot").textContent = "前端启动失败：" + (err && err.message ? err.message : err);
+});
