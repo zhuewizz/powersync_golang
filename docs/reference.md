@@ -32,7 +32,7 @@ go get msmkSync        # 模块名见 go.mod；包名为 powersync
 ```
 
 ```go
-import powersync "msmkSync"
+import powersync "github.com/zhuweizz/powersync_golang"
 ```
 
 要求 **Go 1.25+**、`CGO_ENABLED=0`（SQLite 用 `modernc.org/sqlite`，不需要 cgo）。

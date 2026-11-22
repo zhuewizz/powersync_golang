@@ -6,8 +6,8 @@ import (
 	"sync"
 	"testing"
 
-	"msmkSync/internal/core"
-	"msmkSync/internal/protocol"
+	"github.com/zhuweizz/powersync_golang/internal/core"
+	"github.com/zhuweizz/powersync_golang/internal/protocol"
 )
 
 // TestConcurrentSchemaSwapAndApply 让"同步 goroutine 持续 ApplyOps"与"ReplaceSchema 换 schema"

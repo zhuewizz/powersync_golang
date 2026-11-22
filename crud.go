@@ -7,8 +7,8 @@ import (
 	"fmt"
 	"strconv"
 
-	"msmkSync/internal/core"
-	"msmkSync/internal/protocol"
+	"github.com/zhuweizz/powersync_golang/internal/core"
+	"github.com/zhuweizz/powersync_golang/internal/protocol"
 )
 
 // UpdateType 是本地变更类型。

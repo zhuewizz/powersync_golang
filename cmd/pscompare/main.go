@@ -8,7 +8,7 @@ import (
 	"os"
 	"strings"
 
-	"msmkSync/internal/rowdiff"
+	"github.com/zhuweizz/powersync_golang/internal/rowdiff"
 )
 
 func main() {

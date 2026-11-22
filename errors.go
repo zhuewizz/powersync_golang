@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 
-	"msmkSync/internal/core"
+	"github.com/zhuweizz/powersync_golang/internal/core"
 )
 
 // 导出的哨兵错误，便于 errors.Is 判断。

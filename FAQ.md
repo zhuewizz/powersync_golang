@@ -108,9 +108,9 @@ module myapp
 
 go 1.25
 
-require msmkSync v0.0.0
+require github.com/zhuweizz/powersync_golang v0.0.0
 
-replace msmkSync => ../powersync_golang
+replace github.com/zhuweizz/powersync_golang => ../powersync_golang
 ```
 
 ### 客户端代码（最小可用）
@@ -122,8 +122,8 @@ import (
 	"context"
 	"log"
 
-	powersync "msmkSync"
-	"msmkSync/restconn"
+	powersync "github.com/zhuweizz/powersync_golang"
+	"github.com/zhuweizz/powersync_golang/restconn"
 )
 
 func main() {
@@ -207,5 +207,5 @@ go run ./cmd/genschema \
 ### 打包/发布注意
 
 - 库代码全部在根包，其余在 `internal/`；发布时把 module 路径改成 `github.com/<org>/msmkSync` 即可
-  （当前 `module msmkSync` 只能在本地用 `replace` 引用）。
+  （当前 `module github.com/zhuweizz/powersync_golang` 只能在本地用 `replace` 引用）。
 - 不用带 `cmd/`、`examples/`、`scripts/`、`testdata/`（工具与示例，不影响 import）。

@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	powersync "msmkSync"
+	powersync "github.com/zhuweizz/powersync_golang"
 )
 
 const streamsFixtureHead = `{"checkpoint":{"last_op_id":"101","buckets":[` +

@@ -9,7 +9,7 @@ import (
 	"log"
 	"net/http"
 
-	"msmkSync/internal/fixture"
+	"github.com/zhuweizz/powersync_golang/internal/fixture"
 )
 
 func main() {

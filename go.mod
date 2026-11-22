@@ -1,4 +1,4 @@
-module msmkSync
+module github.com/zhuweizz/powersync_golang
 
 go 1.25
 

@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	"msmkSync/internal/rowdiff"
+	"github.com/zhuweizz/powersync_golang/internal/rowdiff"
 )
 
 func row(table, id, field, value string) rowdiff.Row {

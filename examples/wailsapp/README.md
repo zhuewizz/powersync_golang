@@ -50,7 +50,7 @@ examples/wailsapp/
 
 ## 依赖说明
 
-- 这是一个**独立 Go module**（`go.mod` 里 `replace msmkSync => ../..`），
+- 这是一个**独立 Go module**（`go.mod` 里 `replace github.com/zhuweizz/powersync_golang => ../..`），
   所以 Wails 的依赖不会污染 SDK 根模块。
 - 后端能力全部通过 `msmkSync` 公共 API（`powersync.Open` / `GetAll` / `Execute` / `WatchTables`）
   + 公共包 `msmkSync/restconn`（PostgREST 上传连接器）。

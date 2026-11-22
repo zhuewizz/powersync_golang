@@ -8,8 +8,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"msmkSync/internal/core"
-	"msmkSync/internal/protocol"
+	"github.com/zhuweizz/powersync_golang/internal/core"
+	"github.com/zhuweizz/powersync_golang/internal/protocol"
 )
 
 // TestApplyGoldenStream 用真实抓包的 NDJSON 走一遍"解码 → 落表"，

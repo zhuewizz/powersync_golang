@@ -5,7 +5,7 @@ import (
 	"errors"
 	"fmt"
 
-	"msmkSync/internal/core"
+	"github.com/zhuweizz/powersync_golang/internal/core"
 )
 
 // ColumnType 是用户表的列类型。

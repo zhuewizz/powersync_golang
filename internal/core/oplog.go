@@ -8,7 +8,7 @@ import (
 	"strconv"
 	"time"
 
-	"msmkSync/internal/protocol"
+	"github.com/zhuweizz/powersync_golang/internal/protocol"
 )
 
 // ps_oplog 的 op 判别值（与 powersync-sqlite-core 的 OpType 枚举顺序一致）。

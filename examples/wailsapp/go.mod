@@ -4,7 +4,7 @@ go 1.26.0
 
 require (
 	github.com/wailsapp/wails/v3 v3.1.0
-	msmkSync v0.0.0
+	github.com/zhuweizz/powersync_golang v0.0.0
 )
 
 require (
@@ -26,4 +26,4 @@ require (
 	modernc.org/sqlite v1.44.3 // indirect
 )
 
-replace msmkSync => ../..
+replace github.com/zhuweizz/powersync_golang => ../..

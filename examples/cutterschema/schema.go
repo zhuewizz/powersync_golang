@@ -5,7 +5,7 @@ package cutterschema
 import (
 	"strings"
 
-	powersync "msmkSync"
+	powersync "github.com/zhuweizz/powersync_golang"
 )
 
 // Schema 是本项目的客户端 schema：表清单来自 PowerSync 同步规则（syncRules.yaml），

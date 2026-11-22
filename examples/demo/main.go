@@ -24,9 +24,9 @@ import (
 	"strings"
 	"time"
 
-	powersync "msmkSync"
-	"msmkSync/examples/cutterschema"
-	"msmkSync/restconn"
+	powersync "github.com/zhuweizz/powersync_golang"
+	"github.com/zhuweizz/powersync_golang/examples/cutterschema"
+	"github.com/zhuweizz/powersync_golang/restconn"
 )
 
 func main() {

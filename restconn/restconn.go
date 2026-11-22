@@ -30,8 +30,8 @@ import (
 	"strings"
 	"time"
 
-	powersync "msmkSync"
-	"msmkSync/internal/psclient"
+	powersync "github.com/zhuweizz/powersync_golang"
+	"github.com/zhuweizz/powersync_golang/internal/psclient"
 )
 
 // Config 是连接器参数（与 examples/todo 的 -endpoint/-rpc/-box/-org/-rest 对应）。

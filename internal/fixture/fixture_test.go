@@ -8,7 +8,7 @@ import (
 	"strings"
 	"testing"
 
-	"msmkSync/internal/fixture"
+	"github.com/zhuweizz/powersync_golang/internal/fixture"
 )
 
 func loadServer(t *testing.T) *fixture.Server {

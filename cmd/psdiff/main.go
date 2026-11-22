@@ -31,10 +31,10 @@ import (
 	"strings"
 	"time"
 
-	"msmkSync/internal/bson"
-	"msmkSync/internal/core"
-	"msmkSync/internal/protocol"
-	"msmkSync/internal/psclient"
+	"github.com/zhuweizz/powersync_golang/internal/bson"
+	"github.com/zhuweizz/powersync_golang/internal/core"
+	"github.com/zhuweizz/powersync_golang/internal/protocol"
+	"github.com/zhuweizz/powersync_golang/internal/psclient"
 )
 
 func main() {

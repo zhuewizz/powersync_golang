@@ -11,8 +11,8 @@ import (
 	"testing"
 	"time"
 
-	"msmkSync/internal/bson"
-	"msmkSync/internal/protocol"
+	"github.com/zhuweizz/powersync_golang/internal/bson"
+	"github.com/zhuweizz/powersync_golang/internal/protocol"
 )
 
 // ---------------------------------------------------------------- 测试用编码器

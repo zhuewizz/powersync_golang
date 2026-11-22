@@ -7,9 +7,9 @@ import (
 	"sync"
 	"time"
 
-	"msmkSync/internal/core"
-	"msmkSync/internal/netmon"
-	syncpkg "msmkSync/internal/sync"
+	"github.com/zhuweizz/powersync_golang/internal/core"
+	"github.com/zhuweizz/powersync_golang/internal/netmon"
+	syncpkg "github.com/zhuweizz/powersync_golang/internal/sync"
 )
 
 // Options 是 Open 的参数。

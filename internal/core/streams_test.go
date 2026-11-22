@@ -5,7 +5,7 @@ import (
 	"testing"
 	"time"
 
-	"msmkSync/internal/protocol"
+	"github.com/zhuweizz/powersync_golang/internal/protocol"
 )
 
 // TestStreamSubscriptions 覆盖订阅写入/查询/取消/过期清理。

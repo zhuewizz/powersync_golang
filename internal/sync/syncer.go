@@ -19,9 +19,9 @@ import (
 	"sync/atomic"
 	"time"
 
-	"msmkSync/internal/bson"
-	"msmkSync/internal/core"
-	"msmkSync/internal/protocol"
+	"github.com/zhuweizz/powersync_golang/internal/bson"
+	"github.com/zhuweizz/powersync_golang/internal/core"
+	"github.com/zhuweizz/powersync_golang/internal/protocol"
 )
 
 // Credentials 是一次同步使用的服务端地址与 JWT。

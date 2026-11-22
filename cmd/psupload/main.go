@@ -31,8 +31,8 @@ import (
 	"strings"
 	"time"
 
-	powersync "msmkSync"
-	"msmkSync/internal/psclient"
+	powersync "github.com/zhuweizz/powersync_golang"
+	"github.com/zhuweizz/powersync_golang/internal/psclient"
 )
 
 func main() {

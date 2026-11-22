@@ -8,8 +8,8 @@ import (
 	"strings"
 	"testing"
 
-	"msmkSync/internal/core"
-	"msmkSync/internal/protocol"
+	"github.com/zhuweizz/powersync_golang/internal/core"
+	"github.com/zhuweizz/powersync_golang/internal/protocol"
 )
 
 const testSchema = `{

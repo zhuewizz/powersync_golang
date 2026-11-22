@@ -1,4 +1,4 @@
-// Command wailsapp 是 Wails v3 桌面版演示：把 msmkSync 的双向同步能力做成可点的界面。
+// Command wailsapp 是 Wails v3 桌面版演示：把 github.com/zhuweizz/powersync_golang 的双向同步能力做成可点的界面。
 //
 // 页面能力：
 //   - 左侧：所有表的清单（行数、同步状态），点一下就看这张表的数据
@@ -52,7 +52,7 @@ func main() {
 
 	app := application.New(application.Options{
 		Name:        "PowerSync 双向同步演示",
-		Description: "msmkSync + Wails v3：表清单 / 增删改 / 同步状态",
+		Description: "github.com/zhuweizz/powersync_golang + Wails v3：表清单 / 增删改 / 同步状态",
 		Services: []application.Service{
 			application.NewService(svc),
 		},

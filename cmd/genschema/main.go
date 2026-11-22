@@ -36,8 +36,8 @@ import (
 	"strings"
 	"time"
 
-	powersync "msmkSync"
-	"msmkSync/internal/psclient"
+	powersync "github.com/zhuweizz/powersync_golang"
+	"github.com/zhuweizz/powersync_golang/internal/psclient"
 )
 
 func main() {
@@ -393,7 +393,7 @@ func render(pkg, fn, rulesFile string, order []string, cols map[string][]powersy
 	b.WriteString("; DO NOT EDIT（要改表/列请改 syncRules.yaml 或生成器后重新生成）。\n\n")
 	b.WriteString("package " + pkg + "\n\nimport (\n\t\"strings\"\n")
 	if !samePkg {
-		b.WriteString("\n\tpowersync \"msmkSync\"\n")
+		b.WriteString("\n\tpowersync \"github.com/zhuweizz/powersync_golang\"\n")
 	}
 	b.WriteString(")\n\n")
 	fmt.Fprintf(&b, "// %s 是本项目的客户端 schema：表清单来自 PowerSync 同步规则（%s），\n", fn, filepathBase(rulesFile))

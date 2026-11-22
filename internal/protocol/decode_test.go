@@ -9,7 +9,7 @@ import (
 	"strings"
 	"testing"
 
-	"msmkSync/internal/protocol"
+	"github.com/zhuweizz/powersync_golang/internal/protocol"
 )
 
 // testdata 目录在仓库根，与包目录隔了两层。
